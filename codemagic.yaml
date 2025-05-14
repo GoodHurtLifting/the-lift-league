@@ -1,0 +1,35 @@
+workflows:
+  liftleague_release:
+    name: Lift League iOS Release
+    environment:
+      flutter: stable
+      xcode: latest
+      groups:
+        - firebase_credentials
+        - apple_credentials
+    scripts:
+      - name: Install dependencies
+        script: flutter pub get
+
+      - name: Parse version and build number
+        script: |
+          VERSION_LINE=$(grep '^version: ' pubspec.yaml | awk '{print $2}')
+          BUILD_NAME=$(echo $VERSION_LINE | cut -d "+" -f 1)
+          BUILD_NUMBER=$(echo $VERSION_LINE | cut -d "+" -f 2)
+          echo "BUILD_NAME=$BUILD_NAME" >> $CM_ENV
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
+
+      - name: Build iOS
+        script: |
+          flutter build ipa \
+            --release \
+            --build-name=$BUILD_NAME \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=ios/ExportOptions.plist
+
+      - name: Firebase App Distribution (iOS)
+        script: |
+          firebase appdistribution:distribute build/ios/ipa/Runner.ipa \
+            --app $FIREBASE_IOS_APP_ID \
+            --groups "ios-testers" \
+            --token $FIREBASE_TOKEN

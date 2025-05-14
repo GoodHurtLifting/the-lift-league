@@ -1,0 +1,86 @@
+# -------------------
+# Flutter / Dart
+# -------------------
+.dart_tool/
+.packages
+.pub-cache/
+.flutter-plugins
+.flutter-plugins-dependencies
+.melos_tool/
+/build/
+coverage/
+.pub/
+.metadata/
+*.iml
+
+linux/flutter/
+macos/Flutter/
+windows/flutter/
+
+# -------------------
+# Android
+# -------------------
+android/.gradle/
+android/captures/
+android/app/build/
+android/app/.cxx/
+android/local.properties
+android/key.properties
+**/*.jks
+**/*.keystore
+
+# Generated plugin registrant (Android)
+android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+
+# Gradle wrapper & scripts
+android/gradlew*
+android/gradle/wrapper/
+
+# -------------------
+# iOS
+# -------------------
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Runner.xcworkspace/
+ios/.symlinks/
+ios/Pods/
+Podfile.lock
+
+# Generated plugin registrant (iOS)
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Flutter export environment (iOS)
+**/flutter_export_environment.sh
+
+# -------------------
+# Firebase & secrets
+# -------------------
+firebase.json
+google-services.json
+*.p8
+*.p12
+
+# -------------------
+# Binaries & outputs
+# -------------------
+*.apk
+*.ipa
+
+# -------------------
+# IDEs & editor
+# -------------------
+.idea/
+.vscode/
+
+# -------------------
+# Miscellaneous
+# -------------------
+devtools_options.yaml
+*.log
+*.db
+*.hprof
+/.metadata
+/test/widget_test.dart
+/web/
+/macos/
+/linux/
