@@ -23,10 +23,11 @@ workflows:
         script: |
           flutter build ipa \
             --release \
+            --no-codesign \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
-            --export-options-plist=ios/ExportOptions.plist \
-            --no-codesign
+            --export-options-plist=ios/ExportOptions.plist
+            
 
         code_signing:
           ios:
