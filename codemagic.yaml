@@ -27,8 +27,6 @@ workflows:
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
             --export-options-plist=ios/ExportOptions.plist
-            
-
         code_signing:
           ios:
             automatic_signing: true
