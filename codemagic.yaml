@@ -25,7 +25,7 @@ workflows:
             --release \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
-            --export-options-plist=ios/ExportOptions.plist
+            --export-options-plist=ios/info.plist
 
       - name: Firebase App Distribution (iOS)
         script: |
