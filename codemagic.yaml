@@ -26,6 +26,11 @@ workflows:
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
             --export-options-plist=ios/ExportOptions.plist
+            --no-codesign
+
+        code_signing:
+          ios:
+            automatic_signing: true
 
       - name: Firebase App Distribution (iOS)
         script: |
