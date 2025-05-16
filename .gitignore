@@ -26,6 +26,7 @@ android/app/build/
 android/app/.cxx/
 android/local.properties
 android/key.properties
+**/gradle.properties
 **/*.jks
 **/*.keystore
 
@@ -79,7 +80,7 @@ devtools_options.yaml
 *.log
 *.db
 *.hprof
-/.metadata
+/.metadatathethee
 /test/widget_test.dart
 /web/
 /macos/

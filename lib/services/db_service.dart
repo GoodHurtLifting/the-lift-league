@@ -1648,7 +1648,50 @@ class DBService {
     return finalData;
   }
 
+  Future<Map<String, dynamic>?> getCurrentWorkoutInfo(String userId) async {
+    final db = await DBService().database;
 
+    final result = await db.rawQuery('''
+    SELECT blockName, workoutName, week
+    FROM workout_instances
+    WHERE userId = ? AND completed = 0
+    ORDER BY startTime DESC
+    LIMIT 1
+  ''', [userId]);
+
+    if (result.isEmpty) return null;
+
+    final data = result.first;
+    return {
+      'blockName': data['blockName'] ?? '',
+      'workoutName': data['workoutName'] ?? '',
+      'week': data['week'] ?? 1,
+    };
+  }
+
+  Future<void> postAutoClinkAfterWorkout(String userId) async {
+    final info = await getCurrentWorkoutInfo(userId);
+    if (info == null) return;
+
+    final block = info['blockName'];
+    final workout = info['workoutName'];
+    final week = info['week'];
+
+    final message = 'Just finished: W$week $workout, $block';
+
+    final entry = {
+      'userId': userId,
+      'type': 'clink',
+      'text': message,
+      'timestamp': Timestamp.now(),
+    };
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('timeline_entries')
+        .add(entry);
+  }
 
 }
 

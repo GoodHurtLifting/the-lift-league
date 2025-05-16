@@ -450,8 +450,7 @@ class _UserDashboardState extends State<UserDashboard> {
                     if (userId != null) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => PublicProfileScreen(userId: userId),
+                        MaterialPageRoute(builder: (_) => PublicProfileScreen(userId: userId),
                         ),
                       );
                     }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/services/db_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ClinkComposer extends StatefulWidget {
   const ClinkComposer({super.key});
@@ -26,42 +26,16 @@ class _ClinkComposerState extends State<ClinkComposer> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final info = await getCurrentWorkoutInfo(user.uid);
+    final db = DBService();
+    final info = await db.getCurrentWorkoutInfo(user.uid);
 
-    if (info != null) {
-      final block = info['blockName'];
-      final workout = info['workoutName'];
-      final week = info['week'];
+    final text = (info != null)
+        ? 'Clocking in: W${info['week']} ${info['workoutName']}, ${info['blockName']}'
+        : 'Clocking in 💪';
 
-      setState(() {
-        _controller.text = 'Clocking in: W$week $workout, $block';
-      });
-    } else {
-      setState(() {
-        _controller.text = "Clocking in 💪";
-      });
-    }
-  }
-
-  Future<Map<String, dynamic>?> getCurrentWorkoutInfo(String userId) async {
-    final db = await DBService().database;
-
-    final result = await db.rawQuery('''
-    SELECT blockName, workoutName, week
-    FROM workout_instances
-    WHERE userId = ? AND completed = 0
-    ORDER BY startTime DESC
-    LIMIT 1
-  ''', [userId]);
-
-    if (result.isEmpty) return null;
-
-    final data = result.first;
-    return {
-      'blockName': data['blockName'] ?? '',
-      'workoutName': data['workoutName'] ?? '',
-      'week': data['week'] ?? 1,
-    };
+    setState(() {
+      _controller.text = text;
+    });
   }
 
 

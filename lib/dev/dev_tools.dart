@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/screens/user_dashboard.dart';
 
+const bool devToolsEnabled = bool.fromEnvironment('DEV_TOOLS_ENABLED');
+
 class DevTools extends StatelessWidget {
   const DevTools({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (!kDebugMode) return const SizedBox.shrink();
+    if (!kDebugMode && !devToolsEnabled) return const SizedBox.shrink();
 
     return IconButton(
       icon: const Icon(Icons.bug_report, color: Colors.red, size: 28),

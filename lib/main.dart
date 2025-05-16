@@ -1,5 +1,4 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -13,13 +12,18 @@ import 'screens/login_screen.dart';
 import 'package:lift_league/screens/add_check_in_screen.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
 
-final FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+late FirebaseAnalytics analytics;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+
+  analytics = FirebaseAnalytics.instance;
 
   // ✅ Enable Crashlytics
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;

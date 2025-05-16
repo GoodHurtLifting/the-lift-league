@@ -324,6 +324,9 @@ class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPr
       blockId: blockId,
     );
 
+    await db.postAutoClinkAfterWorkout(userId);
+
+
     final remaining = await db.getRemainingUnfinishedWorkouts(widget.blockInstanceId);
 
     final earnedBadges = await db.checkForEarnedBadges(userId: userId);

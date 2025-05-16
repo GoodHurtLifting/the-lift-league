@@ -29,9 +29,20 @@ android {
         jvmTarget = "11" // ✅ Kotlin requires string, not JavaVersion enum
     }
 
+    signingConfigs {
+        release {
+            storeFile file("C:/Users/ryanl/keystores/liftleague-release.jks")
+            storePassword RELEASE_STORE_PASSWORD
+            keyAlias "liftleague"
+            keyPassword RELEASE_KEY_PASSWORD
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
         }
     }
 }
