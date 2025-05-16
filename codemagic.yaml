@@ -7,6 +7,13 @@ workflows:
       groups:
         - firebase_credentials
         - apple_credentials
+
+    code_signing:
+      ios:
+        distribution_type: app_store
+        certificate: goodhurt_key
+        provisioning_profile: auto
+
     scripts:
       - name: Install dependencies
         script: flutter pub get
@@ -23,13 +30,9 @@ workflows:
         script: |
           flutter build ipa \
             --release \
-            --no-codesign \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
             --export-options-plist=ios/ExportOptions.plist
-        code_signing:
-          ios:
-            automatic_signing: true
 
       - name: Firebase App Distribution (iOS)
         script: |
