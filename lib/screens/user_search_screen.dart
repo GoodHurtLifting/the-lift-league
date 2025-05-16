@@ -1,8 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:lift_league/services/user_follow_service.dart';
-import 'dart:async';
 import 'package:lift_league/widgets/user_search_tile.dart';
 
 class UserSearchScreen extends StatefulWidget {
@@ -14,25 +13,40 @@ class UserSearchScreen extends StatefulWidget {
 
 class _UserSearchScreenState extends State<UserSearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final List<DocumentSnapshot> _loadedUsers = [];
+  late final String currentUserId;
+  late List<String> _circleIds = [];
+
   String searchQuery = '';
   Timer? _debounce;
-  final List<DocumentSnapshot> _loadedUsers = [];
   bool _isLoadingMore = false;
   bool _hasMore = true;
   DocumentSnapshot? _lastDocument;
   final int _perPage = 25;
 
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _searchController.dispose();
-    super.dispose();
-  }
+  bool _isCircleLoaded = false;
 
   @override
   void initState() {
     super.initState();
+    currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    _initLoad();
+  }
+
+  Future<void> _initLoad() async {
+    await _loadTrainingCircle();
+    setState(() => _isCircleLoaded = true);
     _fetchUsers();
+  }
+
+  Future<void> _loadTrainingCircle() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .collection('training_circle')
+        .get();
+
+    _circleIds = snapshot.docs.map((doc) => doc.id).toList();
   }
 
   Future<void> _fetchUsers({bool reset = false}) async {
@@ -48,11 +62,10 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
 
     Query query = FirebaseFirestore.instance
         .collection('users')
-        .where('showStats', isEqualTo: true)
         .orderBy('displayName')
         .limit(_perPage);
 
-    if (searchQuery.isNotEmpty) {
+    if (searchQuery.trim().isNotEmpty) {
       query = query
           .startAt([searchQuery])
           .endAt(['$searchQuery\uf8ff']);
@@ -66,18 +79,38 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
 
     if (snapshot.docs.isNotEmpty) {
       _lastDocument = snapshot.docs.last;
-      _loadedUsers.addAll(snapshot.docs);
+
+      // Prioritize circle members
+      final docs = snapshot.docs;
+      docs.sort((a, b) {
+        final aInCircle = _circleIds.contains(a.id);
+        final bInCircle = _circleIds.contains(b.id);
+        if (aInCircle && !bInCircle) return -1;
+        if (!aInCircle && bInCircle) return 1;
+        return 0;
+      });
+
+      _loadedUsers.addAll(docs);
     } else {
       _hasMore = false;
     }
 
     setState(() => _isLoadingMore = false);
+
+    print('SearchQuery: $searchQuery');
+    print('Loaded user count: ${snapshot.docs.length}');
+
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Find Lifters'),
@@ -112,52 +145,45 @@ class _UserSearchScreenState extends State<UserSearchScreen> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (ScrollNotification scrollInfo) {
-                if (!_isLoadingMore &&
-                    _hasMore &&
-                    scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
-                  _fetchUsers();
-                }
-                return false;
-              },
-              child: ListView.builder(
-                itemCount: _loadedUsers.length + (_hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == _loadedUsers.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: CircularProgressIndicator()),
-                    );
-                  }
+            child: !_isCircleLoaded
+                ? const Center(child: CircularProgressIndicator())
+                : Stack(
+              children: [
+                NotificationListener<ScrollNotification>(
+                  onNotification: (scrollInfo) {
+                    if (!_isLoadingMore &&
+                        _hasMore &&
+                        scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+                      _fetchUsers();
+                    }
+                    return false;
+                  },
+                  child: ListView.builder(
+                    itemCount: _loadedUsers.length,
+                    itemBuilder: (context, index) {
 
-                  final doc = _loadedUsers[index];
-                  final user = doc.data() as Map<String, dynamic>;
-                  final userId = doc.id;
+                      final doc = _loadedUsers[index];
+                      final user = doc.data() as Map<String, dynamic>;
+                      final userId = doc.id;
 
-                  if (userId == currentUserId) return const SizedBox.shrink();
+                      if (userId == currentUserId) return const SizedBox.shrink();
 
-                  return UserSearchTile(userId: userId, user: user);
-                },
-              ),
+                      return UserSearchTile(userId: userId, user: user);
+                    },
+                  ),
+                ),
+                if (!_isLoadingMore && _loadedUsers.isEmpty)
+                  const Center(
+                    child: Text(
+                      'No lifters found.',
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
       ),
     );
-  }
-
-  Future<List<bool>> _getFollowAndCircleStatus(String currentUserId, String targetUserId) async {
-    final followService = UserFollowService();
-    final isFollowing = await followService.isFollowing(currentUserId, targetUserId);
-    final isInCircle = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUserId)
-        .collection('training_circle')
-        .doc(targetUserId)
-        .get()
-        .then((doc) => doc.exists);
-
-    return [isFollowing, isInCircle];
   }
 }
