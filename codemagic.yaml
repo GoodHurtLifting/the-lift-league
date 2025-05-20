@@ -10,8 +10,7 @@ workflows:
       ios_signing:
         certificates:
           - goodhurt_key
-        provisioning_profiles:
-          - Lift League iOS App ios_app_store 1747775116
+
 
       vars:
         APP_ID: "com.example.liftLeague"
