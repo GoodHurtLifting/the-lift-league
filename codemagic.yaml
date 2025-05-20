@@ -6,11 +6,11 @@ workflows:
       flutter: stable
       xcode: latest
 
-    code_signing:
+    ios_signing:
+      distribution_type: app_store
+      bundle_identifier: com.example.liftLeague
       certificates:
         - goodhurt_key
-      provisioning_profiles:
-        - auto
 
       vars:
         APP_ID: "com.example.liftLeague"
