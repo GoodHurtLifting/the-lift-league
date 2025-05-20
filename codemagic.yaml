@@ -58,4 +58,3 @@ workflows:
         issuer_id: 85ac48ea-7393-4080-a8b2-58c9a95835d0
         submit_to_testflight: true
         submit_to_app_store: false
-        export_options: ios/ExportOptions.plist
