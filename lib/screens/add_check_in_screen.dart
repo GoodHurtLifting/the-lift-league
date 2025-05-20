@@ -1,3 +1,4 @@
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,44 +27,51 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
 
 
   Future<List<File>> _pickAndCropImages() async {
-    final picker = ImagePicker();
-    final List<XFile> pickedFiles = await picker.pickMultiImage();
+    try {
+      final picker = ImagePicker();
+      final List<XFile> pickedFiles = await picker.pickMultiImage();
 
-    if (pickedFiles.isEmpty) {
+      if (pickedFiles.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("You get three, bum.")),
+        );
+        return [];
+      }
+
+      List<File> croppedImages = [];
+
+      for (int i = 0; i < pickedFiles.length && i < 3; i++) {
+        final file = pickedFiles[i];
+
+        final cropped = await ImageCropper().cropImage(
+          sourcePath: file.path,
+          aspectRatio: const CropAspectRatio(ratioX: 4, ratioY: 5),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Crop Image ${i + 1}/${pickedFiles.length}',
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Crop Image',
+              aspectRatioLockEnabled: true,
+            ),
+          ],
+        );
+
+        if (cropped != null) {
+          croppedImages.add(File(cropped.path));
+        }
+      }
+
+      return croppedImages;
+    } catch (e, stack) {
+      FirebaseCrashlytics.instance.recordError(e, stack);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("You get three, bum.")),
+        const SnackBar(content: Text("Something went wrong picking or cropping.")),
       );
       return [];
     }
-
-    List<File> croppedImages = [];
-
-    for (int i = 0; i < pickedFiles.length && i < 3; i++) {
-      final file = pickedFiles[i];
-
-      final cropped = await ImageCropper().cropImage(
-        sourcePath: file.path,
-        aspectRatio: const CropAspectRatio(ratioX: 4, ratioY: 5),
-        uiSettings: [
-          AndroidUiSettings(
-            toolbarTitle: 'Crop Image ${i + 1}/${pickedFiles.length}',
-            lockAspectRatio: true,
-          ),
-          IOSUiSettings(
-            title: 'Crop Image',
-            aspectRatioLockEnabled: true,
-          )
-        ],
-      );
-
-      if (cropped != null) {
-        croppedImages.add(File(cropped.path));
-      }
-    }
-
-    return croppedImages;
   }
-
 
 
   Future<void> _submit() async {
@@ -91,21 +99,31 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
     for (int i = 0; i < _imageFiles.length && i < 3; i++) {
       final file = _imageFiles[i];
 
-      final resizedBytes = await FlutterImageCompress.compressWithList(
-        await file.readAsBytes(),
-        minWidth: 800,
-        minHeight: 1000,
-        format: CompressFormat.jpeg,
-      );
+      try {
+        final resizedBytes = await FlutterImageCompress.compressWithList(
+          await file.readAsBytes(),
+          minWidth: 800,
+          minHeight: 1000,
+          format: CompressFormat.jpeg,
+        );
 
-      final tempDir = await getTemporaryDirectory();
-      final resizedPath = '${tempDir.path}/resized_${now.millisecondsSinceEpoch}_$i.jpg';
-      final resizedFile = File(resizedPath)..writeAsBytesSync(resizedBytes);
+        final tempDir = await getTemporaryDirectory();
+        final resizedPath = '${tempDir.path}/resized_${now.millisecondsSinceEpoch}_$i.jpg';
+        final resizedFile = File(resizedPath)..writeAsBytesSync(resizedBytes);
 
-      final uploadRef = storageRef.child("${monthKey}_$i.jpg");
-      await uploadRef.putFile(resizedFile);
-      final url = await uploadRef.getDownloadURL();
-      imageUrls.add(url);
+        final uploadRef = storageRef.child("${monthKey}_$i.jpg");
+        await uploadRef.putFile(resizedFile);
+        final url = await uploadRef.getDownloadURL();
+        imageUrls.add(url);
+      } catch (e, stack) {
+        debugPrint('🛑 Image compress/upload failed: $e');
+        FirebaseCrashlytics.instance.recordError(e, stack);
+        setState(() => _isUploading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Image upload failed. Try smaller images.")),
+        );
+        return;
+      }
     }
 
     // Save entry in Firestore
@@ -130,8 +148,6 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
 
     Navigator.pop(context, true); // Done!
   }
-
-
 
   @override
   Widget build(BuildContext context) {

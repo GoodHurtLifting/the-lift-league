@@ -7,8 +7,8 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 
-import 'screens/user_dashboard.dart';
-import 'screens/login_screen.dart';
+import 'package:lift_league/screens/user_dashboard.dart';
+import 'package:lift_league/screens/login_screen.dart';
 import 'package:lift_league/screens/add_check_in_screen.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
 
@@ -49,16 +49,21 @@ class LiftLeagueApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'The Lift League',
-      theme: ThemeData.dark(),
+      theme: ThemeData.dark().copyWith(
+        pageTransitionsTheme: PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: const FadePageTransitionsBuilder(),
+            TargetPlatform.iOS: const FadePageTransitionsBuilder(),
+          },
+        ),
+      ),
       navigatorObservers: [
         FirebaseAnalyticsObserver(analytics: analytics),
       ],
       routes: {
         '/addCheckIn': (context) => const AddCheckInScreen(),
         '/publicProfile': (context) => PublicProfileScreen(
-          userId: ModalRoute.of(context)!.settings.arguments != null
-              ? (ModalRoute.of(context)!.settings.arguments as Map)['userId']
-              : '',
+          userId: (ModalRoute.of(context)?.settings.arguments as Map?)?['userId'] ?? '',
         ),
       },
       home: const AuthGate(),
@@ -85,3 +90,28 @@ class AuthGate extends StatelessWidget {
     );
   }
 }
+class FadePageTransitionsBuilder extends PageTransitionsBuilder {
+  final Duration duration;
+
+  const FadePageTransitionsBuilder({this.duration = const Duration(milliseconds: 150)});
+
+  @override
+  Widget buildTransitions<T>(
+      PageRoute<T> route,
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+      Widget child,
+      ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(
+        parent: animation,
+        curve: Curves.linear,
+      ),
+      child: child,
+    );
+  }
+}
+
+
+

@@ -1,15 +1,22 @@
 workflows:
-  liftleague_ios_build:
-    name: Lift League iOS Build
+  ios_release:
+    name: iOS Release Workflow
+    max_build_duration: 60
     environment:
       flutter: stable
       xcode: latest
-
+      cocoapods: default
+      vars:
+        APP_ID: "com.example.lift_league"  # <-- replace with your actual bundle ID
+    triggering:
+      events:
+        - push
     scripts:
       - name: Install dependencies
-        script: flutter pub get
+        script: |
+          flutter pub get
 
-      - name: Parse version and build number
+      - name: Set build version
         script: |
           VERSION_LINE=$(grep '^version: ' pubspec.yaml | awk '{print $2}')
           BUILD_NAME=$(echo $VERSION_LINE | cut -d "+" -f 1)
@@ -17,10 +24,25 @@ workflows:
           echo "BUILD_NAME=$BUILD_NAME" >> $CM_ENV
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
 
-      - name: Build iOS (unsigned)
+      - name: Flutter clean & build iOS
         script: |
-          flutter build ios \
-            --release \
-            --no-codesign \
+          flutter clean
+          flutter build ios --release --no-codesign \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/ipa/*.dSYM.zip
+
+    publishing:
+      app_store_connect:
+        api_key: goodhurt_key  # <-- matches your code signing cert in Codemagic
+        submit_to_testflight: true
+        submit_to_app_store: false
+        export_options: ios/ExportOptions.plist  # <-- make sure this is committed
+
+    code_signing:
+      certificates:
+        - goodhurt_key
+      provisioning_profiles: auto

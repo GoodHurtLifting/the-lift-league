@@ -33,7 +33,7 @@ class _BadgeCarouselState extends State<BadgeCarousel> {
     return GestureDetector(
       onTap: _nextBadge,
       child: Container(
-        color: Colors.black.withOpacity(0.9),
+        color: Colors.black.withValues(),
         alignment: Alignment.center,
         child: Column(
           mainAxisSize: MainAxisSize.min,
