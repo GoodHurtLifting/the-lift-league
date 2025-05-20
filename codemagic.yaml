@@ -6,11 +6,21 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+
+      # ✅ MOVE CODE SIGNING HERE:
       vars:
-        APP_ID: "com.example.lift_league"  # <-- replace with your actual bundle ID
+        APP_ID: "com.example.lift_league" # <-- Replace with your actual bundle ID
+
+      # ✅ Code signing now goes inside environment:
+      ios_signing:
+        certificates:
+          - goodhurt_key # <-- This is the name of your uploaded .p12 file
+        provisioning_profiles: auto
+
     triggering:
       events:
         - push
+
     scripts:
       - name: Install dependencies
         script: |
@@ -37,12 +47,7 @@ workflows:
 
     publishing:
       app_store_connect:
-        api_key: goodhurt_key  # <-- matches your code signing cert in Codemagic
+        api_key: goodhurt_key # This must also be defined under your App Store Connect API keys
         submit_to_testflight: true
         submit_to_app_store: false
-        export_options: ios/ExportOptions.plist  # <-- make sure this is committed
-
-    code_signing:
-      certificates:
-        - goodhurt_key
-      provisioning_profiles: auto
+        export_options: ios/ExportOptions.plist
