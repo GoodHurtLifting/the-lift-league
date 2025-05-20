@@ -1,31 +1,35 @@
 workflows:
-  ios_release:
-    name: iOS Release Workflow
+  ios_release_with_shorebird:
+    name: iOS Release with Shorebird
     max_build_duration: 60
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
 
-      # ✅ MOVE CODE SIGNING HERE:
-      vars:
-        APP_ID: "com.example.lift_league" # <-- Replace with your actual bundle ID
-
-      # ✅ Code signing now goes inside environment:
       ios_signing:
         certificates:
-          - goodhurt_key # <-- This is the name of your uploaded .p12 file
+          - goodhurt_key
         provisioning_profiles:
-          - ios_profile.mobileprovision
+          - liftleague_profile
+
+      vars:
+        APP_ID: "com.example.liftLeague"
 
     triggering:
       events:
         - push
+      branch_patterns:
+        - pattern: main
 
     scripts:
       - name: Install dependencies
+        script: flutter pub get
+
+      - name: Shorebird auth
         script: |
-          flutter pub get
+          dart pub global activate shorebird_cli
+          shorebird login --token $SHOREBIRD_AUTH_TOKEN
 
       - name: Set build version
         script: |
@@ -35,12 +39,13 @@ workflows:
           echo "BUILD_NAME=$BUILD_NAME" >> $CM_ENV
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
 
-      - name: Flutter clean & build iOS
+      - name: Build iOS with Shorebird
         script: |
           flutter clean
-          flutter build ios --release --no-codesign \
+          shorebird flutter build ios --release \
             --build-name=$BUILD_NAME \
-            --build-number=$BUILD_NUMBER
+            --build-number=$BUILD_NUMBER \
+            --no-codesign
 
     artifacts:
       - build/ios/ipa/*.ipa
@@ -48,8 +53,9 @@ workflows:
 
     publishing:
       app_store_connect:
-        key_id: 6J6HAU4482
-        api_key: goodhurt_key # This must also be defined under your App Store Connect API keys
+        api_key: goodhurt_key
+        key_id: WWR5JQ5K5X
+        issuer_id: 85ac48ea-7393-4080-a8b2-58c9a95835d0
         submit_to_testflight: true
         submit_to_app_store: false
         export_options: ios/ExportOptions.plist
