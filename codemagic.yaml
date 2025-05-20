@@ -8,8 +8,11 @@ workflows:
       cocoapods: default
 
       ios_signing:
-        certificates:
-          - goodhurt_key
+        automatic_code_signing:
+          provisioning_profile:
+            bundle_identifier: com.example.liftLeague
+            distribution_type: app_store
+          certificate: goodhurt_key
 
 
       vars:
