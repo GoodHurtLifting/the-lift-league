@@ -15,7 +15,8 @@ workflows:
       ios_signing:
         certificates:
           - goodhurt_key # <-- This is the name of your uploaded .p12 file
-        provisioning_profiles: auto
+        provisioning_profiles:
+          - ios_profile.mobileprovision
 
     triggering:
       events:
@@ -47,6 +48,7 @@ workflows:
 
     publishing:
       app_store_connect:
+        key_id: 6J6HAU4482
         api_key: goodhurt_key # This must also be defined under your App Store Connect API keys
         submit_to_testflight: true
         submit_to_app_store: false

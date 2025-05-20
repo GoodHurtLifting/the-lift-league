@@ -1682,7 +1682,7 @@ class DBService {
     final entry = {
       'userId': userId,
       'type': 'clink',
-      'text': message,
+      'clink': message,
       'timestamp': Timestamp.now(),
     };
 

@@ -93,7 +93,7 @@ class AuthGate extends StatelessWidget {
 class FadePageTransitionsBuilder extends PageTransitionsBuilder {
   final Duration duration;
 
-  const FadePageTransitionsBuilder({this.duration = const Duration(milliseconds: 150)});
+  const FadePageTransitionsBuilder({this.duration = const Duration(milliseconds: 100)});
 
   @override
   Widget buildTransitions<T>(
