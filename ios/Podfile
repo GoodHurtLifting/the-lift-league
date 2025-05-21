@@ -1,10 +1,5 @@
-# ios/Podfile
-
 platform :ios, '15.0'
-
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-
-require File.join(File.dirname(`flutter --version`.split("\n").first), 'packages', 'flutter_tools', 'bin', 'podhelper')
 
 project 'Runner', {
   'Debug' => :debug,
@@ -12,17 +7,9 @@ project 'Runner', {
   'Release' => :release,
 }
 
-install! 'cocoapods',
-         :deterministic_uuids => false,
-         :disable_input_output_paths => true
+require File.expand_path(
+  File.join('packages', 'flutter_tools', 'bin', 'podhelper'),
+  __dir__
+)
 
-# Load the Flutter environment
-flutter_application_path = File.expand_path('..', __dir__)
-eval(File.read(File.join(flutter_application_path, '.flutter-plugins-dependencies')))
-
-target 'Runner' do
-  use_frameworks!
-  use_modular_headers!
-
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-end
+flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))
