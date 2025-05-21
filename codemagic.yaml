@@ -18,7 +18,7 @@ workflows:
 
       # add your provisioning profile here (match the ‘name’ you uploaded)
       provisioning_profiles:
-        com.example.liftLeague: Lift League prov
+        com.example.liftLeague: Lift League iOS App
 
     triggering:
       events:
@@ -63,7 +63,7 @@ workflows:
       # push the binary to Shorebird for patch releases
       shorebird:
         app_id: $APP_ID
-        flutter_version: 3.29.0
+        flutter_version: 3.29.3
         release_version: $BUILD_NAME
         build_number: $BUILD_NUMBER
 
