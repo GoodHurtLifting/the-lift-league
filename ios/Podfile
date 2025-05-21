@@ -7,9 +7,30 @@ project 'Runner', {
   'Release' => :release,
 }
 
+# figure out where Flutter is installed by reading the Generated.xcconfig:
+def flutter_root
+  xcconfig = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __dir__)
+  File.foreach(xcconfig) do |line|
+    match = line.match(/FLUTTER_ROOT\=(.*)/)
+    return match[1].strip if match
+  end
+  abort("FLUTTER_ROOT not found in #{xcconfig}")
+end
+
+# require the Pod helper from the Flutter SDK
 require File.expand_path(
   File.join('packages', 'flutter_tools', 'bin', 'podhelper'),
-  __dir__
+  flutter_root
 )
 
-flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))
+install! 'cocoapods',
+         deterministic_uuids: false,
+         disable_input_output_paths: true
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+
+  # pulls in all your Flutter pods
+  flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))
+end
