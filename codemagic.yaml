@@ -5,6 +5,7 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+      cocoapods: default
 
     ios_signing:
       distribution_type: app_store
@@ -41,7 +42,7 @@ workflows:
       - name: Build iOS with Shorebird
         script: |
           flutter clean
-          shorebird flutter build ios --release --verbose\
+          shorebird flutter build ios --release \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
             --no-codesign
