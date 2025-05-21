@@ -5,7 +5,7 @@ workflows:
 
     environment:
       # pin to a known good Flutter SDK
-      flutter: 3.29.0
+      flutter: 3.29.3
       xcode: latest
       cocoapods: default
 
@@ -49,6 +49,7 @@ workflows:
       - name: Build IPA
         script: |
           flutter clean
+          flutter pub get
           flutter build ipa \
             --release \
             --build-name=$BUILD_NAME \
@@ -63,7 +64,7 @@ workflows:
       # push the binary to Shorebird for patch releases
       shorebird:
         app_id: $APP_ID
-        flutter_version: 3.29.0
+        flutter_version: 3.29.3
         release_version: $BUILD_NAME
         build_number: $BUILD_NUMBER
 
