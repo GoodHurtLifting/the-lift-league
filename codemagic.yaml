@@ -41,7 +41,7 @@ workflows:
       - name: Build iOS with Shorebird
         script: |
           flutter clean
-          shorebird flutter build ios --release \
+          shorebird flutter build ios --release --verbose\
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
             --no-codesign
