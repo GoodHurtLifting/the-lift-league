@@ -19,7 +19,7 @@ workflows:
         - push
       # branch_patterns is a simple list of strings, not dicts :contentReference[oaicite:1]{index=1}
       branch_patterns:
-        - main
+        - pattern: "main"
 
     scripts:
       - name: Install dependencies
@@ -62,7 +62,7 @@ workflows:
         build_number: $BUILD_NUMBER
 
       app_store_connect:
-        api_key: goodhurt_key
+        api_key: CodemagicKey
         key_id: WWR5JQ5K5X
         issuer_id: 85ac48ea-7393-4080-a8b2-58c9a95835d0
         submit_to_testflight: true
