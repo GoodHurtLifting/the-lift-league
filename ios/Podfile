@@ -4,7 +4,7 @@ platform :ios, '15.0'
 
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), __dir__)
+require File.join(File.dirname(`flutter --version`.split("\n").first), 'packages', 'flutter_tools', 'bin', 'podhelper')
 
 project 'Runner', {
   'Debug' => :debug,
