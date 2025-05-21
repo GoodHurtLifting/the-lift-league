@@ -9,11 +9,11 @@ project 'Runner', {
 
 # figure out where Flutter is installed by reading the Generated.xcconfig:
 def flutter_root
-  xcconfig = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __dir__)
-  File.foreach(xcconfig) do |line|
-    match = line.match(/FLUTTER_ROOT\=(.*)/)
-    return match[1].strip if match
-  end
+    xcconfig = File.join(__dir__, 'Flutter', 'Generated.xcconfig')
+    File.foreach(xcconfig) do |line|
+        match = line.match(/FLUTTER_ROOT\=(.*)/)
+        return match[1].strip if match
+      end
   abort("FLUTTER_ROOT not found in #{xcconfig}")
 end
 
