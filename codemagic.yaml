@@ -56,7 +56,7 @@ workflows:
     publishing:
       # Use shorebird_release (not “shorebird”) when in codemagic.yaml :contentReference[oaicite:2]{index=2}
       shorebird_release:
-        app_id: Lift League iOS App
+        app_id: e33c9660-cca1-4287-9082-955e603ef47f
         flutter_version: 3.29.3
         release_version: $BUILD_NAME
         build_number: $BUILD_NUMBER
