@@ -2,29 +2,35 @@ workflows:
   ios_release_with_shorebird:
     name: iOS Release with Shorebird
     max_build_duration: 60
+
     environment:
-      flutter: stable
+      # pin to a known good Flutter SDK
+      flutter: 3.29.3
       xcode: latest
       cocoapods: default
 
     ios_signing:
       distribution_type: app_store
       bundle_identifier: com.example.liftLeague
+
       certificates:
         - goodhurt_key
 
-      vars:
-        APP_ID: "com.example.liftLeague"
+      # add your provisioning profile here (match the ‘name’ you uploaded)
+      provisioning_profiles:
+        com.example.liftLeague: Lift League prov
 
     triggering:
       events:
         - push
       branch_patterns:
-        - pattern: main
+        - main
 
     scripts:
       - name: Install dependencies
-        script: flutter pub get
+        script: |
+          flutter pub get
+          cd ios && pod install && cd ..
 
       - name: Shorebird auth
         script: |
@@ -33,25 +39,35 @@ workflows:
 
       - name: Set build version
         script: |
+          # extract version+build from pubspec.yaml
           VERSION_LINE=$(grep '^version: ' pubspec.yaml | awk '{print $2}')
-          BUILD_NAME=$(echo $VERSION_LINE | cut -d "+" -f 1)
-          BUILD_NUMBER=$(echo $VERSION_LINE | cut -d "+" -f 2)
+          BUILD_NAME=${VERSION_LINE%%+*}
+          BUILD_NUMBER=${VERSION_LINE##*+}
           echo "BUILD_NAME=$BUILD_NAME" >> $CM_ENV
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
 
-      - name: Build iOS with Shorebird
+      - name: Build IPA
         script: |
           flutter clean
-          shorebird flutter build ios --release \
+          flutter build ipa \
+            --release \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
-            --no-codesign
+            --export-options-plist=ios/ExportOptions.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
       - build/ios/ipa/*.dSYM.zip
 
     publishing:
+      # push the binary to Shorebird for patch releases
+      shorebird:
+        app_id: $APP_ID
+        flutter_version: 3.29.0
+        release_version: $BUILD_NAME
+        build_number: $BUILD_NUMBER
+
+      # also upload to TestFlight (but don’t submit to App Store yet)
       app_store_connect:
         api_key: goodhurt_key
         key_id: WWR5JQ5K5X
