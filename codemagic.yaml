@@ -1,6 +1,6 @@
 workflows:
-  ios_release_with_shorebird:
-    name: iOS Release with Shorebird
+  ios_release:
+    name: iOS Release
     max_build_duration: 60
 
     environment:
@@ -12,7 +12,7 @@ workflows:
       ios_signing:
         # auto-fetch the App Store distribution cert + profile for this bundle
         distribution_type: app_store
-        bundle_identifier: com.example.liftLeague :contentReference[oaicite:0]{index=0}
+        bundle_identifier: com.example.liftLeague
 
     triggering:
       events:
@@ -27,11 +27,6 @@ workflows:
           flutter pub get
           cd ios && pod install && cd ..
 
-      - name: Shorebird auth
-        script: |
-          dart pub global activate shorebird_cli
-          shorebird login --token $SHOREBIRD_AUTH_TOKEN
-
       - name: Set build version
         script: |
           VERSION_LINE=$(grep '^version: ' pubspec.yaml | awk '{print $2}')
@@ -45,24 +40,17 @@ workflows:
           flutter clean
           flutter build ipa \
             --release \
-            --export-options-plist=ios/ExportOptions.plist \
             --build-name=$BUILD_NAME \
-            --build-number=$BUILD_NUMBER 
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=ios/ExportOptions.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
       - build/ios/ipa/*.dSYM.zip
 
     publishing:
-      # Use shorebird_release (not “shorebird”) when in codemagic.yaml :contentReference[oaicite:2]{index=2}
-      shorebird_release:
-        app_id: e33c9660-cca1-4287-9082-955e603ef47f
-        flutter_version: 3.29.3
-        release_version: $BUILD_NAME
-        build_number: $BUILD_NUMBER
-
       app_store_connect:
-        api_key: 1879c1ef-ae26-474d-9421-ecfcca49c3e29b0ad723-6cea-4a9e-9522-31d97546ceb0
+        api_key: CodemagicKey
         key_id: WWR5JQ5K5X
         issuer_id: 85ac48ea-7393-4080-a8b2-58c9a95835d0
         submit_to_testflight: true
