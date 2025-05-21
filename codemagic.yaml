@@ -45,9 +45,9 @@ workflows:
           flutter clean
           flutter build ipa \
             --release \
+            --export-options-plist=ios/ExportOptions.plist \
             --build-name=$BUILD_NAME \
-            --build-number=$BUILD_NUMBER \
-            --export-options-plist=ios/ExportOptions.plist
+            --build-number=$BUILD_NUMBER 
 
     artifacts:
       - build/ios/ipa/*.ipa
