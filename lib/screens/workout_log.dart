@@ -298,49 +298,57 @@ class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPr
 // ──────────────────────────────────────────────
 
   Future<void> _markWorkoutComplete() async {
+
     final db = DBService();
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-    // ✅ Ensure workout totals are synced and Firestore is updated
+    // 1️⃣ Sync totals & Firestore
     await db.writeWorkoutTotalsDirectly(
       workoutInstanceId: widget.workoutInstanceId,
       userId: userId,
       syncToCloud: true,
     );
-
     await db.syncWorkoutTotalsToFirestore(userId);
 
-    await db.completeWorkoutAndCheckBlock(
+    // 2️⃣ Complete workout + check block
+    final blockJustFinished = await db.completeWorkoutAndCheckBlock(
       workoutInstanceId: widget.workoutInstanceId,
       blockInstanceId: widget.blockInstanceId,
       userId: userId,
-      context: context,
     );
 
+    // 3️⃣ Leaderboard & auto-clink
     final blockId = await db.getBlockIdFromInstance(widget.blockInstanceId);
-
-    await syncBestLeaderboardEntryForBlock(
-      userId: userId,
-      blockId: blockId,
-    );
-
+    await syncBestLeaderboardEntryForBlock(userId: userId, blockId: blockId);
     await db.postAutoClinkAfterWorkout(userId);
 
-
+    // 4️⃣ Badges & remaining count
     final remaining = await db.getRemainingUnfinishedWorkouts(widget.blockInstanceId);
-
     final earnedBadges = await db.checkForEarnedBadges(userId: userId);
 
-    if (!context.mounted) return;
+    // 5️⃣ Bail if unmounted
+    if (!mounted) return;
 
-    if (earnedBadges.isNotEmpty) {
+    // 6️⃣ UI branching
+    if (blockJustFinished) {
+      // show your block-complete UI (e.g. BlockSummaryScreen)
       await showGeneralDialog(
         context: context,
         barrierDismissible: false,
-        barrierColor: Colors.black.withOpacity(0.8),
-        pageBuilder: (_, __, ___) => BadgeCarousel(
+        barrierColor:     Colors.black.withOpacity(0.8),
+        pageBuilder:      (_, __, ___) => BlockSummaryScreen(
+          blockInstanceId: widget.blockInstanceId,
+        ),
+      );
+    } else if (earnedBadges.isNotEmpty) {
+      // badge carousel
+      await showGeneralDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor:     Colors.black.withOpacity(0.8),
+        pageBuilder:      (_, __, ___) => BadgeCarousel(
           earnedBadges: earnedBadges,
-          onComplete: () => _navigateAfterWorkout(remaining),
+          onComplete:   () => _navigateAfterWorkout(remaining),
         ),
       );
     } else {

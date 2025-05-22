@@ -1258,19 +1258,20 @@ class DBService {
     );
   }
 
-  Future<void> completeWorkoutAndCheckBlock({
+  /// Marks the workout complete, updates training days, finishes block if needed,
+  /// and returns true if this call also completed the block.
+  Future<bool> completeWorkoutAndCheckBlock({
     required int workoutInstanceId,
     required int blockInstanceId,
     required String userId,
-    required BuildContext context,
   }) async {
     // Step 1: Mark workout instance complete
     await updateWorkoutInstanceCompletion(workoutInstanceId);
 
-    // 🆕 Step 1.5: Update unique training day
+    // Step 1.5: Update unique training day
     await updateTrainingDaysAndWorkoutsCompleted(userId, workoutInstanceId);
 
-    // Step 2: Check if this was the final workout in block
+    // Step 2: Check remaining workouts in block
     final remaining = await getRemainingUnfinishedWorkouts(blockInstanceId);
 
     if (remaining == 0) {
@@ -1283,12 +1284,20 @@ class DBService {
 
       // Step 5: Update Firestore with new count + title
       final newTitle = getUserTitle(totalBlocks);
-      await FirebaseFirestore.instance.collection('users').doc(userId.toString()).update({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .update({
         'blocksCompleted': totalBlocks,
         'title': newTitle,
       });
+
+      return true;
     }
+
+    return false;
   }
+
 
   Future<List<Map<String, dynamic>>> checkForEarnedBadges({
     required String userId,
@@ -1654,7 +1663,7 @@ class DBService {
     final result = await db.rawQuery('''
     SELECT blockName, workoutName, week
     FROM workout_instances
-    WHERE userId = ? AND completed = 0
+    WHERE userId = ? AND completed = 1
     ORDER BY startTime DESC
     LIMIT 1
   ''', [userId]);
@@ -1669,8 +1678,27 @@ class DBService {
     };
   }
 
+  Future<Map<String, dynamic>?> getLastFinishedWorkoutInfo(String userId) async {
+    final db = await database;
+    final result = await db.rawQuery(r'''
+    SELECT blockName, workoutName, week
+      FROM workout_instances
+     WHERE userId = ? AND completed = 1
+  ORDER BY endTime DESC
+     LIMIT 1
+  ''', [userId]);
+
+    if (result.isEmpty) return null;
+    final data = result.first;
+    return {
+      'blockName':   data['blockName']   as String? ?? '',
+      'workoutName': data['workoutName'] as String? ?? '',
+      'week':        data['week']        as int?    ?? 1,
+    };
+  }
+
   Future<void> postAutoClinkAfterWorkout(String userId) async {
-    final info = await getCurrentWorkoutInfo(userId);
+    final info = await getLastFinishedWorkoutInfo(userId);
     if (info == null) return;
 
     final block = info['blockName'];
