@@ -8,11 +8,6 @@ workflows:
       xcode: latest
       cocoapods: default
 
-      # iOS code signing must live under environment › ios_signing
-      ios_signing:
-        # auto-fetch the App Store distribution cert + profile for this bundle
-        distribution_type: app_store
-        bundle_identifier: com.example.liftLeague
 
     triggering:
       events:
