@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:flutter/material.dart';
 import 'package:lift_league/data/lift_data.dart';
 import 'package:lift_league/data/workout_data.dart';
 import 'package:lift_league/data/block_data.dart';
@@ -1696,6 +1695,26 @@ class DBService {
       'week':        data['week']        as int?    ?? 1,
     };
   }
+
+  Future<Map<String, dynamic>?> getNextWorkoutInfo(String userId) async {
+    final db = await database;
+    final result = await db.rawQuery('''
+    SELECT blockName, workoutName, week
+      FROM workout_instances
+     WHERE userId = ? AND completed = 0
+  ORDER BY startTime ASC
+     LIMIT 1
+  ''', [userId]);
+
+    if (result.isEmpty) return null;
+    final data = result.first;
+    return {
+      'blockName':   data['blockName']   as String? ?? '',
+      'workoutName': data['workoutName'] as String? ?? '',
+      'week':        data['week']        as int?    ?? 1,
+    };
+  }
+
 
   Future<void> postAutoClinkAfterWorkout(String userId) async {
     final info = await getLastFinishedWorkoutInfo(userId);

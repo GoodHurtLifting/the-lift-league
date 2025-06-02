@@ -16,14 +16,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool showTimeline = true;
   bool showCheckInInfo = true;
   bool isLoading = true;
+  bool notifyMessages = true;
+  bool notifyTrainingCircle = true;
 
   @override
   void initState() {
     super.initState();
-    _loadPrivacySettings();
+    _loadPrivacyAndNotificationSettings();
   }
 
-  Future<void> _loadPrivacySettings() async {
+  Future<void> _loadPrivacyAndNotificationSettings() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
@@ -31,10 +33,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final data = doc.data();
 
     if (data != null) {
+      final notif = Map<String, dynamic>.from(data['notificationPrefs'] ?? {});
       setState(() {
         showStats = data['showStats'] ?? true;
         showTimeline = data['showTimeline'] ?? true;
         showCheckInInfo = data['showCheckInInfo'] ?? true;
+        // notificationPrefs with defaults
+        notifyMessages = notif['messages'] ?? true;
+        notifyTrainingCircle = notif['trainingCircle'] ?? true;
         isLoading = false;
       });
     }
@@ -54,8 +60,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'showCheckInInfo': 'Check-In Info',
     };
 
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${labelMap[field]} updated')),
+    );
+  }
+
+  Future<void> _updateNotificationPref(String key, bool value) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    setState(() {
+      if (key == 'messages') notifyMessages = value;
+      if (key == 'trainingCircle') notifyTrainingCircle = value;
+    });
+    await FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'notificationPrefs': {
+        key: value,
+      }
+    }, SetOptions(merge: true));
+    final labelMap = {
+      'messages': 'Message notifications',
+      'trainingCircle': 'Training Circle notifications',
+    };
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${labelMap[key]} updated')),
     );
   }
 
@@ -94,12 +123,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Navigate to account settings page
             },
           ),
-          ListTile(
+          ExpansionTile(
             leading: const Icon(Icons.notifications, color: Colors.white),
             title: const Text('Notifications', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              // Navigate to notifications settings
-            },
+            collapsedIconColor: Colors.white,
+            iconColor: Colors.green,
+            childrenPadding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 8.0),
+            children: [
+              SwitchListTile(
+                activeColor: Colors.green,
+                title: const Text('New Messages', style: TextStyle(color: Colors.white)),
+                value: notifyMessages,
+                onChanged: (val) => _updateNotificationPref('messages', val),
+              ),
+              SwitchListTile(
+                activeColor: Colors.green,
+                title: const Text('Training Circle Updates', style: TextStyle(color: Colors.white)),
+                value: notifyTrainingCircle,
+                onChanged: (val) => _updateNotificationPref('trainingCircle', val),
+              ),
+            ],
           ),
           const Divider(color: Colors.white54),
           Padding(

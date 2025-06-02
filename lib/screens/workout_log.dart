@@ -329,26 +329,28 @@ class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPr
     // 5️⃣ Bail if unmounted
     if (!mounted) return;
 
-    // 6️⃣ UI branching
-    if (blockJustFinished) {
-      // show your block-complete UI (e.g. BlockSummaryScreen)
+    // 6️⃣ BADGE CAROUSEL always comes first if there are earned badges
+    if (earnedBadges.isNotEmpty) {
       await showGeneralDialog(
         context: context,
         barrierDismissible: false,
-        barrierColor:     Colors.black.withOpacity(0.8),
-        pageBuilder:      (_, __, ___) => BlockSummaryScreen(
-          blockInstanceId: widget.blockInstanceId,
+        barrierColor: Colors.black.withValues(alpha: 204),
+        pageBuilder: (_, __, ___) => BadgeCarousel(
+          earnedBadges: earnedBadges,
+          // We'll continue navigation in the next lines, not here
+          onComplete: () {}, // We handle navigation below instead
         ),
       );
-    } else if (earnedBadges.isNotEmpty) {
-      // badge carousel
+    }
+    // 7️⃣ After carousel, decide what to show next:
+    if (!mounted) return;
+    if (blockJustFinished) {
       await showGeneralDialog(
         context: context,
         barrierDismissible: false,
-        barrierColor:     Colors.black.withOpacity(0.8),
-        pageBuilder:      (_, __, ___) => BadgeCarousel(
-          earnedBadges: earnedBadges,
-          onComplete:   () => _navigateAfterWorkout(remaining),
+        barrierColor: Colors.black.withValues(alpha: 204),
+        pageBuilder: (_, __, ___) => BlockSummaryScreen(
+          blockInstanceId: widget.blockInstanceId,
         ),
       );
     } else {

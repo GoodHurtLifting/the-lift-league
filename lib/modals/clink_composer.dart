@@ -27,7 +27,7 @@ class _ClinkComposerState extends State<ClinkComposer> {
     if (user == null) return;
 
     final db = DBService();
-    final info = await db.getCurrentWorkoutInfo(user.uid);
+    final info = await db.getNextWorkoutInfo(user.uid);
 
     final text = (info != null)
         ? 'Clocking in: W${info['week']} ${info['workoutName']}, ${info['blockName']}'

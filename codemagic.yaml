@@ -51,7 +51,7 @@ workflows:
     publishing:
       app_store_connect:
         api_key: CodemagicKey
-        key_id: WWR5JQ5K5X
-        issuer_id: 85ac48ea-7393-4080-a8b2-58c9a95835d0
+        key_id: 6J6HAU4482
+        issuer_id: 8FP674AG7R
         submit_to_testflight: true
         submit_to_app_store: false

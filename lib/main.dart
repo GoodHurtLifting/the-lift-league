@@ -6,22 +6,78 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:lift_league/screens/user_dashboard.dart';
 import 'package:lift_league/screens/login_screen.dart';
 import 'package:lift_league/screens/add_check_in_screen.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
+import 'package:lift_league/services/notifications_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 late FirebaseAnalytics analytics;
 
+/// Background handler
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('[FCM DEBUG] onBackgroundMessage: ${message.notification?.title} - ${message.notification?.body}');
+  await Firebase.initializeApp();
+  NotificationService().showNotification(message);
+}
+
+Future<void> setupPushNotifications() async {
+  // 1. Request permission (iOS, Android 13+)
+  NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+  print('User granted permission: ${settings.authorizationStatus}');
+
+  // 2. (Optional) Get and print FCM token, and save to Firestore if logged in
+  final token = await FirebaseMessaging.instance.getToken();
+  print('FCM Token: $token');
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'fcmToken': token,
+    }, SetOptions(merge: true));
+  }
+
+  // 3. Listen for token refresh and update Firestore
+  FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+    print('FCM Token refreshed: $newToken');
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'fcmToken': newToken,
+      }, SetOptions(merge: true));
+    }
+  });
+
+
+  // 4. Foreground: Show notification via NotificationService
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print('FCM Foreground Message: ${message.notification?.title} - ${message.notification?.body}');
+    NotificationService().showNotification(message);
+  });
+
+  // 5. App opened via notification (background/tapped)
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    print('App opened via notification: ${message.notification?.title}');
+    // Optional: handle deep linking or navigation
+  });
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   analytics = FirebaseAnalytics.instance;
 
@@ -37,6 +93,19 @@ void main() async {
     androidProvider: AndroidProvider.debug,
     appleProvider: AppleProvider.debug,
   );
+
+  // Set up local notifications
+  await NotificationService().init();
+
+
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  // 🔥 SETUP FCM PERMISSIONS AND LISTENERS
+  await setupPushNotifications();
 
   runApp(const LiftLeagueApp());
 }

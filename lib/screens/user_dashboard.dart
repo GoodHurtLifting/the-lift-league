@@ -5,6 +5,7 @@ import 'package:lift_league/dev/dev_tools.dart'; // ✅ Import Dev Tools
 import 'package:lift_league/services/user_stats_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,6 +20,7 @@ import 'user_search_screen.dart';
 import 'chat_list_screen.dart';
 import 'training_circle_screen.dart';
 import 'package:lift_league/services/title_observer_service.dart';
+import 'package:lift_league/services/notifications_service.dart';
 
 
 class UserDashboard extends StatefulWidget {
@@ -48,12 +50,42 @@ class _UserDashboardState extends State<UserDashboard> {
     super.initState();
     TitleObserverService.startObservingTitle();
     // Load profile & block instances immediately
+    registerForPushNotifications();
     _loadUserProfile();
     _fetchUserStats();
     _checkUnread();
     _fetchAllBlockInstances().then((_) {
     });
   }
+
+  Future<void> registerForPushNotifications() async {
+    // Request permissions on iOS, Android 13+, etc.
+    final settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      // Get the FCM token for this device
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+
+      // Print for debugging
+      print("FCM Token: $fcmToken");
+
+      // Save the token to Firestore for this user (optional but recommended)
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && fcmToken != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({'fcmToken': fcmToken});
+      }
+    } else {
+      print('User declined or has not accepted permission');
+    }
+  }
+
 
   Future<void> _loadUserProfile() async {
     final user = FirebaseAuth.instance.currentUser;

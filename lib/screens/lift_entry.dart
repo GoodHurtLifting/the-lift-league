@@ -138,6 +138,7 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
   void _onFieldChanged() {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 750), () {
+      if (!mounted) return;
       _recalculateLiftTotals(); // updates _liftScore and _liftWorkload
       updateStoredData();       // saves to DB
 
