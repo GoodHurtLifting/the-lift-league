@@ -22,17 +22,17 @@ workflows:
         - pattern: "main"
 
     scripts:
+      - name: Install dependencies
+        script: |
+          flutter pub get
+          cd ios && pod install && cd ..
+
       - name: Print environment info
         script: |
           flutter --version
           pod --version
           xcodebuild -version
           env
-
-      - name: Install dependencies
-        script: |
-          flutter pub get
-          cd ios && pod install && cd ..
 
       - name: Set build version
         script: |
