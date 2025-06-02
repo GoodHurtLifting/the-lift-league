@@ -22,6 +22,13 @@ workflows:
         - pattern: "main"
 
     scripts:
+      - name: Print environment info
+        script: |
+          flutter --version
+          pod --version
+          xcodebuild -version
+          env
+
       - name: Install dependencies
         script: |
           flutter pub get
@@ -42,7 +49,8 @@ workflows:
             --release \
             --build-name=$BUILD_NAME \
             --build-number=$BUILD_NUMBER \
-            --export-options-plist=ios/ExportOptions.plist
+            --export-options-plist=ios/ExportOptions.plist\
+            --verbose
 
     artifacts:
       - build/ios/ipa/*.ipa
