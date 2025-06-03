@@ -1,9 +1,7 @@
-# Uncomment this line to define a global platform for your project
 platform :ios, '15.0'
-
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-require_relative '../packages/flutter_tools/bin/podhelper'
+require ENV['FLUTTER_ROOT'] + '/packages/flutter_tools/bin/podhelper.rb'
 
 flutter_ios_podfile_setup
 
