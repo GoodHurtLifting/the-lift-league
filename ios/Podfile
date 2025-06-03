@@ -3,7 +3,7 @@ platform :ios, '15.0'
 
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), __dir__)
+require File.expand_path('../packages/flutter_tools/bin/podhelper', __dir__)
 
 flutter_ios_podfile_setup
 
