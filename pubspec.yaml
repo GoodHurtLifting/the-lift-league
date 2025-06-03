@@ -46,14 +46,14 @@ dependencies:
   image: ^4.5.4
   flutter_image_compress: ^2.2.0
   photo_view: ^0.15.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   share_plus: ^11.0.0
   timeago: ^3.6.1
   firebase_core: ^3.13.0
   firebase_crashlytics: ^4.3.5
   firebase_app_check: ^0.3.2+5
   firebase_messaging: ^15.2.6
-  flutter_local_notifications: 16.1.0
+  flutter_local_notifications: ^19.2.1
 
 
 dev_dependencies:
