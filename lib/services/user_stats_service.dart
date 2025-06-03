@@ -1,5 +1,4 @@
-import 'db_service.dart'; // or wherever your main DB access is
-
+import 'db_service.dart';
 
 
 class UserStatsService {
@@ -17,7 +16,7 @@ class UserStatsService {
     return result.isNotEmpty ? result.first['blockName'] as String : 'Block';
   }
 
-  Future<int> getBlockWorkload(int blockInstanceId) async {
+  Future<double> getBlockWorkload(int blockInstanceId) async {
     final db = await _dbService.database;
     final result = await db.rawQuery('''
       SELECT SUM(workoutWorkload) as totalWorkload
@@ -26,7 +25,7 @@ class UserStatsService {
       WHERE wi.blockInstanceId = ?
     ''', [blockInstanceId]);
 
-    return (result.first['totalWorkload'] as int?) ?? 0;
+    return (result.first['totalWorkload'] as num?)?.toDouble() ?? 0.0;
   }
 
   Future<int> getCompletedWorkoutCount(int blockInstanceId) async {

@@ -17,7 +17,7 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
   final UserStatsService _statsService = UserStatsService();
 
   String blockName = '';
-  int blockWorkload = 0;
+  double blockWorkload = 0.0;
   int workoutsCompleted = 0;
   int daysTaken = 0;
   int totalCalendarDays = 0;
@@ -100,7 +100,7 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
               style: TextStyle(fontSize: 20, color: Colors.grey),
             ),
             const SizedBox(height: 30),
-            Text('Block Workload: $blockWorkload lbs'),
+            Text('Block Workload: ${blockWorkload.toStringAsFixed(1)} lbs'),
             Text('Workouts Completed: $workoutsCompleted'),
             Text('Days Taken: $daysTaken'),
             if (feedbackMessage.isNotEmpty)
