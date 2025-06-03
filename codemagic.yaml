@@ -7,6 +7,8 @@ workflows:
       flutter: 3.29.3
       xcode: latest
       cocoapods: default
+      groups:
+        - firebase_credentials
 
 
     triggering:
