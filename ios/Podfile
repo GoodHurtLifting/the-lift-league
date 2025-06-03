@@ -1,36 +1,14 @@
-platform :ios, '13.0'
+# Uncomment this line to define a global platform for your project
+platform :ios, '15.0'
+
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :release,
-  'Release' => :release,
-}
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), __dir__)
 
-# figure out where Flutter is installed by reading the Generated.xcconfig:
-def flutter_root
-    xcconfig = File.join(__dir__, 'Flutter', 'Generated.xcconfig')
-    File.foreach(xcconfig) do |line|
-        match = line.match(/FLUTTER_ROOT\=(.*)/)
-        return match[1].strip if match
-      end
-  abort("FLUTTER_ROOT not found in #{xcconfig}")
-end
-
-# require the Pod helper from the Flutter SDK
-require File.expand_path(
-  File.join('packages', 'flutter_tools', 'bin', 'podhelper'),
-  flutter_root
-)
-
-install! 'cocoapods',
-         deterministic_uuids: false,
-         disable_input_output_paths: true
+flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
-
-  # pulls in all your Flutter pods
-  flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 end
