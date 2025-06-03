@@ -52,9 +52,13 @@ workflows:
       - build/ios/ipa/*.dSYM.zip
 
     publishing:
-      app_store_connect:
-        api_key: CodemagicKey
-        key_id: 6J6HAU4482
-        issuer_id: 8FP674AG7R
-        submit_to_testflight: true
-        submit_to_app_store: false
+      firebase:
+        firebase_token: $FIREBASE_TOKEN
+
+        #publishing:
+     # app_store_connect:
+      #  api_key: CodemagicKey
+       # key_id: 6J6HAU4482
+        #issuer_id: 8FP674AG7R
+        #submit_to_testflight: true
+        #submit_to_app_store: false
