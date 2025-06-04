@@ -34,8 +34,6 @@ class _ReactionBarState extends State<ReactionBar> {
 
     // ✅ Initialize with cached data from TimelineEntry
     userReactionMap = {
-      "heart": List<String>.from(widget.reactionUsers["heart"] ?? []),
-      "thumb": List<String>.from(widget.reactionUsers["thumb"] ?? []),
       "flex": List<String>.from(widget.reactionUsers["flex"] ?? []),
     };
   }
@@ -54,8 +52,7 @@ class _ReactionBarState extends State<ReactionBar> {
     final Map<String, dynamic> raw = Map<String, dynamic>.from(data['reactionUsers'] ?? {});
     setState(() {
       userReactionMap = {
-        for (var key in ["heart", "thumb", "flex"])
-          key: List<String>.from(raw[key] ?? [])
+        "flex": List<String>.from(raw["flex"] ?? []),
       };
     });
   }
@@ -99,20 +96,6 @@ class _ReactionBarState extends State<ReactionBar> {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _AnimatedReactionIcon(
-          icon: Icons.favorite,
-          color: Colors.red,
-          onTap: () => _toggleReaction("heart"),
-          count: widget.isOwner ? _reactionCount("heart") : null,
-          active: _hasReacted("heart"),
-        ),
-        _AnimatedReactionIcon(
-          icon: Icons.thumb_up_alt,
-          color: Colors.blue,
-          onTap: () => _toggleReaction("thumb"),
-          count: widget.isOwner ? _reactionCount("thumb") : null,
-          active: _hasReacted("thumb"),
-        ),
         _AnimatedReactionIcon(
           icon: Icons.fitness_center,
           color: Colors.green,

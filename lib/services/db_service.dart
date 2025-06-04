@@ -720,7 +720,6 @@ class DBService {
         break;
     }
 
-
     // ✅ Generate full distribution of workouts for the block
     final List<Map<String, dynamic>> distribution =
     await generateWorkoutDistribution(workouts, scheduleType);
@@ -756,6 +755,29 @@ class DBService {
     }
 
     print("✅ All workout instances inserted for blockInstanceId $blockInstanceId");
+  }
+
+  Future<void> deleteBlockInstance(int blockInstanceId) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final workoutIds = await txn.query(
+        'workout_instances',
+        columns: ['workoutInstanceId'],
+        where: 'blockInstanceId = ?',
+        whereArgs: [blockInstanceId],
+      );
+
+      for (final row in workoutIds) {
+        final id = row['workoutInstanceId'] as int;
+        await txn.delete('lift_totals', where: 'workoutInstanceId = ?', whereArgs: [id]);
+        await txn.delete('workout_totals', where: 'workoutInstanceId = ?', whereArgs: [id]);
+      }
+
+      await txn.delete('workout_totals', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+      await txn.delete('block_totals', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+      await txn.delete('workout_instances', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+      await txn.delete('block_instances', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+    });
   }
 
 // ──────────────────────────────────────────────
@@ -1297,7 +1319,6 @@ class DBService {
     return false;
   }
 
-
   Future<List<Map<String, dynamic>>> checkForEarnedBadges({
     required String userId,
   }) async {
@@ -1716,7 +1737,8 @@ class DBService {
   }
 
 
-  Future<void> postAutoClinkAfterWorkout(String userId) async {
+  Future<void> postAutoClinkAfterWorkout(String userId,
+      {List<String>? badgeImagePaths}) async {
     final info = await getLastFinishedWorkoutInfo(userId);
     if (info == null) return;
 
@@ -1732,6 +1754,9 @@ class DBService {
       'clink': message,
       'timestamp': Timestamp.now(),
     };
+    if (badgeImagePaths != null && badgeImagePaths.isNotEmpty) {
+      entry['imageUrls'] = badgeImagePaths;
+    }
 
     await FirebaseFirestore.instance
         .collection('users')
@@ -1739,7 +1764,6 @@ class DBService {
         .collection('timeline_entries')
         .add(entry);
   }
-
 }
 
 

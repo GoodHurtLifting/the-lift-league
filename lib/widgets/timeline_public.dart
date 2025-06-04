@@ -48,7 +48,7 @@ class TimelinePublic extends StatelessWidget {
             final entry = entries[index];
 
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: .8, vertical: 6.0),
+              padding: const EdgeInsets.symmetric(horizontal: .8),
               child: entry.type == 'clink'
                   ? TimelineClinkCard(
                 clink: entry.clink ?? '',
@@ -56,6 +56,7 @@ class TimelinePublic extends StatelessWidget {
                 displayName: entry.displayName,
                 title: entry.title,
                 profileImageUrl: entry.profileImageUrl,
+                imageUrls: entry.imageUrls,
                 showProfileInfo: false,
               )
                   : TimelineCheckinCard(

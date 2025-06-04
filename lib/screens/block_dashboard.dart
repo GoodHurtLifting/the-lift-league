@@ -13,10 +13,10 @@ class BlockDashboard extends StatefulWidget {
   const BlockDashboard({super.key, required this.blockInstanceId});
 
   @override
-  _BlockDashboardState createState() => _BlockDashboardState();
+  BlockDashboardState createState() => BlockDashboardState();
 }
 
-class _BlockDashboardState extends State<BlockDashboard> {
+class BlockDashboardState extends State<BlockDashboard> {
   late int currentBlockInstanceId;
   List<Workout> workouts = [];
   bool isLoading = true;
@@ -198,6 +198,50 @@ class _BlockDashboardState extends State<BlockDashboard> {
     );
   }
 
+  Future<void> _confirmDeleteRun(int runNumber) async {
+    final int? instanceId = runInstanceMap[runNumber];
+    if (instanceId == null) return;
+
+    final bool? shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Block Run?'),
+        content: Text('Delete run $runNumber and all associated data?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      await DBService().deleteBlockInstance(instanceId);
+      await _loadBlockRuns();
+
+      if (!runInstanceMap.containsValue(currentBlockInstanceId)) {
+        if (runInstanceMap.isNotEmpty) {
+          final newInstanceId = runInstanceMap.values.last;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BlockDashboard(blockInstanceId: newInstanceId),
+            ),
+          );
+        } else {
+          Navigator.pop(context);
+        }
+      } else {
+        setState(() {});
+      }
+    }
+  }
+
   void navigateToWorkout(BuildContext context, int workoutInstanceId) async {
     await Navigator.push(
       context,
@@ -279,6 +323,7 @@ class _BlockDashboardState extends State<BlockDashboard> {
                               );
                             }
                           },
+                            onLongPress: () => _confirmDeleteRun(runNumber),
                           child: Container(
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

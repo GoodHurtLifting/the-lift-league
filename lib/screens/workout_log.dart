@@ -317,19 +317,26 @@ class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPr
       userId: userId,
     );
 
-    // 3️⃣ Leaderboard & auto-clink
+    // 3️⃣ Leaderboard
     final blockId = await db.getBlockIdFromInstance(widget.blockInstanceId);
     await syncBestLeaderboardEntryForBlock(userId: userId, blockId: blockId);
-    await db.postAutoClinkAfterWorkout(userId);
 
-    // 4️⃣ Badges & remaining count
-    final remaining = await db.getRemainingUnfinishedWorkouts(widget.blockInstanceId);
+    // 4️⃣ Badges
     final earnedBadges = await db.checkForEarnedBadges(userId: userId);
 
-    // 5️⃣ Bail if unmounted
+    // 5️⃣ Auto-clink with badges
+    final badgePaths = earnedBadges
+        .map<String>((b) => 'assets/images/badges/${b['image'] ?? 'badge_default.png'}')
+        .toList();
+    await db.postAutoClinkAfterWorkout(userId, badgeImagePaths: badgePaths);
+
+    // 6️⃣ Remaining count
+    final remaining = await db.getRemainingUnfinishedWorkouts(widget.blockInstanceId);
+
+    // 7️⃣ Bail if unmounted
     if (!mounted) return;
 
-    // 6️⃣ BADGE CAROUSEL always comes first if there are earned badges
+    // 8️⃣ BADGE CAROUSEL always comes first if there are earned badges
     if (earnedBadges.isNotEmpty) {
       await showGeneralDialog(
         context: context,
@@ -342,7 +349,7 @@ class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPr
         ),
       );
     }
-    // 7️⃣ After carousel, decide what to show next:
+    // 9️⃣ After carousel, decide what to show next:
     if (!mounted) return;
     if (blockJustFinished) {
       await showGeneralDialog(

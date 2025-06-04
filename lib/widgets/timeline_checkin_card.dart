@@ -84,12 +84,15 @@ class TimelineCheckinCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTapProfile,
       behavior: HitTestBehavior.opaque,
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.black,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey.shade700, width: 0.5),
+          ),
+        ),
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (showProfileInfo)
@@ -151,8 +154,8 @@ class TimelineCheckinCard extends StatelessWidget {
                 ),
             ],
           ),
-        ),
-      ),
-    );
+        )
+      );
+
   }
 }

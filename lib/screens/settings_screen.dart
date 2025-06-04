@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'package:lift_league/services/title_observer_service.dart';
+
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool isLoading = true;
   bool notifyMessages = true;
   bool notifyTrainingCircle = true;
+  bool playRestSound = true;
 
   @override
   void initState() {
@@ -66,6 +69,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _updateRestSoundPref(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('playRestSound', value);
+    setState(() => playRestSound = value);
+  }
+
   Future<void> _updateNotificationPref(String key, bool value) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -85,6 +94,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${labelMap[key]} updated')),
+    );
+  }
+
+  Future<void> _changePassword(String newPassword) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      await user.updatePassword(newPassword);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password updated successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating password: $e')),
+      );
+    }
+  }
+
+  Future<void> _showChangePasswordDialog() async {
+    final newPassController = TextEditingController();
+    final confirmController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.black,
+          title: const Text('Change Password', style: TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: newPassController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'New Password',
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
+                style: const TextStyle(color: Colors.white),
+              ),
+              TextField(
+                controller: confirmController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm Password',
+                  labelStyle: TextStyle(color: Colors.white70),
+                ),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final newPass = newPassController.text.trim();
+                final confirm = confirmController.text.trim();
+                if (newPass.isEmpty || confirm.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please fill out both fields')),
+                  );
+                  return;
+                }
+                if (newPass != confirm) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Passwords do not match')),
+                  );
+                  return;
+                }
+                Navigator.pop(context);
+                _changePassword(newPass);
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -116,12 +207,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : ListView(
         children: [
-          ListTile(
+          ExpansionTile(
             leading: const Icon(Icons.person, color: Colors.white),
             title: const Text('Account', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              // Navigate to account settings page
-            },
+            collapsedIconColor: Colors.white,
+            iconColor: Colors.green,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.lock, color: Colors.white),
+                title:
+                const Text('Change Password', style: TextStyle(color: Colors.white)),
+                onTap: _showChangePasswordDialog,
+              ),
+            ],
           ),
           ExpansionTile(
             leading: const Icon(Icons.notifications, color: Colors.white),

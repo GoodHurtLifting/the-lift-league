@@ -60,7 +60,7 @@ class TrainingCircleScreen extends StatelessWidget {
                   final entry = TimelineEntry.fromMap(doc.id, data);
 
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: entry.type == 'clink'
                         ? TimelineClinkCard(
                       clink: entry.clink ?? '',
@@ -68,6 +68,7 @@ class TrainingCircleScreen extends StatelessWidget {
                       displayName: entry.displayName,
                       title: entry.title,
                       profileImageUrl: entry.profileImageUrl,
+                      imageUrls: entry.imageUrls,
                       showProfileInfo: true,
                       onTapProfile: () {
                         Navigator.pushNamed(

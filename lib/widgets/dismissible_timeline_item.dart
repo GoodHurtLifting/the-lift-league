@@ -146,6 +146,7 @@ class DismissibleTimelineItem extends StatelessWidget {
           displayName: null,
           title: null,
           profileImageUrl: null,
+          imageUrls: entry.imageUrls,
           showProfileInfo: false,
         ),
       ),

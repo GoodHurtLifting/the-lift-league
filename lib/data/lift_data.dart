@@ -1,5 +1,5 @@
 
-//lift of lifts
+//list of lifts
 const List<Map<String, dynamic>> liftDataList = [
   {
     'liftId': 1010,

@@ -1,5 +1,7 @@
 // rest_timer.dart
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'package:vibration/vibration.dart';
 
@@ -14,6 +16,28 @@ class _RestTimerState extends State<RestTimer> {
   int _remainingSeconds = 0;
   Timer? _timer;
   int _lastUsedDuration = 60; // Default initial value
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _playSound = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrefs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _playSound = prefs.getBool('playRestSound') ?? true;
+    });
+  }
+
+  Future<void> _playChime() async {
+    if (!_playSound) return;
+    try {
+      await _audioPlayer.play(AssetSource('sounds/chime.wav'));
+    } catch (_) {}
+  }
 
   void _startTimer(int seconds) {
     _timer?.cancel();
@@ -33,6 +57,7 @@ class _RestTimerState extends State<RestTimer> {
             Vibration.vibrate(duration: 500);
           }
         });
+        _playChime();
       }
     });
   }
