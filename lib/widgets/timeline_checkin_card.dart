@@ -136,6 +136,8 @@ class TimelineCheckinCard extends StatelessWidget {
                     Text("Weight: ${entry.weight} lbs", style: const TextStyle(fontSize: 10)),
                   if (showCheckInInfo && entry.bodyFat != null)
                     Text("Body Fat: ${entry.bodyFat}%", style: const TextStyle(fontSize: 10)),
+                  if (showCheckInInfo && entry.bmi != null)
+                    Text("BMI: ${entry.bmi}", style: const TextStyle(fontSize: 10)),
                   if (showCheckInInfo && entry.block != null)
                     Text("Block: ${entry.block}", style: const TextStyle(fontSize: 10)),
                   if (showCheckInInfo && entry.note?.isNotEmpty == true)

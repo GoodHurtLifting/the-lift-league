@@ -28,6 +28,7 @@ class DismissibleTimelineItem extends StatelessWidget {
     if (entry.block != null) buffer.writeln('Block: ${entry.block}');
     if (entry.weight != null) buffer.writeln('Weight: ${entry.weight} lbs');
     if (entry.bodyFat != null) buffer.writeln('Body Fat: ${entry.bodyFat}%');
+    if (entry.bmi != null) buffer.writeln('BMI: ${entry.bmi}');
     buffer.writeln('\n#TheLiftLeague');
     final shareText = buffer.toString();
 

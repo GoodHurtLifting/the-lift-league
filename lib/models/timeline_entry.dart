@@ -14,6 +14,7 @@ class TimelineEntry {
   final String? note; // replaces notes — supports clink messages or check-in notes
   final double? weight;
   final double? bodyFat;
+  final double? bmi;
   final String? block;
   final Map<String, dynamic>? reactions;
   final Map<String, List<String>>? reactionUsers;
@@ -32,6 +33,7 @@ class TimelineEntry {
     this.clink,
     this.weight,
     this.bodyFat,
+    this.bmi,
     this.block,
     this.reactions,
     this.reactionUsers,
@@ -61,6 +63,7 @@ class TimelineEntry {
       note: data['note'],
       weight: data['weight']?.toDouble(),
       bodyFat: data['bodyFat']?.toDouble(),
+      bmi: data['bmi']?.toDouble(),
       block: data['block'],
       reactions: data['reactions'] as Map<String, dynamic>? ?? {},
       reactionUsers: (data['reactionUsers'] as Map<String, dynamic>?)?.map(
@@ -83,6 +86,7 @@ class TimelineEntry {
       'note': note,
       'weight': weight,
       'bodyFat': bodyFat,
+      'bmi': bmi,
       'block': block,
       'reactions': reactions ?? {},
       'reactionUsers': reactionUsers ?? {},

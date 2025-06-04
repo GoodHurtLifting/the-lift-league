@@ -20,6 +20,7 @@ class AddCheckInScreen extends StatefulWidget {
 class _AddCheckInScreenState extends State<AddCheckInScreen> {
   final _weightController = TextEditingController();
   final _bodyFatController = TextEditingController();
+  final _bmiController = TextEditingController();
   final _notesController = TextEditingController();
   String? _selectedBlock;
   bool _isUploading = false;
@@ -139,6 +140,7 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
       "imageUrls": imageUrls,
       "weight": _weightController.text.isNotEmpty ? double.tryParse(_weightController.text) : null,
       "bodyFat": _bodyFatController.text.isNotEmpty ? double.tryParse(_bodyFatController.text) : null,
+      "bmi": _bmiController.text.isNotEmpty ? double.tryParse(_bmiController.text) : null,
       "block": _selectedBlock,
       "note": _notesController.text.trim(),
       "displayName": userData['displayName'] ?? 'Lifter',
@@ -209,6 +211,11 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
               controller: _bodyFatController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: "Body Fat (%)"),
+            ),
+            TextField(
+              controller: _bmiController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "BMI"),
             ),
             const SizedBox(height: 8),
 

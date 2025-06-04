@@ -53,6 +53,7 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
       feedback = "Dang bro. Remember, consistency builds momentum.";
     }
 
+    if (!mounted) return;
     setState(() {
       blockName = name;
       blockWorkload = workload;

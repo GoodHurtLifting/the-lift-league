@@ -29,6 +29,7 @@ class _EditCheckInScreenState extends State<EditCheckInScreen> {
   final List<File> newImages = [];
   final _weightController = TextEditingController();
   final _bodyFatController = TextEditingController();
+  final _bmiController = TextEditingController();
   final _notesController = TextEditingController();
   String? _selectedBlock;
   bool _isUploading = false;
@@ -39,6 +40,7 @@ class _EditCheckInScreenState extends State<EditCheckInScreen> {
     existingImageUrls = List.from(widget.entry.imageUrls);
     _weightController.text = widget.entry.weight?.toString() ?? '';
     _bodyFatController.text = widget.entry.bodyFat?.toString() ?? '';
+    _bmiController.text = widget.entry.bmi?.toString() ?? '';
     _notesController.text = widget.entry.note ?? '';
     _selectedBlock = widget.entry.block;
   }
@@ -100,6 +102,7 @@ class _EditCheckInScreenState extends State<EditCheckInScreen> {
       'imageUrls': allUrls,
       'weight': _weightController.text.isNotEmpty ? double.tryParse(_weightController.text) : null,
       'bodyFat': _bodyFatController.text.isNotEmpty ? double.tryParse(_bodyFatController.text) : null,
+      'bmi': _bmiController.text.isNotEmpty ? double.tryParse(_bmiController.text) : null,
       'block': _selectedBlock,
       'notes': _notesController.text.trim(),
     });
@@ -181,6 +184,11 @@ class _EditCheckInScreenState extends State<EditCheckInScreen> {
               controller: _bodyFatController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: "Body Fat (%)"),
+            ),
+            TextField(
+              controller: _bmiController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: "BMI"),
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
