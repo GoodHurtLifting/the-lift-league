@@ -14,6 +14,7 @@ import 'package:lift_league/widgets/badge_carousel.dart';
 import 'package:lift_league/screens/block_summary.dart';
 import 'package:lift_league/services/leaderboard_service.dart';
 import 'package:lift_league/modals/numpad_modal.dart';
+import 'package:lift_league/services/pr_service.dart';
 
 class WorkoutLogScreen extends StatefulWidget {
   final int workoutInstanceId;
@@ -26,10 +27,10 @@ class WorkoutLogScreen extends StatefulWidget {
   });
 
   @override
-  _WorkoutLogScreenState createState() => _WorkoutLogScreenState();
+  WorkoutLogScreenState createState() => WorkoutLogScreenState();
 }
 
-class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerProviderStateMixin {
+class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerProviderStateMixin {
   late AnimationController _numpadController;
   late Animation<Offset> _numpadOffset;
   late ValueNotifier<WorkoutInstanceTotals?> workoutTotals;
@@ -38,6 +39,7 @@ class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPr
   bool isNumpadOpen = false;
   String? _activeFieldKey;
   double _cachedPreviousScore = 0.0;
+  Map<String, double> _startingBig3Prs = {};
 
 // You no longer need separate state values for score/workload/previousScore
 // Remove buildWorkoutInstanceTotals()
@@ -85,6 +87,8 @@ class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPr
     final db = DBService();
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
+
+    _startingBig3Prs = await getBig3PRs(currentUser.uid);
 
     final workoutInstance = await db.getWorkoutInstanceById(
         widget.workoutInstanceId);
@@ -329,6 +333,21 @@ class _WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPr
         .map<String>((b) => 'assets/images/badges/${b['image'] ?? 'badge_default.png'}')
         .toList();
     await db.postAutoClinkAfterWorkout(userId, badgeImagePaths: badgePaths);
+
+    // 5️⃣b Check for new Big 3 PRs
+    final endingPrs = await getBig3PRs(userId);
+    final prUpdates = <String>[];
+    for (final lift in ['Bench Press', 'Squats', 'Deadlift']) {
+      final start = _startingBig3Prs[lift] ?? 0;
+      final end = endingPrs[lift] ?? 0;
+      if (end > start) {
+        prUpdates.add('New $lift PR - ${end.toStringAsFixed(0)}');
+      }
+    }
+    if (prUpdates.isNotEmpty) {
+      final message = prUpdates.join(' & ');
+      await db.postPRClink(userId, message);
+    }
 
     // 6️⃣ Remaining count
     final remaining = await db.getRemainingUnfinishedWorkouts(widget.blockInstanceId);

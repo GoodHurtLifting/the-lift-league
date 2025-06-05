@@ -56,44 +56,60 @@ class TrainingCircleScreen extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final doc = entries[index];
                   final data = doc.data() as Map<String, dynamic>;
-                  final type = data['type'] ?? 'checkin';
                   final entry = TimelineEntry.fromMap(doc.id, data);
+                  final isMe = entry.userId == currentUserId;
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: entry.type == 'clink'
-                        ? TimelineClinkCard(
-                      clink: entry.clink ?? '',
-                      timestamp: entry.timestamp,
-                      displayName: entry.displayName,
-                      title: entry.title,
-                      profileImageUrl: entry.profileImageUrl,
-                      imageUrls: entry.imageUrls,
-                      showProfileInfo: true,
-                      onTapProfile: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/publicProfile',
-                          arguments: {'userId': entry.userId},
-                        );
-                      },
-                    )
-                        : TimelineCheckinCard(
-                      entry: entry,
-                      entryId: doc.id,
-                      userId: entry.userId,
-                      displayName: entry.displayName,
-                      title: entry.title,
-                      profileImageUrl: entry.profileImageUrl,
-                      showProfileInfo: true,
-                      showCheckInInfo: true,
-                      onTapProfile: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/publicProfile',
-                          arguments: {'userId': entry.userId},
-                        );
-                      },
+                  final bgColor =
+                  isMe ? Colors.grey[700]! : Colors.grey[800]!;
+
+                  final widget = entry.type == 'clink'
+                      ? TimelineClinkCard(
+                    clink: entry.clink ?? '',
+                    timestamp: entry.timestamp,
+                    displayName: entry.displayName,
+                    title: entry.title,
+                    profileImageUrl: entry.profileImageUrl,
+                    imageUrls: entry.imageUrls,
+                    showProfileInfo: true,
+                    backgroundColor: bgColor,
+                    borderRadius: BorderRadius.circular(12),
+                    showBottomBorder: false,
+                    onTapProfile: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/publicProfile',
+                        arguments: {'userId': entry.userId},
+                      );
+                    },
+                  )
+                      : TimelineCheckinCard(
+                    entry: entry,
+                    entryId: doc.id,
+                    userId: entry.userId,
+                    displayName: entry.displayName,
+                    title: entry.title,
+                    profileImageUrl: entry.profileImageUrl,
+                    showProfileInfo: true,
+                    showCheckInInfo: true,
+                    backgroundColor: bgColor,
+                    borderRadius: BorderRadius.circular(12),
+                    showBottomBorder: false,
+                    onTapProfile: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/publicProfile',
+                        arguments: {'userId': entry.userId},
+                      );
+                    },
+                  );
+
+                  return Align(
+                    alignment:
+                    isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0, vertical: 4),
+                      child: widget,
                     ),
                   );
                 },
@@ -105,17 +121,17 @@ class TrainingCircleScreen extends StatelessWidget {
     );
   }
 
-  Future<List<String>> _fetchCircleMemberIds(String userId) async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('training_circle')
-        .get();
+Future<List<String>> _fetchCircleMemberIds(String userId) async {
+  final snapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .collection('training_circle')
+      .get();
 
-    final memberIds = snapshot.docs.map((doc) => doc.id).toList();
-    memberIds.add(userId); // Add yourself to the list
+  final memberIds = snapshot.docs.map((doc) => doc.id).toList();
+  memberIds.add(userId); // Add yourself to the list
 
-    // Remove any accidental duplicates by converting to a Set, then back to List
-    return memberIds.toSet().toList();
+  // Remove any accidental duplicates by converting to a Set, then back to List
+  return memberIds.toSet().toList();
   }
 }

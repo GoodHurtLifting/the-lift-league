@@ -11,6 +11,9 @@ class TimelineClinkCard extends StatelessWidget {
   final List<String> imageUrls;
   final bool showProfileInfo;
   final VoidCallback? onTapProfile;
+  final Color backgroundColor;
+  final BorderRadius? borderRadius;
+  final bool showBottomBorder;
 
   const TimelineClinkCard({
     super.key,
@@ -22,6 +25,9 @@ class TimelineClinkCard extends StatelessWidget {
     this.imageUrls = const [],
     this.showProfileInfo = false,
     this.onTapProfile,
+    this.backgroundColor = Colors.black,
+    this.borderRadius,
+    this.showBottomBorder = true,
   });
 
   Widget _buildImageRow(List<String> urls) {
@@ -61,10 +67,13 @@ class TimelineClinkCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.black,
-        border: Border(
+        color: backgroundColor,
+        borderRadius: borderRadius,
+        border: showBottomBorder
+            ? Border(
           bottom: BorderSide(color: Colors.grey.shade700, width: 0.5),
-        ),
+        )
+            : null,
       ),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

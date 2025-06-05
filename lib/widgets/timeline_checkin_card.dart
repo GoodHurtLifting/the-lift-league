@@ -16,6 +16,9 @@ class TimelineCheckinCard extends StatelessWidget {
   final bool showProfileInfo;
   final bool showCheckInInfo;
   final VoidCallback? onTapProfile;
+  final Color backgroundColor;
+  final BorderRadius? borderRadius;
+  final bool showBottomBorder;
 
   const TimelineCheckinCard({
     super.key,
@@ -29,6 +32,9 @@ class TimelineCheckinCard extends StatelessWidget {
     this.readonly = false,
     this.showCheckInInfo = true,
     this.onTapProfile,
+    this.backgroundColor = Colors.black,
+    this.borderRadius,
+    this.showBottomBorder = true,
   });
 
   Widget _buildImageRow(BuildContext context, List<String> imageUrls) {
@@ -87,10 +93,13 @@ class TimelineCheckinCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black,
-          border: Border(
+          color: backgroundColor,
+          borderRadius: borderRadius,
+          border: showBottomBorder
+              ? Border(
             bottom: BorderSide(color: Colors.grey.shade700, width: 0.5),
-          ),
+          )
+              : null,
         ),
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

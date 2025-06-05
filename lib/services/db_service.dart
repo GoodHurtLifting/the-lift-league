@@ -1764,6 +1764,19 @@ class DBService {
         .collection('timeline_entries')
         .add(entry);
   }
+
+  Future<void> postPRClink(String userId, String message) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('timeline_entries')
+        .add({
+      'userId': userId,
+      'type': 'clink',
+      'clink': message,
+      'timestamp': Timestamp.now(),
+    });
+  }
 }
 
 

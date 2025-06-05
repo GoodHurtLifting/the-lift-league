@@ -20,3 +20,20 @@ Future<void> updateBig3PR({
     await docRef.set({'bestWeight': weightUsed});
   }
 }
+
+Future<Map<String, double>> getBig3PRs(String userId) async {
+  final snapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .collection('big3_prs')
+      .get();
+
+  final prs = <String, double>{};
+  for (var doc in snapshot.docs) {
+    final liftName = doc.id;
+    final weight = (doc.data()['bestWeight'] ?? 0).toDouble();
+    prs[liftName] = weight;
+  }
+
+  return prs;
+}
