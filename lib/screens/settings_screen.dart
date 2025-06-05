@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
@@ -21,6 +23,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool notifyMessages = true;
   bool notifyTrainingCircle = true;
   bool playRestSound = true;
+  bool googleLinked = false;
+  bool appleLinked = false;
 
   @override
   void initState() {
@@ -34,6 +38,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
     final data = doc.data();
+
+    final providers = FirebaseAuth.instance.currentUser?.providerData ?? [];
+    setState(() {
+      googleLinked = providers.any((p) => p.providerId == 'google.com');
+      appleLinked = providers.any((p) => p.providerId == 'apple.com');
+    });
 
     if (data != null) {
       final notif = Map<String, dynamic>.from(data['notificationPrefs'] ?? {});
@@ -178,6 +188,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
       },
     );
   }
+  Future<void> _linkWithGoogle() async {
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return;
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      await FirebaseAuth.instance.currentUser?.linkWithCredential(credential);
+      setState(() => googleLinked = true);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Google account linked')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error linking Google: $e')),
+      );
+    }
+  }
+
+  Future<void> _linkWithApple() async {
+    try {
+      final appleCred = await SignInWithApple.getAppleIDCredential(
+        scopes: [AppleIDAuthorizationScopes.email],
+      );
+      final oauth = OAuthProvider('apple.com').credential(
+        idToken: appleCred.identityToken,
+        accessToken: appleCred.authorizationCode,
+      );
+      await FirebaseAuth.instance.currentUser?.linkWithCredential(oauth);
+      setState(() => appleLinked = true);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Apple account linked')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error linking Apple: $e')),
+      );
+    }
+  }
+
+  Future<void> _unlinkProvider(String providerId) async {
+    try {
+      await FirebaseAuth.instance.currentUser?.unlink(providerId);
+      setState(() {
+        if (providerId == 'google.com') googleLinked = false;
+        if (providerId == 'apple.com') appleLinked = false;
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Account unlinked')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error unlinking account: $e')),
+      );
+    }
+  }
 
   Future<void> _logout(BuildContext context) async {
     try {
@@ -219,6 +293,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Text('Change Password', style: TextStyle(color: Colors.white)),
                 onTap: _showChangePasswordDialog,
               ),
+              ListTile(
+                leading: const Icon(Icons.link, color: Colors.white),
+                title: Text(
+                  googleLinked ? 'Unlink Google' : 'Link Google',
+                  style: const TextStyle(color: Colors.white),
+                ),
+                onTap: googleLinked
+                    ? () => _unlinkProvider('google.com')
+                    : _linkWithGoogle,
+              ),
+              ListTile(
+                leading: const Icon(Icons.link, color: Colors.white),
+                title: Text(
+                  appleLinked ? 'Unlink Apple' : 'Link Apple',
+                  style: const TextStyle(color: Colors.white),
+                ),
+                onTap:
+                appleLinked ? () => _unlinkProvider('apple.com') : _linkWithApple,
+              ),
             ],
           ),
           ExpansionTile(
@@ -239,6 +332,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: const Text('Training Circle Updates', style: TextStyle(color: Colors.white)),
                 value: notifyTrainingCircle,
                 onChanged: (val) => _updateNotificationPref('trainingCircle', val),
+              ),
+              SwitchListTile(
+                activeColor: Colors.green,
+                title: const Text('Rest Timer Sound', style: TextStyle(color: Colors.white)),
+                value: playRestSound,
+                onChanged: (val) => _updateRestSoundPref(val),
               ),
             ],
           ),

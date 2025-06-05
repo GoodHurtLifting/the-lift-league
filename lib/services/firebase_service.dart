@@ -31,7 +31,7 @@ class FirebaseService {
         'title': 'Lone Wolf',
         'blocksCompleted': 0,
         'totalLbsLifted': 0, // ✅ Add this
-        'profileImageUrl': '', // ✅ Already there
+        'profileImageUrl': user.photoURL ?? '', // ✅ Already there
       });
     }
   }

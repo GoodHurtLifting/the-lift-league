@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+/*
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+*/
 import 'package:lift_league/data/titles_data.dart';
 import 'user_dashboard.dart';
 
@@ -40,7 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = false);
   }
 
-
   Future<void> _signup() async {
     if (!_validateInputs()) return;
 
@@ -71,6 +74,86 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() => isLoading = false);
   }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => isLoading = true);
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        setState(() => isLoading = false);
+        return;
+      }
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      final userCred =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+      if (userCred.additionalUserInfo?.isNewUser ?? false) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCred.user!.uid)
+            .set({
+          'displayName': userCred.user!.displayName ?? 'New Lifter',
+          'title': getUserTitle(0),
+          'blocksCompleted': 0,
+          'totalLbsLifted': 0,
+          'profileImageUrl': userCred.user!.photoURL ?? '',
+        });
+      }
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const UserDashboard()),
+      );
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString());
+      }
+    }
+    setState(() => isLoading = false);
+  }
+
+  /*Future<void> _signInWithApple() async {
+    setState(() => isLoading = true);
+    try {
+      final appleCred = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+      final oauthCredential = OAuthProvider('apple.com').credential(
+        idToken: appleCred.identityToken,
+        accessToken: appleCred.authorizationCode,
+      );
+      final userCred =
+      await FirebaseAuth.instance.signInWithCredential(oauthCredential);
+      if (userCred.additionalUserInfo?.isNewUser ?? false) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCred.user!.uid)
+            .set({
+          'displayName': userCred.user!.displayName ?? 'New Lifter',
+          'title': getUserTitle(0),
+          'blocksCompleted': 0,
+          'totalLbsLifted': 0,
+          'profileImageUrl': '',
+        });
+      }
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const UserDashboard()),
+      );
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString());
+      }
+    }
+    setState(() => isLoading = false);
+  }*/
 
 
   bool _validateInputs() {
@@ -165,6 +248,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _resetPassword,
                       child: const Text('Forgot Password?'),
                     ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _signInWithGoogle,
+                      child: const Text('Sign in with Google'),
+                    ),
+                    /*const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: _signInWithApple,
+                      child: const Text('Sign in with Apple'),
+                    ),*/
                   ],
                 ),
               ],
