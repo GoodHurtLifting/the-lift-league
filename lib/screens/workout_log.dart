@@ -458,6 +458,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
 
           SafeArea(
             top: false,
+            bottom: false,
             child: ValueListenableBuilder<WorkoutInstanceTotals?>(
               valueListenable: workoutTotals,
               builder: (context, totals, _) {

@@ -260,6 +260,7 @@ class BlockDashboardState extends State<BlockDashboard> {
 
   Widget build(BuildContext context) {
     return SafeArea(
+      bottom: false,
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(

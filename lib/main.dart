@@ -126,6 +126,12 @@ class LiftLeagueApp extends StatelessWidget {
           },
         ),
       ),
+      builder: (context, child) {
+        return SafeArea(
+          top: false,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       navigatorObservers: [
         FirebaseAnalyticsObserver(analytics: analytics),
       ],
