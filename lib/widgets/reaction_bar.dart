@@ -8,6 +8,7 @@ class ReactionBar extends StatefulWidget {
   final bool isOwner;
   final Map<String, dynamic> reactions;
   final Map<String, List<String>> reactionUsers; // ✅ NEW
+  final VoidCallback? onLikeAdded;
 
 
   const ReactionBar({
@@ -17,6 +18,7 @@ class ReactionBar extends StatefulWidget {
     required this.isOwner,
     required this.reactions,
     required this.reactionUsers,
+    this.onLikeAdded,
   });
 
   @override
@@ -71,6 +73,12 @@ class _ReactionBarState extends State<ReactionBar> {
       currentUsers.remove(currentUserId);
     } else {
       currentUsers.add(currentUserId);
+      // Increment hype counter when a new like is added
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .update({'likesGiven': FieldValue.increment(1)});
+      widget.onLikeAdded?.call();
     }
 
     setState(() {

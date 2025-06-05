@@ -168,6 +168,43 @@ class BadgeService {
 
 
   // ─────────────────────────────────────────────────────────────────────
+  // 📣 Hype Man Badge – every 100 likes given
+  // ─────────────────────────────────────────────────────────────────────
+  Future<List<Map<String, dynamic>>> checkAndAwardHypeManBadge(String userId) async {
+    final userDoc = await _firestore.collection('users').doc(userId).get();
+    final likesGiven = (userDoc.data()?['likesGiven'] ?? 0) as int;
+    final earnedBadges = likesGiven ~/ 100;
+
+    final badgeRef = _firestore.collection('users').doc(userId).collection('badges');
+    List<Map<String, dynamic>> newlyEarned = [];
+
+    for (int i = 1; i <= earnedBadges; i++) {
+      final badgeId = 'hype_man_$i';
+      final badgeDoc = await badgeRef.doc(badgeId).get();
+
+      if (!badgeDoc.exists) {
+        final badgeData = {
+          'badgeId': badgeId,
+          'name': 'Hype Man',
+          'description': 'You liked ${i * 100} check-ins.',
+          'image': 'hypeMan.png',
+        };
+
+        await badgeRef.doc(badgeId).set({
+          ...badgeData,
+          'iconPath': 'assets/images/badges/hypeMan.png',
+          'imagePath': 'assets/images/badges/hypeMan.png',
+          'unlockDate': Timestamp.now(),
+        });
+
+        newlyEarned.add(badgeData);
+      }
+    }
+
+    return newlyEarned;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
   // 🔢 Helper – Get ISO Week Key
   // ─────────────────────────────────────────────────────────────────────
   String getIsoWeekKey(DateTime date) {

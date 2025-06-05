@@ -16,6 +16,7 @@ class TimelineCheckinCard extends StatelessWidget {
   final bool showProfileInfo;
   final bool showCheckInInfo;
   final VoidCallback? onTapProfile;
+  final VoidCallback? onLikeAdded;
   final Color backgroundColor;
   final BorderRadius? borderRadius;
   final bool showBottomBorder;
@@ -32,6 +33,7 @@ class TimelineCheckinCard extends StatelessWidget {
     this.readonly = false,
     this.showCheckInInfo = true,
     this.onTapProfile,
+    this.onLikeAdded,
     this.backgroundColor = Colors.black,
     this.borderRadius,
     this.showBottomBorder = true,
@@ -179,6 +181,7 @@ class TimelineCheckinCard extends StatelessWidget {
                     isOwner: isOwner,
                     reactions: entry.reactions ?? {},
                     reactionUsers: entry.reactionUsers ?? {},
+                    onLikeAdded: onLikeAdded,
                   ),
                 ],
               ],

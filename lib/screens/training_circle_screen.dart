@@ -4,9 +4,33 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/widgets/timeline_clink_card.dart';
 import 'package:lift_league/widgets/timeline_checkin_card.dart';
 import 'package:lift_league/models/timeline_entry.dart';
+import 'package:lift_league/services/badge_service.dart';
+import 'package:lift_league/widgets/badge_carousel.dart';
 
-class TrainingCircleScreen extends StatelessWidget {
+class TrainingCircleScreen extends StatefulWidget {
   const TrainingCircleScreen({super.key});
+
+  @override
+  State<TrainingCircleScreen> createState() => _TrainingCircleScreenState();
+}
+
+class _TrainingCircleScreenState extends State<TrainingCircleScreen> {
+  Future<void> _checkHypeManBadge() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+    final earned = await BadgeService().checkAndAwardHypeManBadge(userId);
+    if (earned.isNotEmpty && mounted) {
+      await showGeneralDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.8),
+        pageBuilder: (_, __, ___) => BadgeCarousel(
+          earnedBadges: earned,
+          onComplete: () {},
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,6 +125,7 @@ class TrainingCircleScreen extends StatelessWidget {
                         arguments: {'userId': entry.userId},
                       );
                     },
+                    onLikeAdded: _checkHypeManBadge,
                   );
 
                   return Align(
