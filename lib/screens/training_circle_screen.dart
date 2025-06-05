@@ -60,7 +60,7 @@ class TrainingCircleScreen extends StatelessWidget {
                   final isMe = entry.userId == currentUserId;
 
                   final bgColor =
-                  isMe ? Colors.grey[700]! : Colors.grey[800]!;
+                  isMe ? Colors.grey[800]! : Colors.grey[900]!;
 
                   final widget = entry.type == 'clink'
                       ? TimelineClinkCard(

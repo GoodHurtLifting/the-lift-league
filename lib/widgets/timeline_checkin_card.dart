@@ -45,8 +45,8 @@ class TimelineCheckinCard extends StatelessWidget {
       mainAxisAlignment: count == 1
           ? MainAxisAlignment.center
           : count == 2
-          ? MainAxisAlignment.spaceEvenly
-          : MainAxisAlignment.spaceBetween,
+              ? MainAxisAlignment.spaceEvenly
+              : MainAxisAlignment.spaceBetween,
       children: imageUrls.map((url) {
         return Flexible(
           flex: 1,
@@ -84,7 +84,8 @@ class TimelineCheckinCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formattedDate = DateFormat('MM/dd/yyyy').format(entry.timestamp.toLocal());
+    final formattedDate =
+    DateFormat('MM/dd/yyyy').format(entry.timestamp.toLocal());
     final isOwner = userId == FirebaseAuth.instance.currentUser?.uid;
 
     return GestureDetector(
@@ -102,71 +103,90 @@ class TimelineCheckinCard extends StatelessWidget {
               : null,
         ),
         child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (showProfileInfo)
-                InkWell(
-                  onTap: onTapProfile,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundImage: profileImageUrl != null && profileImageUrl!.isNotEmpty
-                            ? NetworkImage(profileImageUrl!)
-                            : const AssetImage('assets/images/flatLogo.jpg') as ImageProvider,
-                      ),
-                      const SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (showProfileInfo)
+              InkWell(
+                onTap: onTapProfile,
+                borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundImage: profileImageUrl != null &&
+                          profileImageUrl!.isNotEmpty
+                          ? NetworkImage(profileImageUrl!)
+                          : const AssetImage('assets/images/flatLogo.jpg')
+                      as ImageProvider,
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName ?? 'Lifter',
+                          style: const TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        if (title != null && title!.isNotEmpty)
                           Text(
-                            displayName ?? 'Lifter',
-                            style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                            title!,
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.white70),
                           ),
-                          if (title != null && title!.isNotEmpty)
-                            Text(
-                              title!,
-                              style: const TextStyle(fontSize: 12, color: Colors.white70),
-                            ),
-                        ],
-                      ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            if (showProfileInfo) const SizedBox(height: 8),
+            _buildImageRow(context, entry.imageUrls),
+            const SizedBox(height: 8),
+            // ⬇️ Check-in info & ReactionBar aligned horizontally
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (showCheckInInfo && entry.weight != null)
+                        Text("Weight: ${entry.weight} lbs",
+                            style: const TextStyle(fontSize: 10)),
+                      if (showCheckInInfo && entry.bodyFat != null)
+                        Text("Body Fat: ${entry.bodyFat}%",
+                            style: const TextStyle(fontSize: 10)),
+                      if (showCheckInInfo && entry.bmi != null)
+                        Text("BMI: ${entry.bmi}",
+                            style: const TextStyle(fontSize: 10)),
+                      if (showCheckInInfo && entry.block != null)
+                        Text("Block: ${entry.block}",
+                            style: const TextStyle(fontSize: 10)),
+                      if (showCheckInInfo && entry.note?.isNotEmpty == true)
+                        Text("${entry.note}",
+                            style: const TextStyle(fontSize: 10)),
+                      Text("Date: $formattedDate",
+                          style: const TextStyle(fontSize: 10)),
                     ],
                   ),
                 ),
-              if (showProfileInfo) const SizedBox(height: 8),
-
-              _buildImageRow(context, entry.imageUrls),
-              const SizedBox(height: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (showCheckInInfo && entry.weight != null)
-                    Text("Weight: ${entry.weight} lbs", style: const TextStyle(fontSize: 10)),
-                  if (showCheckInInfo && entry.bodyFat != null)
-                    Text("Body Fat: ${entry.bodyFat}%", style: const TextStyle(fontSize: 10)),
-                  if (showCheckInInfo && entry.bmi != null)
-                    Text("BMI: ${entry.bmi}", style: const TextStyle(fontSize: 10)),
-                  if (showCheckInInfo && entry.block != null)
-                    Text("Block: ${entry.block}", style: const TextStyle(fontSize: 10)),
-                  if (showCheckInInfo && entry.note?.isNotEmpty == true)
-                    Text("${entry.note}", style: const TextStyle(fontSize: 10)),
-                  Text("Date: $formattedDate", style: const TextStyle(fontSize: 10)),
+                if (!isOwner) ...[
+                  const SizedBox(width: 8),
+                  ReactionBar(
+                    userId: userId,
+                    entryId: entryId,
+                    isOwner: isOwner,
+                    reactions: entry.reactions ?? {},
+                    reactionUsers: entry.reactionUsers ?? {},
+                  ),
                 ],
-              ),
-              const SizedBox(height: 4),
-              if (!isOwner)
-                ReactionBar(
-                  userId: userId,
-                  entryId: entryId,
-                  isOwner: isOwner,
-                  reactions: entry.reactions ?? {},
-                  reactionUsers: entry.reactionUsers ?? {},
-                ),
-            ],
-          ),
-        )
-      );
-
+              ],
+            ),
+            const SizedBox(height: 4),
+          ],
+        ),
+      ),
+    );
   }
 }
