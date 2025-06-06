@@ -11,7 +11,7 @@ final List<String> titles = [
   'Loadbearer',
   'Swolebringer',
   'League Champion',
-  'Block Nomad',
+  'Block Master',
   'Sun Eater',
   'Titan Among Gods',
 ];

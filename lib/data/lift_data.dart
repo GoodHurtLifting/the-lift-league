@@ -10,7 +10,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=DbFgADa2PL8",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1011,
@@ -21,7 +21,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=lfb3ffbrd4Q",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm. \n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1012,
@@ -32,7 +32,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=TDSXgCB6KfI",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1013,
@@ -43,7 +43,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=fD6kaKjiy84",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm. \n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1014,
@@ -54,7 +54,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=HIKzvHkibWc",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1015,
@@ -65,7 +65,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=XTerYx0kwQ8",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1016,
@@ -76,7 +76,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=MyQVLFBwlJ8",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1017,
@@ -87,7 +87,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=PgpQ4-jHiq4",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm. \n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1018,
@@ -98,7 +98,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=g6qbq4Lf1FI",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm. \n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1019,
@@ -109,7 +109,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=zC3nLlEvin4",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm. \n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1020,
@@ -120,7 +120,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=JJB8XgKltA8",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1021,
@@ -131,7 +131,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=JJB8XgKltA8",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1022,
@@ -142,7 +142,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=U3HlEF_E9fo",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1023,
@@ -153,7 +153,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=F488k67BTNo",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1024,
@@ -164,7 +164,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=tTbJBUKnWU8",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1025,
@@ -175,7 +175,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=5Xj6XUa77qc",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1026,
@@ -186,7 +186,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=JbyjNymZOt0",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1027,
@@ -197,7 +197,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=pDTHSnoGoEc",
-    'description': "- One rep is a complete twist from one side to the other.\n - Use a dumbbell or weight plate to add weight.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- One rep is a complete twist from one side to the other.\n- Use a dumbbell or weight plate to add weight.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1028,
@@ -208,7 +208,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=2yjwXTZQDDI",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1029,
@@ -219,7 +219,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=UZh7AD3Dot4",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 minutes rests between sets."
   },
   {
     'liftId': 1030,
@@ -230,7 +230,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=nRiJVZDpdL0",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1031,
@@ -241,7 +241,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=nRiJVZDpdL0",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1032,
@@ -252,7 +252,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=8luF-t9o1AM",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1033,
@@ -263,7 +263,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=8vk6rWMSxOk",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1034,
@@ -274,7 +274,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=jobEeklwrrs",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1035,
@@ -285,7 +285,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=Jex6zrElBRY",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1036,
@@ -296,7 +296,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=yP62ixnwBgk",
-    'description': "- Leave the weight field empty if using only body weight.\n - To scale, increase reps per set when you are able to complete the target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- To scale, increase reps per set when you are able to complete the target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1037,
@@ -307,7 +307,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=TDSXgCB6KfI",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1038,
@@ -318,7 +318,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=MyQVLFBwlJ8",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1039,
@@ -329,7 +329,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=lfb3ffbrd4Q",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm. \n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1040,
@@ -340,7 +340,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=_mfORB47xMs",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1041,
@@ -351,7 +351,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=D7KaRcUTQeE",
-    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1042,
@@ -362,7 +362,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=DbFgADa2PL8",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1043,
@@ -373,7 +373,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=9efgcAjQe7E",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1044,
@@ -384,7 +384,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=YMmgqO8Jo-k",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1045,
@@ -395,7 +395,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=r4MzxtBKyNE",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1046,
@@ -406,7 +406,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=2yjwXTZQDDI",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1047,
@@ -417,7 +417,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=VfBOBhwXbro",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1048,
@@ -428,7 +428,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=amCU-ziHITM",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1049,
@@ -439,7 +439,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=ZK-O_aS3GdY",
-    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1050,
@@ -450,7 +450,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=r4MzxtBKyNE",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1051,
@@ -461,7 +461,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=ML1L5ytxLMY",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1052,
@@ -472,7 +472,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=MyQVLFBwlJ8",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1053,
@@ -483,7 +483,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=DbFgADa2PL8",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1054,
@@ -494,7 +494,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=D7KaRcUTQeE",
-    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1055,
@@ -505,7 +505,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=in7PaeYlhrM",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm. \n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1056,
@@ -516,7 +516,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=-MAABwVKxok",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1057,
@@ -527,7 +527,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=KFnKL7qSzVs",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1058,
@@ -538,7 +538,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=HIKzvHkibWc",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1059,
@@ -549,7 +549,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=vaMYBmJH-tw",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1060,
@@ -560,7 +560,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=RyhwqaUoeSo",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1061,
@@ -571,7 +571,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=sP_4vybjVJs",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1062,
@@ -582,7 +582,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=ML1L5ytxLMY",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1063,
@@ -593,7 +593,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=vaMYBmJH-tw",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1064,
@@ -604,7 +604,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=2yjwXTZQDDI",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1065,
@@ -615,7 +615,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=r4MzxtBKyNE",
-    'description': "- Target beginning weight should be approx 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1066,
@@ -626,7 +626,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=D7KaRcUTQeE",
-    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 minute rests between sets."
+    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 minute rests between sets."
   },
   {
     'liftId': 1067,
@@ -637,7 +637,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=KFnKL7qSzVs",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 minute rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 minute rests between sets."
   },
   {
     'liftId': 1068,
@@ -648,7 +648,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=0tn5K9NlCfo",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1069,
@@ -659,7 +659,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=RyhwqaUoeSo",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 second rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 second rests between sets."
   },
   {
     'liftId': 1070,
@@ -670,7 +670,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=RyhwqaUoeSo",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 second rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 second rests between sets."
   },
   {
     'liftId': 1071,
@@ -681,7 +681,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=Cnc0qKLAgcU",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1072,
@@ -692,7 +692,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=4usyq_IHdkg",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1073,
@@ -703,7 +703,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=4usyq_IHdkg",
-    'description': "- Enter reps for a single leg and the combined weight of both dumbbells.\n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Enter reps for a single leg and the combined weight of both dumbbells.\n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1074,
@@ -714,7 +714,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=JbyjNymZOt0",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1075,
@@ -725,7 +725,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=pDTHSnoGoEc",
-    'description': "- One rep is a complete twist from one side to the other.\n - Use a dumbbell or weight plate to add weight.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- One rep is a complete twist from one side to the other.\n- Use a dumbbell or weight plate to add weight.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1076,
@@ -736,7 +736,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=711U6NbJRmc",
-    'description': "- Leave the weight field empty if using only body weight.\n - Add weight by holding a dumbbell between your ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Add weight by holding a dumbbell between your ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1077,
@@ -747,7 +747,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=711U6NbJRmc",
-    'description': "- Leave the weight field empty if using only body weight.\n - Add weight by holding a dumbbell between your knees or ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Add weight by holding a dumbbell between your knees or ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1078,
@@ -758,7 +758,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=TDSXgCB6KfI",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1079,
@@ -769,7 +769,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=3gdGSSgDby8",
-    'description': "- Target beginning weight should be the same as the weight used for Bench Press.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be the same as the weight used for Bench Press.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1080,
@@ -780,7 +780,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=nRiJVZDpdL0",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1081,
@@ -791,7 +791,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=zC3nLlEvin4",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1082,
@@ -802,7 +802,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=ALNyDCkW9y8",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1083,
@@ -813,7 +813,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=mPsxlNjv7Aw",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1084,
@@ -824,7 +824,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=Uv_DKDl7EjA",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1085,
@@ -835,7 +835,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=5Xj6XUa77qc",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1086,
@@ -846,7 +846,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=sjlsISvHyZs",
-    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Enter reps for a single leg and the combined weight of both dumbbells.\n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1087,
@@ -857,7 +857,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=YMmgqO8Jo-k",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1088,
@@ -868,7 +868,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=IINnwHwexkg",
-    'description': "- Leave the weight field empty if using only body weight.\n - Add weight by holding a weight plate or dumbbell to your chest and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.  \n - 60 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Add weight by holding a weight plate or dumbbell to your chest and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.  \n - 60 second rests between sets."
   },
   {
     'liftId': 1089,
@@ -879,7 +879,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=2yjwXTZQDDI",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1090,
@@ -890,7 +890,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=oqDpaZkfV0o",
-    'description': "- Leave the weight field empty if using only body weight.\n - Add weight by holding a dumbbell between your knees or ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Add weight by holding a dumbbell between your knees or ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1091,
@@ -901,7 +901,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=SHsUIZiNdeY",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1092,
@@ -912,7 +912,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=JJB8XgKltA8",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1093,
@@ -923,7 +923,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=kOXVmFFTcio",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1094,
@@ -934,7 +934,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=q5sNYB1Q6aM",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1095,
@@ -945,7 +945,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=kOXVmFFTcio",
-    'description': "- Target beginning weight should be approx 85% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank."
+    'description': "- Target beginning weight should be approx 85% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank."
   },
   {
     'liftId': 1096,
@@ -956,7 +956,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=MO10KOoQx5E",
-    'description': "- Leave the weight field empty if using only body weight.\n Increase reps per set if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Increase reps per set if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1097,
@@ -967,7 +967,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=u56jywgbvE4",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1098,
@@ -978,7 +978,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=H36vL531tZA",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Enter reps and weight for a single arm. The log will duplicate to account for both arms.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Enter reps and weight for a single arm. The log will duplicate to account for both arms.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1099,
@@ -989,7 +989,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=SHsUIZiNdeY",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Enter reps and weight for a single arm. The log will duplicate to account for both arms.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Enter reps and weight for a single arm. The log will duplicate to account for both arms.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1100,
@@ -1000,7 +1000,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=gAyTBB4lm3I",
-    'description': "- Leave the weight field empty if using only body weight.\n - Add weight by holding a kettle bell or dumbbell between your ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.  \n - 60 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Add weight by holding a kettle bell or dumbbell between your ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.  \n - 60 second rests between sets."
   },
   {
     'liftId': 1101,
@@ -1011,7 +1011,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=hXTc1mDnZCw",
-    'description': "- Leave the weight field empty if using only body weight.\n - Increase reps per set when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Increase reps per set when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1102,
@@ -1022,7 +1022,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/shorts/jAyZfWWOKSo",
-    'description': "- Leave the weight field empty if using only body weight.\n - Increase reps per set when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.\n - Add weight by holding weight to your chest.\n - 90 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Increase reps per set when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.\n - Add weight by holding weight to your chest.\n - 90 second rests between sets."
   },
   {
     'liftId': 1103,
@@ -1033,7 +1033,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=j3Igk5nyZE4",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Do not include the weight of the barbell.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Do not include the weight of the barbell.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1104,
@@ -1044,7 +1044,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=wcVDItawocI",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1105,
@@ -1055,7 +1055,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=CrylzZHfO1c",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1106,
@@ -1066,7 +1066,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=D7KaRcUTQeE",
-    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps for a single leg and the combined weight of both dumbbells.\n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1107,
@@ -1077,7 +1077,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=ZYDTJaAM-gE",
-    'description': "- Enter reps for a single leg. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps for a single leg.\n- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1108,
@@ -1088,7 +1088,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=KFnKL7qSzVs",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1109,
@@ -1099,7 +1099,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=0tn5K9NlCfo",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1110,
@@ -1110,7 +1110,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=F488k67BTNo",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1111,
@@ -1121,7 +1121,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=YMmgqO8Jo-k",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1112,
@@ -1132,7 +1132,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=711U6NbJRmc",
-    'description': "- Leave the weight field empty if using only body weight.\n - Add weight by holding a dumbbell between your ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Add weight by holding a dumbbell between your ankles and increase the weight by 5lbs when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 60 second rests between sets."
   },
   {
     'liftId': 1113,
@@ -1143,7 +1143,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=6Z15_WdXmVw",
-    'description': "- Enter reps and weight for a single arm.\n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Enter reps and weight for a single arm.\n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1114,
@@ -1154,7 +1154,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=H0O4HNvtB70",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1115,
@@ -1165,7 +1165,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=o08eUhMGYm0",
-    'description': "- Enter reps and weight for a single arm.\n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Enter reps and weight for a single arm.\n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1116,
@@ -1176,7 +1176,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "need reference",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1117,
@@ -1187,7 +1187,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=Jl2fzN3mY_k",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1118,
@@ -1198,7 +1198,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=3qjoXDTuyOE",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1119,
@@ -1209,7 +1209,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=zC3nLlEvin4",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1120,
@@ -1220,7 +1220,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=zG2xJ0Q5QtI",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1121,
@@ -1231,7 +1231,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=840rgLSw-84",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1122,
@@ -1242,7 +1242,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=GFP4xK-1oJ4",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1123,
@@ -1253,7 +1253,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=tgusmyhJKgU",
-    'description': "- Enter the reps and weight used for a single side.\n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Enter the reps and weight used for a single side.\n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1124,
@@ -1264,7 +1264,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=3gdGSSgDby8",
-    'description': "- Target beginning weight should 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1125,
@@ -1275,7 +1275,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=neP32qCyPbQ",
-    'description': "- Target beginning weight should 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1126,
@@ -1286,7 +1286,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=6SS6K3lAwZ8",
-    'description': "- Enter reps and dumbbell weight for a signle arm.\n - Target beginning weight should 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1127,
@@ -1297,7 +1297,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=VfBOBhwXbro",
-    'description': "- Target beginning weight should 80% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should 80% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1128,
@@ -1308,7 +1308,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=8vk6rWMSxOk",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 - 3 minute rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 2 - 3 minute rests between sets."
   },
   {
     'liftId': 1129,
@@ -1319,7 +1319,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=bYFSqrikw2U",
-    'description': "- Enter the combined weight of the dumbbells in the weight field.\n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter the combined weight of the dumbbells in the weight field.\n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1130,
@@ -1330,7 +1330,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/watch?v=7UVgs18Y1P4",
-    'description': "- Leave the weight field empty if using only body weight.\n - Increase the reps per set when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Increase the reps per set when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1131,
@@ -1341,7 +1341,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=DbFgADa2PL8",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1132,
@@ -1352,7 +1352,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=Ub49dt2B2VI",
-    'description': "- Enter reps and weight for a single arm.\n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Enter reps and weight for a single arm.\n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1133,
@@ -1363,7 +1363,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=8CbJK7mmisE",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1134,
@@ -1374,7 +1374,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=o08eUhMGYm0",
-    'description': "- Enter reps and weight for a single arm.\n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Enter reps and weight for a single arm.\n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1135,
@@ -1385,7 +1385,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=3qjoXDTuyOE",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1136,
@@ -1396,7 +1396,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=j3Igk5nyZE4",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Do not include the weight of the barbell.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Do not include the weight of the barbell.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1137,
@@ -1407,7 +1407,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=wcVDItawocI",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1138,
@@ -1418,7 +1418,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=JJB8XgKltA8",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1139,
@@ -1429,7 +1429,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=AsAVbj7puKo",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1140,
@@ -1440,7 +1440,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=g6qbq4Lf1FI",
-    'description': "Enter the reps and weight for a single arm.\n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "Enter the reps and weight for a single arm.\n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1141,
@@ -1451,7 +1451,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'bodyweight',
     'youtubeUrl': "https://www.youtube.com/shorts/jAyZfWWOKSo",
-    'description': "- Leave the weight field empty if using only body weight.\n - Increase reps per set when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.\n - Add weight by holding weight to your chest.\n - 90 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Increase reps per set when you are able to complete the entire rep scheme and feel you have 2 - 3 reps left in the tank.\n - Add weight by holding weight to your chest.\n - 90 second rests between sets."
   },
   {
     'liftId': 1142,
@@ -1462,7 +1462,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=tTbJBUKnWU8",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1143,
@@ -1473,7 +1473,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=jobEeklwrrs",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1144,
@@ -1484,7 +1484,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=JbyjNymZOt0",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1145,
@@ -1495,7 +1495,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/shorts/zBQ-gN22PtA",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1146,
@@ -1506,7 +1506,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=2yjwXTZQDDI",
-    'description': "- Target beginning weight should be approx 85% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 85% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1147,
@@ -1517,7 +1517,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/shorts/9mgUM_6AHzA",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - Move directly to the second lift of the superset without rest."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - Move directly to the second lift of the superset without rest."
   },
   {
     'liftId': 1148,
@@ -1528,7 +1528,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/shorts/9mgUM_6AHzA",
-    'description': "Use the same weight for Lift A of the superset.\n - Enter reps and dumbbell weight for a single arm.\n - 90 second rest before returning to Lift A of the superset."
+    'description': "Use the same weight for Lift A of the superset.\n- Enter reps and dumbbell weight for a single arm.\n - 90 second rest before returning to Lift A of the superset."
   },
   {
     'liftId': 1149,
@@ -1539,7 +1539,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=YMmgqO8Jo-k",
-    'description': "- Target beginning weight should be approx 75% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 75% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1150,
@@ -1550,7 +1550,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=D7KaRcUTQeE",
-    'description': "- Enter reps for a single leg and the combined weight of both dumbbells. \n - Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps for a single leg and the combined weight of both dumbbells.\n- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1151,
@@ -1561,7 +1561,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=YMmgqO8Jo-k",
-    'description': "- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 60% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1152,
@@ -1573,7 +1573,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'scoreType': 'multiplier',
     'referenceLiftId' : 1059,
     'youtubeUrl': "https://www.youtube.com/watch?v=Uv_DKDl7EjA",
-    'description': "- Target beginning weight should be approx 85% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
+    'description': "- Target beginning weight should be approx 85% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 2 - 3 minutes rests between sets."
   },
   {
     'liftId': 1153,
@@ -1584,7 +1584,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=JbyjNymZOt0",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1154,
@@ -1595,7 +1595,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=3qjoXDTuyOE",
-    'description': "- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 65% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1155,
@@ -1606,7 +1606,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'bodyweight',
     'youtubeUrl': "need link",
-    'description': "- Leave the weight field empty if using only body weight.\n Increase reps per set if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank.\n - 90 second rests between sets."
+    'description': "- Leave the weight field empty if using only body weight.\n- Increase reps per set if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank.\n - 90 second rests between sets."
   },
   {
     'liftId': 1156,
@@ -1617,7 +1617,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/shorts/k3ci3gIBbS8",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 65% of your 1RM.\n - Increase weight if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - Move directly to the second lift of the superset without rest."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should be approx 65% of your 1RM.\n - Increase weight if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - Move directly to the second lift of the superset without rest."
   },
   {
     'liftId': 1157,
@@ -1628,7 +1628,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/shorts/k3ci3gIBbS8",
-    'description': "Use the same weight for Lift A of the superset.\n - Enter reps and dumbbell weight for a single arm.\n - 90 second rest before returning to Lift A of the superset."
+    'description': "Use the same weight for Lift A of the superset.\n- Enter reps and dumbbell weight for a single arm.\n - 90 second rest before returning to Lift A of the superset."
   },
   {
     'liftId': 1158,
@@ -1639,7 +1639,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 0,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=RyhwqaUoeSo",
-    'description': "- Target beginning weight should be approx 70% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Target beginning weight should be approx 70% of your 1RM.\n- Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1159,
@@ -1650,7 +1650,7 @@ const List<Map<String, dynamic>> liftDataList = [
     'isDumbbellLift': 1,
     'scoreType': 'multiplier',
     'youtubeUrl': "https://www.youtube.com/watch?v=QENKPHhQVi4",
-    'description': "- Enter reps and dumbbell weight for a single arm. \n - Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
+    'description': "- Enter reps and dumbbell weight for a single arm.\n- Target beginning weight should be approx 60% of your 1RM.\n - Increase weight by 5lbs if you were able to complete the previous target rep scheme and still have 2 - 3 reps left in the tank. \n - 90 second rests between sets."
   },
   {
     'liftId': 1160,

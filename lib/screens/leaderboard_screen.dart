@@ -7,35 +7,37 @@ class LeaderboardScreen extends StatelessWidget {
 
   const LeaderboardScreen({super.key, required this.blockId});
 
-  Future<List<Map<String, dynamic>>> fetchLeaderboardData() async {
-    final snapshot = await FirebaseFirestore.instance
+  Stream<List<Map<String, dynamic>>> leaderboardStream() {
+    return FirebaseFirestore.instance
         .collection('leaderboards')
         .doc(blockId.toString())
         .collection('entries')
         .orderBy('blockScore', descending: true)
-        .get();
-
-    return snapshot.docs.map((doc) {
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) {
       final data = doc.data();
       return {
         'userId': doc.id,
         'displayName': data['displayName'] ?? 'Unknown',
         'profileImageUrl': data['profileImageUrl'] ?? '',
         'title': data['title'] ?? '',
-        'blockScore': (double.tryParse(data['blockScore'].toString()) ?? 0.0).toStringAsFixed(1),
-        'workoutScores': (data['workoutScores'] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
+        'blockScore':
+        (double.tryParse(data['blockScore'].toString()) ?? 0.0)
+            .toStringAsFixed(1),
+        'workoutScores':
+        (data['workoutScores'] as List<dynamic>? ?? [])
+            .map((e) => e.toString())
+            .toList(),
       };
-    }).toList();
+    }).toList());
   }
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Leaderboard')),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchLeaderboardData(),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: leaderboardStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
