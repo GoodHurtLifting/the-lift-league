@@ -1326,7 +1326,7 @@ class DBService {
     final meatWagon = await badgeService.checkAndAwardMeatWagonBadge(userId);
     final punchCard = await badgeService.checkAndAwardPunchCardBadge(userId);
     final hypeMan = await badgeService.checkAndAwardHypeManBadge(userId);
-
+    final dailyDriver = await badgeService.checkAndAwardDailyDriverBadge(userId);
 
     // If you want to include Lift PR-based badges here too (optional)
     final liftPRs = ['Bench Press', 'Squats', 'Deadlift'];
@@ -1351,7 +1351,7 @@ class DBService {
       }
     }
 
-    return [...meatWagon, ...lunchLadyBadges, ...punchCard, ...hypeMan];
+    return [...meatWagon, ...lunchLadyBadges, ...punchCard, ...hypeMan, ...dailyDriver];
   }
 
   Future<int> getRemainingUnfinishedWorkouts(int blockInstanceId) async {

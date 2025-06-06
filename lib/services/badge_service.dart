@@ -205,6 +205,89 @@ class BadgeService {
   }
 
   // ─────────────────────────────────────────────────────────────────────
+  // 🚗 Daily Driver Badge – most workouts in training circle per month
+  // ─────────────────────────────────────────────────────────────────────
+  Future<List<Map<String, dynamic>>> checkAndAwardDailyDriverBadge(String userId) async {
+    // Fetch training circle members
+    final circleSnap = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('training_circle')
+        .get();
+
+    if (circleSnap.docs.isEmpty) {
+      return [];
+    }
+
+    final memberIds = circleSnap.docs.map((d) => d.id).toList();
+    memberIds.add(userId); // include self
+
+    final now = DateTime.now();
+    final currentMonthStart = DateTime(now.year, now.month, 1);
+    final prevMonthEnd = currentMonthStart.subtract(const Duration(days: 1));
+    final prevMonthStart = DateTime(prevMonthEnd.year, prevMonthEnd.month, 1);
+
+    final startTs = Timestamp.fromDate(prevMonthStart);
+    final endTs = Timestamp.fromDate(currentMonthStart);
+
+    String topUser = '';
+    int topCount = 0;
+
+    for (final id in memberIds) {
+      final snap = await _firestore
+          .collection('users')
+          .doc(id)
+          .collection('workouts')
+          .where('completed', isEqualTo: true)
+          .where('timestamp', isGreaterThanOrEqualTo: startTs)
+          .where('timestamp', isLessThan: endTs)
+          .get();
+
+      final count = snap.docs.length;
+      if (count > topCount) {
+        topCount = count;
+        topUser = id;
+      }
+    }
+
+    if (topCount < 12 || topUser.isEmpty) {
+      return [];
+    }
+
+    final badgeId =
+        'daily_driver_${prevMonthStart.year}_${prevMonthStart.month.toString().padLeft(2, '0')}';
+
+    final badgeRef = _firestore
+        .collection('users')
+        .doc(topUser)
+        .collection('badges')
+        .doc(badgeId);
+
+    final badgeDoc = await badgeRef.get();
+    if (badgeDoc.exists) {
+      return [];
+    }
+
+    final monthName = DateFormat('MMMM yyyy').format(prevMonthStart);
+
+    final badgeData = {
+      'badgeId': badgeId,
+      'name': 'Daily Driver',
+      'description': 'Most workouts logged in $monthName.',
+      'image': 'dailyDriver.png',
+    };
+
+    await badgeRef.set({
+      ...badgeData,
+      'iconPath': 'assets/images/badges/dailyDriver.png',
+      'imagePath': 'assets/images/badges/dailyDriver.png',
+      'unlockDate': Timestamp.now(),
+    });
+
+    return topUser == userId ? [badgeData] : [];
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
   // 🔢 Helper – Get ISO Week Key
   // ─────────────────────────────────────────────────────────────────────
   String getIsoWeekKey(DateTime date) {
