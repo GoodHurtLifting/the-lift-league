@@ -62,6 +62,22 @@ class UserFollowService {
       'title': userData['title'],
       'timestamp': Timestamp.now(),
     });
+
+    // notify the user who was added to the circle
+    final currentUserDoc = await _firestore.collection('users').doc(currentUserId).get();
+    final fromName = currentUserDoc.data()?['displayName'] ?? 'Someone';
+
+    await _firestore
+        .collection('users')
+        .doc(userData['userId'])
+        .collection('notifications')
+        .add({
+      'type': 'training_circle_add',
+      'fromUserId': currentUserId,
+      'fromDisplayName': fromName,
+      'timestamp': Timestamp.now(),
+      'seen': false,
+    });
   }
 
   Future<void> removeFromTrainingCircle(String currentUserId, String targetUserId) async {
