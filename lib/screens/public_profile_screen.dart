@@ -49,13 +49,17 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _loadUserProfile() async {
-    final doc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .get();
     final data = doc.data();
     if (data == null) return;
 
     final blockName = data['activeBlockName'];
     if (blockName != null) {
-      bannerImagePath = blockBannerImages[blockName] ?? 'assets/images/PushPullLegs.jpg';
+      bannerImagePath =
+          blockBannerImages[blockName] ?? 'assets/images/PushPullLegs.jpg';
     }
 
     setState(() {
@@ -88,9 +92,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
         backgroundColor: Colors.black,
         title: _actionLabel != null
             ? Text(
-          _actionLabel!,
-          style: const TextStyle(color: Colors.white, fontSize: 18),
-        )
+                _actionLabel!,
+                style: const TextStyle(color: Colors.white, fontSize: 18),
+              )
             : const SizedBox.shrink(),
         centerTitle: true,
       ),
@@ -111,7 +115,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       image: DecorationImage(
                         image: bannerImagePath != null
                             ? AssetImage(bannerImagePath!)
-                            : const AssetImage('assets/images/PushPullLegs.jpg'),
+                            : const AssetImage(
+                                'assets/images/PushPullLegs.jpg'),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -131,74 +136,13 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                           ),
                           child: CircleAvatar(
                             radius: 48,
-                            backgroundImage: (profileUrl != null && profileUrl!.isNotEmpty)
+                            backgroundImage: (profileUrl != null &&
+                                    profileUrl!.isNotEmpty)
                                 ? NetworkImage(profileUrl!)
-                                : const AssetImage('assets/images/flatLogo.jpg') as ImageProvider,
+                                : const AssetImage('assets/images/flatLogo.jpg')
+                                    as ImageProvider,
                           ),
                         ),
-                        if (widget.userId != FirebaseAuth.instance.currentUser?.uid)
-                          Positioned(
-                            bottom: 4,
-                            right: 4,
-                            child: FutureBuilder<List<bool>>(
-                              future: _getFollowAndCircleStatus(
-                                FirebaseAuth.instance.currentUser!.uid,
-                                widget.userId,
-                              ),
-                              builder: (context, snapshot) {
-                                if (!snapshot.hasData) return const SizedBox();
-
-                                final isFollowing = snapshot.data![0];
-                                final isInCircle = snapshot.data![1];
-                                final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-
-                                if (!isFollowing) {
-                                  return _smallActionButton(
-                                    icon: Icons.person_add,
-                                    color: Colors.blueAccent,
-                                    onTap: () async {
-                                      await UserFollowService().followUser(currentUserId, widget.userId);
-                                      setState(() {});
-                                      _showActionLabel('Followed');
-                                    },
-                                  );
-                                } else if (!isInCircle) {
-                                  return _smallActionButton(
-                                    icon: Icons.group_add,
-                                    color: Colors.green,
-                                    onTap: () async {
-                                      final doc = await FirebaseFirestore.instance
-                                          .collection('users')
-                                          .doc(widget.userId)
-                                          .get();
-                                      final userData = doc.data();
-                                      if (userData == null) return;
-
-                                      await UserFollowService().addToTrainingCircle(currentUserId, {
-                                        'userId': widget.userId,
-                                        'displayName': userData['displayName'],
-                                        'profileImageUrl': userData['profileImageUrl'],
-                                        'title': userData['title'],
-                                      });
-                                      setState(() {});
-                                      _showActionLabel('Added to Circle');
-                                    },
-                                  );
-                                } else {
-                                  return _smallActionButton(
-                                    icon: Icons.remove_circle_outline,
-                                    color: Colors.grey,
-                                    onTap: () async {
-                                      await UserFollowService()
-                                          .removeFromTrainingCircle(currentUserId, widget.userId);
-                                      setState(() {});
-                                      _showActionLabel('Removed');
-                                    },
-                                  );
-                                }
-                              },
-                            ),
-                          ),
                         Positioned(
                           left: 112,
                           child: Column(
@@ -230,63 +174,103 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               ),
             ),
             const SizedBox(height: 55),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: showStats
-                      ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => UserStatsScreen(userId: widget.userId),
-                      ),
-                    );
-                  }
-                      : null,
-                  icon: const Icon(Icons.bar_chart),
-                  label: const Text("Stats"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[800],
-                    foregroundColor: Colors.white70,
-                    disabledBackgroundColor: Colors.grey,
-                    disabledForegroundColor: Colors.white70,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                FutureBuilder<List<bool>>(
-                  future: _getFollowAndCircleStatus(
-                    FirebaseAuth.instance.currentUser!.uid,
-                    widget.userId,
-                  ),
-                  builder: (context, snapshot) {
-                    final isInCircle = snapshot.hasData ? snapshot.data![1] : false;
+            FutureBuilder<List<bool>>(
+              future: _getFollowAndCircleStatus(
+                FirebaseAuth.instance.currentUser!.uid,
+                widget.userId,
+              ),
+              builder: (context, snapshot) {
+                final isFollowing = snapshot.data?[0] ?? false;
+                final isInCircle = snapshot.data?[1] ?? false;
+                final currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
-                    return ElevatedButton.icon(
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _iconRectButton(
+                      icon: Icons.bar_chart,
+                      onPressed: showStats
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      UserStatsScreen(userId: widget.userId),
+                                ),
+                              );
+                            }
+                          : null,
+                    ),
+                    if (widget.userId != currentUserId) ...[
+                      const SizedBox(width: 16),
+                      _iconRectButton(
+                        icon: isFollowing
+                            ? Icons.person_remove
+                            : Icons.person_add,
+                        onPressed: () async {
+                          if (isFollowing) {
+                            await UserFollowService()
+                                .unfollowUser(currentUserId, widget.userId);
+                            _showActionLabel('Unfollowed');
+                          } else {
+                            await UserFollowService()
+                                .followUser(currentUserId, widget.userId);
+                            _showActionLabel('Followed');
+                          }
+                          setState(() {});
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _iconRectButton(
+                        icon: isInCircle
+                            ? Icons.remove_circle_outline
+                            : Icons.control_point,
+                        onPressed: isFollowing
+                            ? () async {
+                                if (isInCircle) {
+                                  await UserFollowService()
+                                      .removeFromTrainingCircle(
+                                          currentUserId, widget.userId);
+                                  _showActionLabel('Removed');
+                                } else {
+                                  final doc = await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(widget.userId)
+                                      .get();
+                                  final data = doc.data();
+                                  if (data == null) return;
+                                  await UserFollowService()
+                                      .addToTrainingCircle(currentUserId, {
+                                    'userId': widget.userId,
+                                    'displayName': data['displayName'],
+                                    'profileImageUrl': data['profileImageUrl'],
+                                    'title': data['title'],
+                                  });
+                                  _showActionLabel('Added to Circle');
+                                }
+                                setState(() {});
+                              }
+                            : null,
+                      ),
+                    ],
+                    const SizedBox(width: 16),
+                    _iconRectButton(
+                      icon: Icons.message,
                       onPressed: isInCircle
                           ? () async {
-                        final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-                        final otherUserId = widget.userId;
-                        final chatId = await getOrCreateChat(currentUserId!, otherUserId);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => ChatScreen(chatId: chatId)),
-                        );
-                      }
+                              final chatId = await getOrCreateChat(
+                                  currentUserId, widget.userId);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => ChatScreen(chatId: chatId)),
+                              );
+                            }
                           : null,
-                      icon: const Icon(Icons.message),
-                      label: const Text("Message"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[800],
-                        foregroundColor: Colors.white70,
-                        disabledBackgroundColor: Colors.grey,
-                        disabledForegroundColor: Colors.white54,
-                      ),
-                    );
-                  },
-                ),
-              ],
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 20),
             if (showTimeline)
@@ -310,9 +294,11 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     );
   }
 
-  Future<List<bool>> _getFollowAndCircleStatus(String currentUserId, String targetUserId) async {
+  Future<List<bool>> _getFollowAndCircleStatus(
+      String currentUserId, String targetUserId) async {
     final followService = UserFollowService();
-    final isFollowing = await followService.isFollowing(currentUserId, targetUserId);
+    final isFollowing =
+        await followService.isFollowing(currentUserId, targetUserId);
     final isInCircle = await FirebaseFirestore.instance
         .collection('users')
         .doc(currentUserId)
@@ -343,22 +329,19 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     return chatId;
   }
 
-  Widget _smallActionButton({
+  Widget _iconRectButton({
     required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
+    required VoidCallback? onPressed,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 1.5),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 0),
+      child: SizedBox(
+        width: 80,
+        height: 40,
+        child: IconButton(
+          icon: Icon(icon, color: Colors.white),
+          onPressed: onPressed,
         ),
-        child: Icon(icon, size: 16, color: Colors.white),
       ),
     );
   }
