@@ -9,28 +9,45 @@ class UserFollowService {
     try {
       print('[followUser] Start: $currentUserId wants to follow $targetUserId');
 
-      // Add to following
+      // Load user details so we can store richer info in the follow document
+      final currentUserDoc =
+      await _firestore.collection('users').doc(currentUserId).get();
+      final targetUserDoc =
+      await _firestore.collection('users').doc(targetUserId).get();
+
+      final currentData = currentUserDoc.data() ?? {};
+      final targetData = targetUserDoc.data() ?? {};
+
+    // Add to following with extra info
       await _firestore
           .collection('users')
           .doc(currentUserId)
           .collection('following')
           .doc(targetUserId)
-          .set({'timestamp': now});
+          .set({
+        'displayName': targetData['displayName'],
+        'profileImageUrl': targetData['profileImageUrl'],
+        'title': targetData['title'],
+        'timestamp': now,
+      });
       print('[followUser] Added to following');
 
-      // Add to followers
+      // Add to followers with extra info
       await _firestore
           .collection('users')
           .doc(targetUserId)
           .collection('followers')
           .doc(currentUserId)
-          .set({'timestamp': now});
+          .set({
+        'displayName': currentData['displayName'],
+        'profileImageUrl': currentData['profileImageUrl'],
+        'title': currentData['title'],
+        'timestamp': now,
+      });
       print('[followUser] Added to followers');
 
       // Notify the user who was followed
-      final currentUserDoc =
-      await _firestore.collection('users').doc(currentUserId).get();
-      final fromName = currentUserDoc.data()?['displayName'] ?? 'Someone';
+      final fromName = currentData['displayName'] ?? 'Someone';
 
       await _firestore
           .collection('users')
