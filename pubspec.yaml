@@ -80,7 +80,7 @@ flutter_native_splash:
 flutter_icons:
   android: true
   ios: true
-  image_path: assets/images/flatOnBlack.jpg # replace with your actual image path
+  image_path: assets/images/pinkAlpha.png # replace with your actual image path
 
 # The "flutter_lints" package below contains a set of recommended lints to
 # encourage good coding practices. The lint set provided by the package is
@@ -124,6 +124,7 @@ flutter:
     - assets/images/rebrand_LL_pink_S.png
     - assets/schedules/
     - assets/sounds/chime.wav
+    - assets/images/pinkAlpha.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
