@@ -22,6 +22,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _listenForCircleNotifications();
+    _listenForFollowNotifications();
   }
 
   void _listenForCircleNotifications() {
@@ -42,6 +43,31 @@ class _ChatListScreenState extends State<ChatListScreen>
           NotificationService().showSimpleNotification(
             'Training Circle',
             '$fromName added you to their training circle',
+          );
+          change.doc.reference.update({'seen': true});
+        }
+      }
+    });
+  }
+
+  void _listenForFollowNotifications() {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .where('type', isEqualTo: 'follow')
+        .where('seen', isEqualTo: false)
+        .snapshots()
+        .listen((snapshot) {
+      for (final change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          final data = change.doc.data() as Map<String, dynamic>;
+          final fromName = data['fromDisplayName'] ?? 'Someone';
+          NotificationService().showSimpleNotification(
+            'New Follower',
+            '$fromName followed you',
           );
           change.doc.reference.update({'seen': true});
         }
@@ -96,45 +122,30 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   Future<List<Map<String, dynamic>>> _fetchActivity(String currentUserId) async {
     final firestore = FirebaseFirestore.instance;
-    final followersSnap = await firestore
-        .collection('users')
-        .doc(currentUserId)
-        .collection('followers')
-        .orderBy('timestamp', descending: true)
-        .get();
 
-    final circleSnap = await firestore
+    final notifSnap  = await firestore
         .collection('users')
         .doc(currentUserId)
         .collection('notifications')
-        .where('type', isEqualTo: 'training_circle_add')
+        .where('type', whereIn: ['follow', 'training_circle_add'])
         .orderBy('timestamp', descending: true)
         .get();
 
     final items = <Map<String, dynamic>>[];
 
-    for (final doc in followersSnap.docs) {
-      final userDoc = await firestore.collection('users').doc(doc.id).get();
-      final data = userDoc.data() ?? {};
-      items.add({
-        'type': 'follow',
-        'userId': doc.id,
-        'displayName': data['displayName'] ?? 'Unknown',
-        'profileImageUrl': data['profileImageUrl'] ?? '',
-        'timestamp': doc['timestamp'] as Timestamp?,
-      });
-    }
+    for (final doc in notifSnap.docs) {
+      final data = doc.data();
+      final fromId = data['fromUserId'];
 
-    for (final doc in circleSnap.docs) {
-      final fromId = doc['fromUserId'];
       final userDoc = await firestore.collection('users').doc(fromId).get();
-      final data = userDoc.data() ?? {};
+      final userData = userDoc.data() ?? {};
+      final type = data['type'] == 'training_circle_add' ? 'circle' : 'follow';
       items.add({
-        'type': 'circle',
+        'type': 'type',
         'userId': fromId,
-        'displayName': data['displayName'] ?? doc['fromDisplayName'] ?? 'Unknown',
-        'profileImageUrl': data['profileImageUrl'] ?? '',
-        'timestamp': doc['timestamp'] as Timestamp?,
+        'displayName': userData['displayName'] ?? data['fromDisplayName'] ?? 'Unknown',
+        'profileImageUrl': userData['profileImageUrl'] ?? '',
+        'timestamp': data['timestamp'] as Timestamp?,
       });
     }
 
