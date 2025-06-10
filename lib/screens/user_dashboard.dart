@@ -36,6 +36,7 @@ class _UserDashboardState extends State<UserDashboard> {
   Map<String, int?> blockInstances = {}; // ✅ Store all block instance IDs
   bool isBlockLoading = true; // ✅ Loading state
   List<String> customBlockNames = [];
+  List<int> customBlockIds = [];
   bool isProfileLoading = true;
   String profileImageUrl = 'assets/images/flatLogo.jpg';
   String displayName = '';
@@ -59,11 +60,19 @@ class _UserDashboardState extends State<UserDashboard> {
 
   Future<void> _fetchCustomBlocks() async {
     final db = DBService();
-    final blocks = await db.getCustomBlocks();
+    final blocks = await db.getCustomBlocks(includeDrafts: true);
     setState(() {
-      customBlockNames =
-          blocks.map((b) => b['name']?.toString() ?? 'Custom').toList();
+      customBlockNames = blocks
+          .map((b) =>
+              b['isDraft'] == 1 ? "${b['name']} (draft)" : b['name'].toString())
+          .toList();
+      customBlockIds = blocks.map<int>((b) => b['id'] as int).toList();
     });
+  }
+
+  Future<void> _deleteCustomBlock(int id) async {
+    await DBService().deleteCustomBlock(id);
+    await _fetchCustomBlocks();
   }
 
   Future<void> registerForPushNotifications() async {
@@ -581,6 +590,7 @@ class _UserDashboardState extends State<UserDashboard> {
                             workoutImages: List.filled(
                                 customBlockNames.length, 'assets/images/flatLogo.jpg'),
                             blockNames: customBlockNames,
+                            customBlockIds: customBlockIds,
                             blockInstances: blockInstances,
                             isLoading: isBlockLoading,
                             onNewBlockInstanceCreated: (blockName, newId) {
@@ -588,6 +598,7 @@ class _UserDashboardState extends State<UserDashboard> {
                                 blockInstances[blockName] = newId;
                               });
                             },
+                            onDeleteCustomBlock: _deleteCustomBlock,
                           ),
                         ],
                         const SizedBox(height: 20),

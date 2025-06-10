@@ -33,6 +33,28 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     );
   }
 
+  Future<void> _saveDraft() async {
+    if (blockName.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a block name')),
+      );
+      return;
+    }
+    if (workouts.isEmpty && (daysPerWeek ?? 0) > 0) {
+      _createDrafts();
+    }
+    final block = CustomBlock(
+      id: DateTime.now().millisecondsSinceEpoch,
+      name: blockName,
+      numWeeks: numWeeks ?? 1,
+      daysPerWeek: daysPerWeek ?? 1,
+      workouts: workouts,
+      isDraft: true,
+    );
+    await DBService().insertCustomBlock(block);
+    if (mounted) Navigator.pop(context);
+  }
+
   Future<void> _finish() async {
     final List<WorkoutDraft> allWorkouts = [];
     int idCounter = 0;
@@ -63,7 +85,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       numWeeks: numWeeks!,
       daysPerWeek: daysPerWeek!,
       workouts: allWorkouts,
+      isDraft: false,
     );
+
 
     await DBService().insertCustomBlock(block);
     if (mounted) Navigator.pop(context);
@@ -72,7 +96,16 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Custom Block')),
+      appBar: AppBar(
+        title: const Text('Custom Block'),
+        actions: [
+          if (_currentStep > 0)
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: _saveDraft,
+            ),
+        ],
+      ),
       body: Stepper(
         currentStep: _currentStep,
         onStepContinue: () {
