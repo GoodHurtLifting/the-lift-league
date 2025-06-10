@@ -9,7 +9,8 @@ import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/screens/workout_builder.dart';
 
 class CustomBlockWizard extends StatefulWidget {
-  const CustomBlockWizard({super.key});
+  final CustomBlock? initialBlock;
+  const CustomBlockWizard({super.key, this.initialBlock});
 
   @override
   State<CustomBlockWizard> createState() => _CustomBlockWizardState();
@@ -29,15 +30,49 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   @override
   void initState() {
     super.initState();
-    workouts = [];
+    if (widget.initialBlock != null) {
+      final block = widget.initialBlock!;
+      blockName = block.name;
+      numWeeks = block.numWeeks;
+      daysPerWeek = block.daysPerWeek;
+      workouts = block.workouts
+          .map((w) => WorkoutDraft(
+                id: w.id,
+                dayIndex: w.dayIndex,
+                name: w.name,
+                lifts: w.lifts
+                    .map(
+                      (l) => LiftDraft(
+                        name: l.name,
+                        sets: l.sets,
+                        repsPerSet: l.repsPerSet,
+                        multiplier: l.multiplier,
+                        isBodyweight: l.isBodyweight,
+                      ),
+                    )
+                    .toList(),
+              ))
+          .toList();
+      _coverImagePath = block.coverImagePath;
+      if (_coverImagePath != null && File(_coverImagePath!).existsSync()) {
+        _coverImageBytes = File(_coverImagePath!).readAsBytesSync();
+      }
+      _currentStep = 4;
+    } else {
+      workouts = [];
+    }
   }
 
   void _createDrafts() {
     final count = daysPerWeek ?? 0;
-    workouts = List.generate(
+    final List<WorkoutDraft> newList = List.generate(
       count,
       (i) => WorkoutDraft(id: i, dayIndex: i, name: '', lifts: []),
     );
+    for (var i = 0; i < newList.length && i < workouts.length; i++) {
+      newList[i] = workouts[i];
+    }
+    workouts = newList;
   }
 
   Future<void> _pickCoverImage() async {
@@ -77,8 +112,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     if (workouts.isEmpty && (daysPerWeek ?? 0) > 0) {
       _createDrafts();
     }
+    final int id = widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
     final block = CustomBlock(
-      id: DateTime.now().millisecondsSinceEpoch,
+      id: id,
       name: blockName,
       numWeeks: numWeeks ?? 1,
       daysPerWeek: daysPerWeek ?? 1,
@@ -86,7 +122,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       workouts: workouts,
       isDraft: true,
     );
-    await DBService().insertCustomBlock(block);
+    if (widget.initialBlock != null) {
+      await DBService().updateCustomBlock(block);
+    } else {
+      await DBService().insertCustomBlock(block);
+    }
     if (mounted) Navigator.pop(context);
   }
 
@@ -114,8 +154,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       }
     }
 
+    final int id = widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
     final block = CustomBlock(
-      id: DateTime.now().millisecondsSinceEpoch,
+      id: id,
       name: blockName,
       numWeeks: numWeeks!,
       daysPerWeek: daysPerWeek!,
@@ -123,9 +164,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       workouts: allWorkouts,
       isDraft: false,
     );
-
-
-    await DBService().insertCustomBlock(block);
+    if (widget.initialBlock != null) {
+      await DBService().updateCustomBlock(block);
+    } else {
+      await DBService().insertCustomBlock(block);
+    }
     if (mounted) Navigator.pop(context);
   }
 
@@ -246,6 +289,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                     height: 400,
                     child: WorkoutBuilder(
                       workout: workouts[_workoutIndex],
+                      allWorkouts: workouts,
+                      currentIndex: _workoutIndex,
+                      onSelectWorkout: (i) => setState(() => _workoutIndex = i),
                       isLast: _workoutIndex == workouts.length - 1,
                       onComplete: () async {
                         if (_workoutIndex < workouts.length - 1) {

@@ -731,6 +731,78 @@ class DBService {
     await db.delete('custom_blocks', where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<CustomBlock?> getCustomBlock(int id) async {
+    final db = await database;
+    final blockData = await db.query(
+      'custom_blocks',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (blockData.isEmpty) return null;
+    final blockRow = blockData.first;
+    final workoutRows = await db.query(
+      'workout_drafts',
+      where: 'blockId = ?',
+      whereArgs: [id],
+      orderBy: 'dayIndex ASC',
+    );
+    final List<WorkoutDraft> workouts = [];
+    for (final w in workoutRows) {
+      final lifts = await db.query(
+        'lift_drafts',
+        where: 'workoutId = ?',
+        whereArgs: [w['id']],
+      );
+      workouts.add(
+        WorkoutDraft(
+          id: w['id'] as int,
+          dayIndex: w['dayIndex'] as int,
+          name: w['name'] as String? ?? '',
+          lifts: lifts
+              .map((l) => LiftDraft(
+                    name: l['name'] as String,
+                    sets: l['sets'] as int,
+                    repsPerSet: l['repsPerSet'] as int,
+                    multiplier: (l['multiplier'] as num).toDouble(),
+                    isBodyweight: (l['isBodyweight'] as int) == 1,
+                  ))
+              .toList(),
+        ),
+      );
+    }
+
+    return CustomBlock(
+      id: blockRow['id'] as int,
+      name: blockRow['name'] as String,
+      numWeeks: blockRow['numWeeks'] as int,
+      daysPerWeek: blockRow['daysPerWeek'] as int,
+      coverImagePath: blockRow['coverImagePath'] as String?,
+      workouts: workouts,
+      isDraft: (blockRow['isDraft'] as int) == 1,
+    );
+  }
+
+  Future<void> updateCustomBlock(CustomBlock block) async {
+    final db = await database;
+    await db.update(
+      'custom_blocks',
+      {
+        'name': block.name,
+        'numWeeks': block.numWeeks,
+        'daysPerWeek': block.daysPerWeek,
+        'isDraft': block.isDraft ? 1 : 0,
+        'coverImagePath': block.coverImagePath,
+      },
+      where: 'id = ?',
+      whereArgs: [block.id],
+    );
+    await db.delete('workout_drafts', where: 'blockId = ?', whereArgs: [block.id]);
+    for (final w in block.workouts) {
+      await insertWorkoutDraft(w, block.id);
+    }
+  }
+
 
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
