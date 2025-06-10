@@ -1,4 +1,9 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/screens/workout_builder.dart';
@@ -18,6 +23,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   late List<WorkoutDraft> workouts;
   int _currentStep = 0;
   int _workoutIndex = 0;
+  Uint8List? _coverImageBytes;
+  String? _coverImagePath;
 
   @override
   void initState() {
@@ -31,6 +38,33 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       count,
       (i) => WorkoutDraft(id: i, dayIndex: i, name: '', lifts: []),
     );
+  }
+
+  Future<void> _pickCoverImage() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: picked.path,
+      aspectRatio: const CropAspectRatio(ratioX: 16, ratioY: 9),
+      uiSettings: [
+        AndroidUiSettings(lockAspectRatio: true, toolbarTitle: 'Crop Image'),
+        IOSUiSettings(title: 'Crop Image', aspectRatioLockEnabled: true),
+      ],
+    );
+
+    if (cropped == null) return;
+
+    final bytes = await File(cropped.path).readAsBytes();
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File(
+        '${dir.path}/custom_block_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    await file.writeAsBytes(bytes);
+
+    setState(() {
+      _coverImageBytes = bytes;
+      _coverImagePath = file.path;
+    });
   }
 
   Future<void> _saveDraft() async {
@@ -48,6 +82,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       name: blockName,
       numWeeks: numWeeks ?? 1,
       daysPerWeek: daysPerWeek ?? 1,
+      coverImagePath: _coverImagePath,
       workouts: workouts,
       isDraft: true,
     );
@@ -84,6 +119,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       name: blockName,
       numWeeks: numWeeks!,
       daysPerWeek: daysPerWeek!,
+      coverImagePath: _coverImagePath,
       workouts: allWorkouts,
       isDraft: false,
     );
@@ -114,13 +150,17 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               setState(() => _currentStep = 1);
             }
           } else if (_currentStep == 1) {
-            if (numWeeks != null) {
+            if (_coverImagePath != null) {
               setState(() => _currentStep = 2);
             }
           } else if (_currentStep == 2) {
+            if (numWeeks != null) {
+              setState(() => _currentStep = 3);
+            }
+          } else if (_currentStep == 3) {
             if (daysPerWeek != null) {
               _createDrafts();
-              setState(() => _currentStep = 3);
+              setState(() => _currentStep = 4);
             }
           }
         },
@@ -132,7 +172,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           }
         },
         controlsBuilder: (context, details) {
-          if (_currentStep < 3) {
+          if (_currentStep < 4) {
             return Row(
               children: [
                 ElevatedButton(
@@ -156,8 +196,23 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               controller: _nameCtrl,
               decoration: const InputDecoration(labelText: 'Name'),
               onChanged: (v) => blockName = v,
+              maxLength: 14,
             ),
             isActive: _currentStep >= 0,
+          ),
+          Step(
+            title: const Text('Cover image'),
+            content: Column(
+              children: [
+                if (_coverImageBytes != null)
+                  Image.memory(_coverImageBytes!, height: 120, fit: BoxFit.cover),
+                ElevatedButton(
+                  onPressed: _pickCoverImage,
+                  child: Text(_coverImageBytes == null ? 'Select Image' : 'Change Image'),
+                ),
+              ],
+            ),
+            isActive: _currentStep >= 1,
           ),
           Step(
             title: const Text('How many weeks?'),
@@ -169,7 +224,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) => setState(() => numWeeks = v),
             ),
-            isActive: _currentStep >= 1,
+            isActive: _currentStep >= 2,
           ),
           Step(
             title: const Text('Days per week?'),
@@ -181,7 +236,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) => setState(() => daysPerWeek = v),
             ),
-            isActive: _currentStep >= 2,
+            isActive: _currentStep >= 3,
           ),
           Step(
             title: Text('Workout ${_workoutIndex + 1}'),
@@ -201,7 +256,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                       },
                     ),
                   ),
-            isActive: _currentStep >= 3,
+            isActive: _currentStep >= 4,
           ),
         ],
       ),

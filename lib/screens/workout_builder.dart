@@ -28,6 +28,14 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   }
 
   @override
+  void didUpdateWidget(covariant WorkoutBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workout != widget.workout) {
+      _nameController.text = widget.workout.name;
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     super.dispose();

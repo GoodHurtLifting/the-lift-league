@@ -37,6 +37,7 @@ class _UserDashboardState extends State<UserDashboard> {
   bool isBlockLoading = true; // ✅ Loading state
   List<String> customBlockNames = [];
   List<int> customBlockIds = [];
+  List<String> customBlockImages = [];
   bool isProfileLoading = true;
   String profileImageUrl = 'assets/images/flatLogo.jpg';
   String displayName = '';
@@ -67,6 +68,9 @@ class _UserDashboardState extends State<UserDashboard> {
               b['isDraft'] == 1 ? "${b['name']} (draft)" : b['name'].toString())
           .toList();
       customBlockIds = blocks.map<int>((b) => b['id'] as int).toList();
+      customBlockImages = blocks
+          .map<String>((b) => b['coverImagePath']?.toString() ?? 'assets/images/flatLogo.jpg')
+          .toList();
     });
   }
 
@@ -588,12 +592,12 @@ class _UserDashboardState extends State<UserDashboard> {
                         if (customBlockNames.isNotEmpty) ...[
                           const SizedBox(height: 20),
                           BlockGridSection(
-                            workoutImages: List.filled(
-                                customBlockNames.length, 'assets/images/flatLogo.jpg'),
+                            workoutImages: customBlockImages,
                             blockNames: customBlockNames,
                             customBlockIds: customBlockIds,
                             blockInstances: blockInstances,
                             isLoading: isBlockLoading,
+                            overlayNames: true,
                             onNewBlockInstanceCreated: (blockName, newId) {
                               setState(() {
                                 blockInstances[blockName] = newId;
