@@ -18,7 +18,6 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   late List<WorkoutDraft> workouts;
   int _currentStep = 0;
   int _workoutIndex = 0;
-  late CustomBlock _block;
 
   @override
   void initState() {
@@ -27,22 +26,46 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   }
 
   void _createDrafts() {
-    final total = (numWeeks ?? 0) * (daysPerWeek ?? 0);
+    final count = daysPerWeek ?? 0;
     workouts = List.generate(
-      total,
-          (i) => WorkoutDraft(id: i, dayIndex: i, lifts: []),
-    );
-    _block = CustomBlock(
-      id: DateTime.now().millisecondsSinceEpoch,
-      name: blockName,
-      numWeeks: numWeeks!,
-      daysPerWeek: daysPerWeek!,
-      workouts: workouts,
+      count,
+      (i) => WorkoutDraft(id: i, dayIndex: i, name: '', lifts: []),
     );
   }
 
   Future<void> _finish() async {
-    await DBService().insertCustomBlock(_block);
+    final List<WorkoutDraft> allWorkouts = [];
+    int idCounter = 0;
+    for (var week = 0; week < (numWeeks ?? 0); week++) {
+      for (var day = 0; day < workouts.length; day++) {
+        final base = workouts[day];
+        final copiedLifts = base.lifts
+            .map((l) => LiftDraft(
+                  name: l.name,
+                  sets: l.sets,
+                  repsPerSet: l.repsPerSet,
+                  multiplier: l.multiplier,
+                  isBodyweight: l.isBodyweight,
+                ))
+            .toList();
+        allWorkouts.add(WorkoutDraft(
+          id: idCounter++,
+          dayIndex: week * workouts.length + day,
+          name: base.name,
+          lifts: copiedLifts,
+        ));
+      }
+    }
+
+    final block = CustomBlock(
+      id: DateTime.now().millisecondsSinceEpoch,
+      name: blockName,
+      numWeeks: numWeeks!,
+      daysPerWeek: daysPerWeek!,
+      workouts: allWorkouts,
+    );
+
+    await DBService().insertCustomBlock(block);
     if (mounted) Navigator.pop(context);
   }
 
@@ -132,18 +155,19 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             content: workouts.isEmpty
                 ? const SizedBox.shrink()
                 : SizedBox(
-              height: 400,
-              child: WorkoutBuilder(
-                workout: workouts[_workoutIndex],
-                onComplete: () async {
-                  if (_workoutIndex < workouts.length - 1) {
-                    setState(() => _workoutIndex++);
-                  } else {
-                    await _finish();
-                  }
-                },
-              ),
-            ),
+                    height: 400,
+                    child: WorkoutBuilder(
+                      workout: workouts[_workoutIndex],
+                      isLast: _workoutIndex == workouts.length - 1,
+                      onComplete: () async {
+                        if (_workoutIndex < workouts.length - 1) {
+                          setState(() => _workoutIndex++);
+                        } else {
+                          await _finish();
+                        }
+                      },
+                    ),
+                  ),
             isActive: _currentStep >= 3,
           ),
         ],

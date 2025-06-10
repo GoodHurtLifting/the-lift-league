@@ -17,8 +17,14 @@ class CustomBlock {
 class WorkoutDraft {
   int id;
   int dayIndex;
+  String name;
   List<LiftDraft> lifts;
-  WorkoutDraft({required this.id, required this.dayIndex, required this.lifts});
+  WorkoutDraft({
+    required this.id,
+    required this.dayIndex,
+    required this.name,
+    required this.lifts,
+  });
 }
 
 class LiftDraft {

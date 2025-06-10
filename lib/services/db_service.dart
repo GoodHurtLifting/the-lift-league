@@ -33,7 +33,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 10,
+      version: 11,
       onCreate: (db, version) async {
         await db.execute("PRAGMA foreign_keys = ON;");
 
@@ -74,6 +74,9 @@ class DBService {
               FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
             )
           ''');
+        }
+        if (oldVersion < 11) {
+          await db.execute("ALTER TABLE workout_drafts ADD COLUMN name TEXT;");
         }
       },
     );
@@ -232,6 +235,7 @@ class DBService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         blockId INTEGER,
         dayIndex INTEGER,
+        name TEXT,
         FOREIGN KEY (blockId) REFERENCES custom_blocks(id) ON DELETE CASCADE
       )
     ''');
@@ -683,6 +687,7 @@ class DBService {
     final workoutId = await db.insert('workout_drafts', {
       'blockId': blockId,
       'dayIndex': w.dayIndex,
+      'name': w.name,
     });
     for (final lift in w.lifts) {
       await db.insert('lift_drafts', {
