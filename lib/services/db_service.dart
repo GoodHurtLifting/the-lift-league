@@ -1901,6 +1901,9 @@ class DBService {
 
     // Step 3: Build list of userIds to fetch from Firestore
     final List<String> userIds = bestPerUser.keys.toList();
+    if (userIds.isEmpty) {
+      return [];
+    }
 
     // Step 4: Batch fetch all user profiles at once
     final userDocs = await FirebaseFirestore.instance

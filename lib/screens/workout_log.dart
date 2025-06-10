@@ -110,42 +110,75 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
     }
 
     final int workoutId = (workoutInstance['workoutId'] as num).toInt();
-    final workoutDefinition = workoutDataList.firstWhere(
-          (w) => w['workoutId'] == workoutId,
-      orElse: () => {'name': 'Unknown Workout'},
-    );
-
-    final List<int> liftIds = List<int>.from(
-        workoutDefinition['liftIds'] ?? []);
-    final block = blockDataList.firstWhere(
-          (b) => b['blockId'] == blockInstance['blockId'],
-      orElse: () => {'blockName': 'Block Name'},
-    );
+    Map<String, dynamic>? workoutDefinition;
+    try {
+      workoutDefinition = workoutDataList
+          .firstWhere((w) => w['workoutId'] == workoutId);
+    } catch (_) {
+      workoutDefinition = null;
+    }
 
     // Prepare lifts
     final List<Liftinfo> orderedLifts = [];
-    for (final id in liftIds) {
-      final liftData = await db.getLiftById(id);
-      if (liftData != null) {
-        orderedLifts.add(
-          Liftinfo(
-            liftId: id,
-            workoutInstanceId: widget.workoutInstanceId,
-            liftName: liftData['liftName'] ?? 'Unknown',
-            repScheme: liftData['repScheme'] ?? '',
-            numSets: liftData['numSets'] ?? 3,
-            scoreMultiplier: (liftData['scoreMultiplier'] ?? 1.0).toDouble(),
-            isDumbbellLift: liftData['isDumbbellLift'] == 1,
-            scoreType: liftData['scoreType'] ?? 'multiplier',
-            youtubeUrl: liftData['youtubeUrl'],
-            description: liftData['description'] ?? '',
-            referenceLiftId: liftData['referenceLiftId'],
-            percentOfReference: (liftData['percentOfReference'] as num?)
-                ?.toDouble(),
-          ),
-        );
+    if (workoutDefinition != null) {
+      final List<int> liftIds = List<int>.from(
+          workoutDefinition['liftIds'] ?? []);
+      for (final id in liftIds) {
+        final liftData = await db.getLiftById(id);
+        if (liftData != null) {
+          orderedLifts.add(
+            Liftinfo(
+              liftId: id,
+              workoutInstanceId: widget.workoutInstanceId,
+              liftName: liftData['liftName'] ?? 'Unknown',
+              repScheme: liftData['repScheme'] ?? '',
+              numSets: liftData['numSets'] ?? 3,
+              scoreMultiplier: (liftData['scoreMultiplier'] ?? 1.0).toDouble(),
+              isDumbbellLift: liftData['isDumbbellLift'] == 1,
+              scoreType: liftData['scoreType'] ?? 'multiplier',
+              youtubeUrl: liftData['youtubeUrl'],
+              description: liftData['description'] ?? '',
+              referenceLiftId: liftData['referenceLiftId'],
+              percentOfReference:
+              (liftData['percentOfReference'] as num?)?.toDouble(),
+            ),
+          );
+        }
       }
+    } else {
+      final liftsFromDb = await db.getWorkoutLifts(widget.workoutInstanceId);
+      for (final lift in liftsFromDb) {
+        final liftData = await db.getLiftById(lift['liftId']);
+        if (liftData != null) {
+          orderedLifts.add(
+            Liftinfo(
+              liftId: liftData['liftId'] as int,
+              workoutInstanceId: widget.workoutInstanceId,
+              liftName: liftData['liftName'] ?? 'Unknown',
+              repScheme: liftData['repScheme'] ?? '',
+              numSets: liftData['numSets'] ?? 3,
+              scoreMultiplier: (liftData['scoreMultiplier'] ?? 1.0).toDouble(),
+              isDumbbellLift: liftData['isDumbbellLift'] == 1,
+              scoreType: liftData['scoreType'] ?? 'multiplier',
+              youtubeUrl: liftData['youtubeUrl'],
+              description: liftData['description'] ?? '',
+              referenceLiftId: liftData['referenceLiftId'],
+              percentOfReference:
+              (liftData['percentOfReference'] as num?)?.toDouble(),
+            ),
+          );
+        }
+      }
+      workoutDefinition = {
+        'workoutId': workoutId,
+        'workoutName': workoutInstance['workoutName'] ?? 'Workout',
+      };
     }
+
+    final block = blockDataList.firstWhere(
+          (b) => b['blockId'] == blockInstance['blockId'],
+      orElse: () => {'blockName': blockInstance['blockName']},
+    );
 
     // Construct the workout object
     workout = Workout(
