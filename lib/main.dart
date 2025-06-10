@@ -12,6 +12,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lift_league/screens/user_dashboard.dart';
 import 'package:lift_league/screens/login_screen.dart';
 import 'package:lift_league/screens/add_check_in_screen.dart';
+import 'package:lift_league/screens/custom_block_wizard.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
 import 'package:lift_league/services/notifications_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -137,6 +138,7 @@ class LiftLeagueApp extends StatelessWidget {
       ],
       routes: {
         '/addCheckIn': (context) => const AddCheckInScreen(),
+        '/customBlock': (ctx) => const CustomBlockWizard(),
         '/publicProfile': (context) => PublicProfileScreen(
           userId: (ModalRoute.of(context)?.settings.arguments as Map?)?['userId'] ?? '',
         ),

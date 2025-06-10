@@ -16,12 +16,12 @@ import 'package:lift_league/screens/user_stats_screen.dart';
 import 'package:lift_league/widgets/timeline_private.dart';
 import 'package:lift_league/widgets/block_grid_section.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
+import '../widgets/custom_block_button.dart';
 import 'user_search_screen.dart';
 import 'chat_list_screen.dart';
 import 'training_circle_screen.dart';
 import 'package:lift_league/services/title_observer_service.dart';
 import 'package:lift_league/services/notifications_service.dart';
-
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -44,7 +44,6 @@ class _UserDashboardState extends State<UserDashboard> {
   bool hasUploadedCheckIn = false;
   bool hasUnread = false;
 
-
   @override
   void initState() {
     super.initState();
@@ -54,8 +53,7 @@ class _UserDashboardState extends State<UserDashboard> {
     _loadUserProfile();
     _fetchUserStats();
     _checkUnread();
-    _fetchAllBlockInstances().then((_) {
-    });
+    _fetchAllBlockInstances().then((_) {});
   }
 
   Future<void> registerForPushNotifications() async {
@@ -86,12 +84,14 @@ class _UserDashboardState extends State<UserDashboard> {
     }
   }
 
-
   Future<void> _loadUserProfile() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
     final data = doc.data();
 
     if (data != null) {
@@ -153,13 +153,18 @@ class _UserDashboardState extends State<UserDashboard> {
       final resized = img.copyResize(image!, width: 800, height: 800);
       final compressed = img.encodeJpg(resized, quality: 85);
 
-      final fileName = '${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final ref = FirebaseStorage.instance.ref().child('profile_images/$fileName');
+      final fileName =
+          '${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final ref =
+          FirebaseStorage.instance.ref().child('profile_images/$fileName');
 
       final uploadTask = await ref.putData(Uint8List.fromList(compressed));
       final downloadUrl = await uploadTask.ref.getDownloadURL();
 
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
         'profileImageUrl': downloadUrl,
       });
 
@@ -184,16 +189,18 @@ class _UserDashboardState extends State<UserDashboard> {
 
     final db = DBService();
     List<Map<String, dynamic>> blockInstancesFromDB =
-    await db.getAllBlockInstances(user.uid);
+        await db.getAllBlockInstances(user.uid);
 
     // ✅ If NO block_instances yet, auto-generate one for each block from the blocks table
     if (blockInstancesFromDB.isEmpty) {
       print("ℹ️ No block_instances found. Auto-starting one for each block...");
 
-      final List<Map<String, dynamic>> allBlocks = await db.getAllBlocks(); // <-- New helper you'll need
+      final List<Map<String, dynamic>> allBlocks =
+          await db.getAllBlocks(); // <-- New helper you'll need
 
       for (var block in allBlocks) {
-        final String blockName = block['blockName']?.toString() ?? 'Unnamed Block';
+        final String blockName =
+            block['blockName']?.toString() ?? 'Unnamed Block';
         await db.insertNewBlockInstance(blockName, user.uid);
       }
 
@@ -284,7 +291,10 @@ class _UserDashboardState extends State<UserDashboard> {
                 if (newName.isNotEmpty) {
                   final user = FirebaseAuth.instance.currentUser;
                   if (user != null) {
-                    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .update({
                       'displayName': newName,
                     });
                     setState(() {
@@ -384,7 +394,7 @@ class _UserDashboardState extends State<UserDashboard> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const SettingsScreen( )),
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
               );
             },
           ),
@@ -402,7 +412,8 @@ class _UserDashboardState extends State<UserDashboard> {
                     onPressed: () async {
                       await Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const ChatListScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const ChatListScreen()),
                       );
                       _checkUnread(); // 🔥 re-check when returning from ChatList
                     },
@@ -427,126 +438,155 @@ class _UserDashboardState extends State<UserDashboard> {
         ],
       ),
       backgroundColor: Colors.black,
-      body: Padding(
-        padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 1,
-          left: 16.0,
-          right: 16.0,
-          bottom: 16.0,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ✅ Profile Section
-            Row(
+      body: Stack(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 1,
+              left: 16.0,
+              right: 16.0,
+              bottom: 16.0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: _pickProfileImage,
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: profileImageUrl.startsWith('http')
-                        ? NetworkImage(profileImageUrl)
-                        : AssetImage(profileImageUrl) as ImageProvider,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // ✅ Profile Section
+                Row(
                   children: [
                     GestureDetector(
-                      onTap: _showEditDisplayNameDialog,
-                      child: Text(
-                        isProfileLoading ? 'Loading...' : displayName,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFFC3B3D),
-                        ),
+                      onTap: _pickProfileImage,
+                      child: CircleAvatar(
+                        radius: 40,
+                        backgroundImage: profileImageUrl.startsWith('http')
+                            ? NetworkImage(profileImageUrl)
+                            : AssetImage(profileImageUrl) as ImageProvider,
                       ),
                     ),
-                    Text(userTitle, style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.grey)),
-                    Text("Total Blocks: $blocksCompleted", style: const TextStyle(fontSize: 14, color: Colors.white)),
-                    Text("Total Workload: ${totalLbsLifted.toString()} lbs", style: const TextStyle(fontSize: 14, color: Colors.white)),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                          onTap: _showEditDisplayNameDialog,
+                          child: Text(
+                            isProfileLoading ? 'Loading...' : displayName,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFC3B3D),
+                            ),
+                          ),
+                        ),
+                        Text(userTitle,
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontStyle: FontStyle.italic,
+                                color: Colors.grey)),
+                        Text("Total Blocks: $blocksCompleted",
+                            style: const TextStyle(
+                                fontSize: 14, color: Colors.white)),
+                        Text("Total Workload: ${totalLbsLifted.toString()} lbs",
+                            style: const TextStyle(
+                                fontSize: 14, color: Colors.white)),
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
 
-            const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-            // ✅ Navigation Icons Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white, size: 28),
-                  onPressed: () {
-                    final userId = FirebaseAuth.instance.currentUser?.uid;
-                    if (userId != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => PublicProfileScreen(userId: userId),
-                        ),
-                      );
-                    }
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.group, color: Colors.white, size: 28,),
-                  tooltip: 'Training Circle',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TrainingCircleScreen()),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.bar_chart, color: Colors.white, size: 28),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => UserStatsScreen(userId: FirebaseAuth.instance.currentUser!.uid),
-                      ),
-                    );
-                  },
-                ),
-
-                const DevTools(),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // ✅ Grid and Timeline in scrollable area
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
+                // ✅ Navigation Icons Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    BlockGridSection(
-                      workoutImages: workoutImages,
-                      blockNames: blockNames,
-                      blockInstances: blockInstances,
-                      isLoading: isBlockLoading,
-                      onNewBlockInstanceCreated: (blockName, newId) {
-                        setState(() {
-                          blockInstances[blockName] = newId;
-                        });
+                    IconButton(
+                      icon: const Icon(Icons.person,
+                          color: Colors.white, size: 28),
+                      onPressed: () {
+                        final userId = FirebaseAuth.instance.currentUser?.uid;
+                        if (userId != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PublicProfileScreen(userId: userId),
+                            ),
+                          );
+                        }
                       },
                     ),
-                    const SizedBox(height: 20),
-                    TimelinePrivate(
-                      userId: FirebaseAuth.instance.currentUser!.uid,
-                      onCheckInUploaded: () {
-                        setState(() {
-                          hasUploadedCheckIn = true;
-                        });
+                    IconButton(
+                      icon: const Icon(
+                        Icons.group,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      tooltip: 'Training Circle',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const TrainingCircleScreen()),
+                        );
                       },
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.bar_chart,
+                          color: Colors.white, size: 28),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserStatsScreen(
+                                userId: FirebaseAuth.instance.currentUser!.uid),
+                          ),
+                        );
+                      },
+                    ),
+                    const DevTools(),
                   ],
                 ),
-              ),
+
+                const SizedBox(height: 20),
+
+                // ✅ Grid and Timeline in scrollable area
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        BlockGridSection(
+                          workoutImages: workoutImages,
+                          blockNames: blockNames,
+                          blockInstances: blockInstances,
+                          isLoading: isBlockLoading,
+                          onNewBlockInstanceCreated: (blockName, newId) {
+                            setState(() {
+                              blockInstances[blockName] = newId;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 20),
+                        TimelinePrivate(
+                          userId: FirebaseAuth.instance.currentUser!.uid,
+                          onCheckInUploaded: () {
+                            setState(() {
+                              hasUploadedCheckIn = true;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const Positioned(
+            top: 10,
+            right: 10,
+            child: CustomBlockButton(),
+          ),
+        ],
       ),
     );
   }

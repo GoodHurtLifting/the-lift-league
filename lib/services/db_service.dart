@@ -6,6 +6,7 @@ import 'package:lift_league/data/workout_data.dart';
 import 'package:lift_league/data/block_data.dart';
 import 'package:lift_league/data/titles_data.dart';
 import 'package:lift_league/services/calculations.dart';
+import 'package:lift_league/models/custom_block_models.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lift_league/services/user_stats_service.dart';
@@ -32,7 +33,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: (db, version) async {
         await db.execute("PRAGMA foreign_keys = ON;");
 
@@ -43,6 +44,35 @@ class DBService {
         if (oldVersion < 9) {
           await db.execute("ALTER TABLE workout_instances ADD COLUMN blockName TEXT;");
           await db.execute("ALTER TABLE workout_instances ADD COLUMN week INTEGER;");
+        }
+        if (oldVersion < 10) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS custom_blocks (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              numWeeks INTEGER,
+              daysPerWeek INTEGER
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS workout_drafts (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              blockId INTEGER,
+              dayIndex INTEGER,
+              FOREIGN KEY (blockId) REFERENCES custom_blocks(id) ON DELETE CASCADE
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS lift_drafts (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              workoutId INTEGER,
+              name TEXT,
+              sets INTEGER,
+              repsPerSet INTEGER,
+              multiplier REAL,
+              isBodyweight INTEGER,
+              FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
+            )
+          ''');
         }
       },
     );
@@ -172,10 +202,9 @@ class DBService {
         FOREIGN KEY (workoutInstanceId) REFERENCES workout_instances(workoutInstanceId),
         FOREIGN KEY (blockInstanceId) REFERENCES block_instances(blockInstanceId)
       )
-
     ''');
 
-    await db.execute('''
+      await db.execute('''
       CREATE TABLE IF NOT EXISTS block_totals (
         blockInstanceId INTEGER PRIMARY KEY,
         userId TEXT,
@@ -185,7 +214,37 @@ class DBService {
         blockScore REAL DEFAULT 0.0,
         FOREIGN KEY (blockInstanceId) REFERENCES block_instances(blockInstanceId)
       );
+      
+    ''');
 
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS custom_blocks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        numWeeks INTEGER,
+        daysPerWeek INTEGER
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS workout_drafts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        blockId INTEGER,
+        dayIndex INTEGER,
+        FOREIGN KEY (blockId) REFERENCES custom_blocks(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS lift_drafts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workoutId INTEGER,
+        name TEXT,
+        sets INTEGER,
+        repsPerSet INTEGER,
+        multiplier REAL,
+        isBodyweight INTEGER,
+        FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
+      )
     ''');
 
 
@@ -601,6 +660,40 @@ class DBService {
         .remainder(100000);
   }
 
+  // ──────────────────────────────────────────────
+  // 📝 CUSTOM BLOCK HELPERS
+  // ──────────────────────────────────────────────
+  Future<int> insertCustomBlock(CustomBlock block) async {
+    final db = await database;
+    final blockId = await db.insert('custom_blocks', {
+      'numWeeks': block.numWeeks,
+      'daysPerWeek': block.daysPerWeek,
+    });
+    for (final workout in block.workouts) {
+      await insertWorkoutDraft(workout, blockId);
+    }
+    return blockId;
+  }
+
+  Future<void> insertWorkoutDraft(WorkoutDraft w, int blockId) async {
+    final db = await database;
+    final workoutId = await db.insert('workout_drafts', {
+      'blockId': blockId,
+      'dayIndex': w.dayIndex,
+    });
+    for (final lift in w.lifts) {
+      await db.insert('lift_drafts', {
+        'workoutId': workoutId,
+        'name': lift.name,
+        'sets': lift.sets,
+        'repsPerSet': lift.repsPerSet,
+        'multiplier': lift.multiplier,
+        'isBodyweight': lift.isBodyweight ? 1 : 0,
+      });
+    }
+  }
+
+  
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
 // ──────────────────────────────────────────────
