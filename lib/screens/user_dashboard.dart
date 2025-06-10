@@ -562,6 +562,7 @@ class _UserDashboardState extends State<UserDashboard> {
                         );
                       },
                     ),
+                    CustomBlockButton(onReturn: _fetchCustomBlocks),
                     const DevTools(),
                   ],
                 ),

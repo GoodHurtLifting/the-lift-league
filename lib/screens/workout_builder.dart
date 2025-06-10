@@ -142,14 +142,16 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
           ),
         ),
         ElevatedButton(
+          onPressed: _showAddLiftSheet,
+          child: const Text('Add Lift'),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
           onPressed: widget.onComplete,
           child: Text(widget.isLast ? 'Build Block' : 'Next Workout'),
         ),
         const SizedBox(height: 8),
-        FloatingActionButton(
-          onPressed: _showAddLiftSheet,
-          child: const Icon(Icons.add),
-        ),
+
       ],
     );
   }

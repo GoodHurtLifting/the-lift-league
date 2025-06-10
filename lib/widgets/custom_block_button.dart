@@ -1,28 +1,19 @@
 import 'package:flutter/material.dart';
 
 class CustomBlockButton extends StatelessWidget {
-  const CustomBlockButton({super.key});
+  final VoidCallback? onReturn;
+
+  const CustomBlockButton({super.key, this.onReturn});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFFC3B3D),
-      shape: const CircleBorder(),
-      child: IconButton(
-        iconSize: 28,
-        icon: Stack(
-          alignment: Alignment.center,
-          children: const [
-            Icon(Icons.fitness_center, color: Colors.white),
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Icon(Icons.add, size: 12, color: Colors.white),
-            ),
-          ],
-        ),
-        onPressed: () => Navigator.pushNamed(context, '/customBlock'),
-      ),
+    return IconButton(
+      icon: const Icon(Icons.library_add, color: Colors.white, size: 28),
+      tooltip: 'Build Your Own Block',
+      onPressed: () async {
+        await Navigator.pushNamed(context, '/customBlock');
+        if (onReturn != null) onReturn!();
+      },
     );
   }
 }
