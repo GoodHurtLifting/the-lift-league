@@ -35,6 +35,7 @@ class _UserDashboardState extends State<UserDashboard> {
 
   Map<String, int?> blockInstances = {}; // ✅ Store all block instance IDs
   bool isBlockLoading = true; // ✅ Loading state
+  List<String> customBlockNames = [];
   bool isProfileLoading = true;
   String profileImageUrl = 'assets/images/flatLogo.jpg';
   String displayName = '';
@@ -53,7 +54,16 @@ class _UserDashboardState extends State<UserDashboard> {
     _loadUserProfile();
     _fetchUserStats();
     _checkUnread();
-    _fetchAllBlockInstances().then((_) {});
+    _fetchAllBlockInstances().then((_) => _fetchCustomBlocks());
+  }
+
+  Future<void> _fetchCustomBlocks() async {
+    final db = DBService();
+    final blocks = await db.getCustomBlocks();
+    setState(() {
+      customBlockNames =
+          blocks.map((b) => b['name']?.toString() ?? 'Custom').toList();
+    });
   }
 
   Future<void> registerForPushNotifications() async {
@@ -565,6 +575,21 @@ class _UserDashboardState extends State<UserDashboard> {
                             });
                           },
                         ),
+                        if (customBlockNames.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          BlockGridSection(
+                            workoutImages: List.filled(
+                                customBlockNames.length, 'assets/images/flatLogo.jpg'),
+                            blockNames: customBlockNames,
+                            blockInstances: blockInstances,
+                            isLoading: isBlockLoading,
+                            onNewBlockInstanceCreated: (blockName, newId) {
+                              setState(() {
+                                blockInstances[blockName] = newId;
+                              });
+                            },
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         TimelinePrivate(
                           userId: FirebaseAuth.instance.currentUser!.uid,

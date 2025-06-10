@@ -49,6 +49,7 @@ class DBService {
           await db.execute('''
             CREATE TABLE IF NOT EXISTS custom_blocks (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
+              name TEXT,
               numWeeks INTEGER,
               daysPerWeek INTEGER
             )
@@ -220,6 +221,7 @@ class DBService {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS custom_blocks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
         numWeeks INTEGER,
         daysPerWeek INTEGER
       )
@@ -666,6 +668,7 @@ class DBService {
   Future<int> insertCustomBlock(CustomBlock block) async {
     final db = await database;
     final blockId = await db.insert('custom_blocks', {
+      'name': block.name,
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
     });
@@ -693,7 +696,12 @@ class DBService {
     }
   }
 
-  
+  Future<List<Map<String, dynamic>>> getCustomBlocks() async {
+    final db = await database;
+    return db.query('custom_blocks');
+  }
+
+
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
 // ──────────────────────────────────────────────

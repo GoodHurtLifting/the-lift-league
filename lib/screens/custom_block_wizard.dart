@@ -11,6 +11,8 @@ class CustomBlockWizard extends StatefulWidget {
 }
 
 class _CustomBlockWizardState extends State<CustomBlockWizard> {
+  final TextEditingController _nameCtrl = TextEditingController();
+  String blockName = '';
   int? numWeeks;
   int? daysPerWeek;
   late List<WorkoutDraft> workouts;
@@ -32,6 +34,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     );
     _block = CustomBlock(
       id: DateTime.now().millisecondsSinceEpoch,
+      name: blockName,
       numWeeks: numWeeks!,
       daysPerWeek: daysPerWeek!,
       workouts: workouts,
@@ -51,13 +54,17 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         currentStep: _currentStep,
         onStepContinue: () {
           if (_currentStep == 0) {
-            if (numWeeks != null) {
+            if (blockName.trim().isNotEmpty) {
               setState(() => _currentStep = 1);
             }
           } else if (_currentStep == 1) {
+            if (numWeeks != null) {
+              setState(() => _currentStep = 2);
+            }
+          } else if (_currentStep == 2) {
             if (daysPerWeek != null) {
               _createDrafts();
-              setState(() => _currentStep = 2);
+              setState(() => _currentStep = 3);
             }
           }
         },
@@ -69,7 +76,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           }
         },
         controlsBuilder: (context, details) {
-          if (_currentStep < 2) {
+          if (_currentStep < 3) {
             return Row(
               children: [
                 ElevatedButton(
@@ -88,6 +95,15 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         },
         steps: [
           Step(
+            title: const Text('Block name'),
+            content: TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(labelText: 'Name'),
+              onChanged: (v) => blockName = v,
+            ),
+            isActive: _currentStep >= 0,
+          ),
+          Step(
             title: const Text('How many weeks?'),
             content: DropdownButton<int>(
               value: numWeeks,
@@ -97,7 +113,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) => setState(() => numWeeks = v),
             ),
-            isActive: _currentStep >= 0,
+            isActive: _currentStep >= 1,
           ),
           Step(
             title: const Text('Days per week?'),
@@ -109,7 +125,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) => setState(() => daysPerWeek = v),
             ),
-            isActive: _currentStep >= 1,
+            isActive: _currentStep >= 2,
           ),
           Step(
             title: Text('Workout ${_workoutIndex + 1}'),
@@ -128,7 +144,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                 },
               ),
             ),
-            isActive: _currentStep >= 2,
+            isActive: _currentStep >= 3,
           ),
         ],
       ),
