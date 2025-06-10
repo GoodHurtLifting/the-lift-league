@@ -718,6 +718,14 @@ class DBService {
     }
   }
 
+  int? _findLiftIdByName(String name) {
+    final match = liftDataList.firstWhere(
+          (l) => (l['liftName'] as String).toLowerCase() == name.toLowerCase(),
+      orElse: () => {},
+    );
+    return match.isNotEmpty ? match['liftId'] as int : null;
+  }
+
   Future<List<Map<String, dynamic>>> getCustomBlocks({bool includeDrafts = false}) async {
     final db = await database;
     if (includeDrafts) {
@@ -803,6 +811,57 @@ class DBService {
     }
   }
 
+  Future<int> createBlockFromCustomBlockId(int customId, String userId) async {
+    final customBlock = await getCustomBlock(customId);
+    if (customBlock == null) {
+      throw Exception('Custom block not found: $customId');
+    }
+
+    final db = await database;
+
+    final int blockId = await db.insert('blocks', {
+      'blockName': customBlock.name,
+      'scheduleType': 'standard',
+      'numWorkouts': customBlock.workouts.length,
+    });
+
+    for (final workout in customBlock.workouts) {
+      final int workoutId = await db.insert('workouts', {
+        'workoutName': workout.name,
+      });
+
+      await db.insert('workouts_blocks', {
+        'blockId': blockId,
+        'workoutId': workoutId,
+      });
+
+      for (final lift in workout.lifts) {
+        final liftId = _findLiftIdByName(lift.name);
+        if (liftId != null) {
+          await db.insert('lift_workouts', {
+            'workoutId': workoutId,
+            'liftId': liftId,
+          });
+        } else {
+          print('❌ Unknown lift name: ${lift.name}');
+        }
+      }
+    }
+
+    final int blockInstanceId = await db.insert('block_instances', {
+      'blockId': blockId,
+      'blockName': customBlock.name,
+      'userId': userId,
+      'startDate': null,
+      'endDate': null,
+      'status': 'inactive',
+    });
+
+    await insertWorkoutInstancesForBlock(blockInstanceId);
+
+    return blockInstanceId;
+  }
+
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
 // ──────────────────────────────────────────────
@@ -831,8 +890,8 @@ class DBService {
       if (custom.isEmpty) {
         throw Exception('❌ Block not found: $blockName');
       }
-      blockId = await createBlockFromCustomBlockId(custom.first['id'] as int);
-      blockName = cleanName;
+      return await createBlockFromCustomBlockId(
+          custom.first['id'] as int, userId);
     } else {
       blockId = blockData.first['blockId'] as int;
     }

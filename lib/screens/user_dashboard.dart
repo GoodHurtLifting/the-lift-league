@@ -17,6 +17,7 @@ import 'package:lift_league/widgets/timeline_private.dart';
 import 'package:lift_league/widgets/block_grid_section.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
 import '../widgets/custom_block_button.dart';
+import 'custom_block_wizard.dart';
 import 'user_search_screen.dart';
 import 'chat_list_screen.dart';
 import 'training_circle_screen.dart';
