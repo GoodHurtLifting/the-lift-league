@@ -33,7 +33,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 10,
+      version: 12,
       onCreate: (db, version) async {
         await db.execute("PRAGMA foreign_keys = ON;");
 
@@ -74,6 +74,13 @@ class DBService {
               FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
             )
           ''');
+        }
+        if (oldVersion < 11) {
+          await db.execute("ALTER TABLE workout_drafts ADD COLUMN name TEXT;");
+        }
+        if (oldVersion < 12) {
+          await db.execute(
+              "ALTER TABLE custom_blocks ADD COLUMN isDraft INTEGER DEFAULT 0;");
         }
       },
     );
@@ -223,7 +230,8 @@ class DBService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
         numWeeks INTEGER,
-        daysPerWeek INTEGER
+        daysPerWeek INTEGER,
+        isDraft INTEGER DEFAULT 0
       )
     ''');
 
@@ -232,6 +240,7 @@ class DBService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         blockId INTEGER,
         dayIndex INTEGER,
+        name TEXT,
         FOREIGN KEY (blockId) REFERENCES custom_blocks(id) ON DELETE CASCADE
       )
     ''');
@@ -671,6 +680,7 @@ class DBService {
       'name': block.name,
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
+      'isDraft': block.isDraft ? 1 : 0,
     });
     for (final workout in block.workouts) {
       await insertWorkoutDraft(workout, blockId);
@@ -683,6 +693,7 @@ class DBService {
     final workoutId = await db.insert('workout_drafts', {
       'blockId': blockId,
       'dayIndex': w.dayIndex,
+      'name': w.name,
     });
     for (final lift in w.lifts) {
       await db.insert('lift_drafts', {
@@ -696,9 +707,17 @@ class DBService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getCustomBlocks() async {
+  Future<List<Map<String, dynamic>>> getCustomBlocks({bool includeDrafts = false}) async {
     final db = await database;
-    return db.query('custom_blocks');
+    if (includeDrafts) {
+      return db.query('custom_blocks');
+    }
+    return db.query('custom_blocks', where: 'isDraft = 0');
+  }
+
+  Future<void> deleteCustomBlock(int id) async {
+    final db = await database;
+    await db.delete('custom_blocks', where: 'id = ?', whereArgs: [id]);
   }
 
 

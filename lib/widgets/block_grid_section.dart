@@ -9,6 +9,8 @@ class BlockGridSection extends StatelessWidget {
   final Map<String, int?> blockInstances;
   final bool isLoading;
   final Function(String, int) onNewBlockInstanceCreated;
+  final List<int>? customBlockIds;
+  final void Function(int id)? onDeleteCustomBlock;
 
   const BlockGridSection({
     super.key,
@@ -17,6 +19,8 @@ class BlockGridSection extends StatelessWidget {
     required this.blockInstances,
     required this.isLoading,
     required this.onNewBlockInstanceCreated,
+    this.customBlockIds,
+    this.onDeleteCustomBlock,
   });
 
   @override
@@ -58,6 +62,32 @@ class BlockGridSection extends StatelessWidget {
               ),
             );
           },
+          onLongPress: customBlockIds != null && onDeleteCustomBlock != null
+              ? () async {
+                  final id = customBlockIds![index];
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Delete block?'),
+                      content:
+                          const Text('Are you sure you want to delete this block?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    onDeleteCustomBlock!(id);
+                  }
+                }
+              : null,
           child: Container(
             decoration: BoxDecoration(
               image: DecorationImage(

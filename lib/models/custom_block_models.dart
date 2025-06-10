@@ -3,6 +3,7 @@ class CustomBlock {
   final String name;
   final int numWeeks;
   final int daysPerWeek;
+  final bool isDraft;
   final List<WorkoutDraft> workouts;
 
   CustomBlock({
@@ -11,14 +12,21 @@ class CustomBlock {
     required this.numWeeks,
     required this.daysPerWeek,
     required this.workouts,
+    this.isDraft = false,
   });
 }
 
 class WorkoutDraft {
   int id;
   int dayIndex;
+  String name;
   List<LiftDraft> lifts;
-  WorkoutDraft({required this.id, required this.dayIndex, required this.lifts});
+  WorkoutDraft({
+    required this.id,
+    required this.dayIndex,
+    required this.name,
+    required this.lifts,
+  });
 }
 
 class LiftDraft {
