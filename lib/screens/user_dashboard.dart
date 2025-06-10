@@ -70,7 +70,7 @@ class _UserDashboardState extends State<UserDashboard> {
           .toList();
       customBlockIds = blocks.map<int>((b) => b['id'] as int).toList();
       customBlockImages = blocks
-          .map<String>((b) => b['coverImagePath']?.toString() ?? 'assets/images/flatLogo.jpg')
+          .map<String>((b) => b['coverImagePath']?.toString() ?? 'assets/logo25.jpg')
           .toList();
     });
   }
@@ -574,7 +574,9 @@ class _UserDashboardState extends State<UserDashboard> {
                           context,
                           MaterialPageRoute(
                             builder: (_) => UserStatsScreen(
-                                userId: FirebaseAuth.instance.currentUser!.uid),
+                              userId: FirebaseAuth.instance.currentUser!.uid,
+                              showCheckInGraph: true,
+                            ),
                           ),
                         );
                       },

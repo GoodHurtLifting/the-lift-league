@@ -194,8 +194,10 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      UserStatsScreen(userId: widget.userId),
+                                  builder: (_) => UserStatsScreen(
+                                    userId: widget.userId,
+                                    showCheckInGraph: false,
+                                  ),
                                 ),
                               );
                             }

@@ -119,7 +119,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       name: blockName,
       numWeeks: numWeeks ?? 1,
       daysPerWeek: daysPerWeek ?? 1,
-      coverImagePath: _coverImagePath,
+      coverImagePath: _coverImagePath ?? 'assets/logo25.jpg',
       workouts: workouts,
       isDraft: true,
     );
@@ -161,7 +161,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       name: blockName,
       numWeeks: numWeeks!,
       daysPerWeek: daysPerWeek!,
-      coverImagePath: _coverImagePath,
+      coverImagePath: _coverImagePath ?? 'assets/logo25.jpg',
       workouts: allWorkouts,
       isDraft: false,
     );
@@ -194,9 +194,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               setState(() => _currentStep = 1);
             }
           } else if (_currentStep == 1) {
-            if (_coverImagePath != null) {
-              setState(() => _currentStep = 2);
-            }
+            setState(() => _currentStep = 2);
           } else if (_currentStep == 2) {
             if (numWeeks != null) {
               setState(() => _currentStep = 3);
@@ -249,8 +247,25 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             content: Column(
               children: [
                 if (_coverImageBytes != null)
-                  Image.memory(_coverImageBytes!, height: 120, fit: BoxFit.cover),
-                ElevatedButton(
+                  Image.memory(_coverImageBytes!, height: 120, fit: BoxFit.cover)
+                else
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Opacity(
+                        opacity: 0.5,
+                        child: Image.asset('assets/logo25.jpg', height: 120, fit: BoxFit.cover),
+                      ),
+                      Text(
+                        blockName,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),                ElevatedButton(
                   onPressed: _pickCoverImage,
                   child: Text(_coverImageBytes == null ? 'Select Image' : 'Change Image'),
                 ),
