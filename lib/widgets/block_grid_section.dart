@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/services/db_service.dart';
@@ -11,6 +13,7 @@ class BlockGridSection extends StatelessWidget {
   final Function(String, int) onNewBlockInstanceCreated;
   final List<int>? customBlockIds;
   final void Function(int id)? onDeleteCustomBlock;
+  final bool overlayNames;
 
   const BlockGridSection({
     super.key,
@@ -21,6 +24,7 @@ class BlockGridSection extends StatelessWidget {
     required this.onNewBlockInstanceCreated,
     this.customBlockIds,
     this.onDeleteCustomBlock,
+    this.overlayNames = false,
   });
 
   @override
@@ -88,14 +92,32 @@ class BlockGridSection extends StatelessWidget {
                   }
                 }
               : null,
-          child: Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(workoutImages[index]),
-                fit: BoxFit.cover,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: overlayNames
+                    ? Opacity(
+                        opacity: 0.5,
+                        child: workoutImages[index].startsWith('assets/')
+                            ? Image.asset(workoutImages[index], fit: BoxFit.cover)
+                            : Image.file(File(workoutImages[index]), fit: BoxFit.cover),
+                      )
+                    : workoutImages[index].startsWith('assets/')
+                        ? Image.asset(workoutImages[index], fit: BoxFit.cover)
+                        : Image.file(File(workoutImages[index]), fit: BoxFit.cover),
               ),
-              borderRadius: BorderRadius.circular(8),
-            ),
+              if (overlayNames)
+                Center(
+                  child: Text(
+                    blockName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
           ),
         );
       },

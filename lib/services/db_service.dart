@@ -34,7 +34,7 @@ class DBService {
     return await openDatabase(
       path,
 
-      version: 12,
+      version: 13,
 
       onCreate: (db, version) async {
         await db.execute("PRAGMA foreign_keys = ON;");
@@ -84,6 +84,11 @@ class DBService {
         if (oldVersion < 12) {
           await db.execute(
               "ALTER TABLE custom_blocks ADD COLUMN isDraft INTEGER DEFAULT 0;");
+        }
+
+        if (oldVersion < 13) {
+          await db.execute(
+              "ALTER TABLE custom_blocks ADD COLUMN coverImagePath TEXT;");
         }
 
       },
@@ -235,7 +240,8 @@ class DBService {
         name TEXT,
         numWeeks INTEGER,
         daysPerWeek INTEGER,
-        isDraft INTEGER DEFAULT 0
+        isDraft INTEGER DEFAULT 0,
+        coverImagePath TEXT
       )
     ''');
 
@@ -685,6 +691,7 @@ class DBService {
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
       'isDraft': block.isDraft ? 1 : 0,
+      'coverImagePath': block.coverImagePath,
     });
     for (final workout in block.workouts) {
       await insertWorkoutDraft(workout, blockId);

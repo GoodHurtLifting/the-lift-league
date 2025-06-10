@@ -4,6 +4,7 @@ class CustomBlock {
   final int numWeeks;
   final int daysPerWeek;
   final bool isDraft;
+  final String? coverImagePath;
   final List<WorkoutDraft> workouts;
 
   CustomBlock({
@@ -12,6 +13,7 @@ class CustomBlock {
     required this.numWeeks,
     required this.daysPerWeek,
     required this.workouts,
+    this.coverImagePath,
     this.isDraft = false,
   });
 }
