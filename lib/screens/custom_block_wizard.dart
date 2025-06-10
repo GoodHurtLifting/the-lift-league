@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/services/db_service.dart';

@@ -803,24 +803,39 @@ class DBService {
     }
   }
 
-
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
 // ──────────────────────────────────────────────
+  /// Creates a new block instance for the given [blockName]. If the block does
+  /// not exist in the standard `blocks` table, this will look for a matching
+  /// entry in `custom_blocks` and automatically convert it to a standard block
+  /// (along with its workouts and lifts) before creating the instance.
   Future<int> insertNewBlockInstance(String blockName, String userId) async {
     final db = await database;
 
-    // ✅ Fetch blockId from the `blocks` table
-    final blockData = await db.query(
+// ✅ Fetch blockId from the `blocks` table. If not found, attempt to convert
+    // a custom block with the same name into a standard one.
+    var blockData = await db.query(
       'blocks',
       where: 'blockName = ?',
       whereArgs: [blockName],
       limit: 1,
     );
 
-    if (blockData.isEmpty) throw Exception("❌ Block not found: $blockName");
+    int blockId;
 
-    int blockId = blockData.first['blockId'] as int;
+    if (blockData.isEmpty) {
+      final cleanName = blockName.replaceAll(' (draft)', '');
+      final custom = await db.query('custom_blocks',
+          where: 'name = ?', whereArgs: [cleanName], limit: 1);
+      if (custom.isEmpty) {
+        throw Exception('❌ Block not found: $blockName');
+      }
+      blockId = await createBlockFromCustomBlockId(custom.first['id'] as int);
+      blockName = cleanName;
+    } else {
+      blockId = blockData.first['blockId'] as int;
+    }
 
     // ✅ Insert new block instance with userId
     int newBlockInstanceId = await db.insert('block_instances', {
@@ -831,7 +846,6 @@ class DBService {
       'endDate': null,
       'status': "inactive",
     });
-
 
     return newBlockInstanceId;
   }
@@ -867,8 +881,6 @@ class DBService {
       'activeBlockName': blockName,
     });
   }
-
-
 
 // ──────────────────────────────────────────────
 // 🔄 INSERT WORKOUT INSTANCES FOR A BLOCK INSTANCE
