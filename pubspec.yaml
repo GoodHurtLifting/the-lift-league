@@ -69,7 +69,7 @@ dev_dependencies:
 
 flutter_native_splash:
   color: "#000000"  # black background
-  image: assets/images/flatLogo.jpg  # your image path
+  image: assets/images/pinkAlpha.png  # your image path
   branding_mode: center
   android: true
   ios: true
@@ -80,7 +80,7 @@ flutter_native_splash:
 flutter_icons:
   android: true
   ios: true
-  image_path: assets/images/pinkAlpha.png # replace with your actual image path
+  image_path: assets/images/flatLogo.jpg # replace with your actual image path
 
 # The "flutter_lints" package below contains a set of recommended lints to
 # encourage good coding practices. The lint set provided by the package is

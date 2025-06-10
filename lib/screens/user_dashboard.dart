@@ -622,11 +622,7 @@ class _UserDashboardState extends State<UserDashboard> {
               ],
             ),
           ),
-          const Positioned(
-            top: 10,
-            right: 10,
-            child: CustomBlockButton(),
-          ),
+
         ],
       ),
     );

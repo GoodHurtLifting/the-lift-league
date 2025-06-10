@@ -731,24 +731,113 @@ class DBService {
     await db.delete('custom_blocks', where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Convert a custom block (stored in draft tables) into standard block,
+  /// workout, and lift records. Returns the new `blockId` created in the
+  /// `blocks` table.
+  Future<int> createBlockFromCustomBlockId(int customBlockId) async {
+    final db = await database;
+
+    final cbData = await db.query('custom_blocks',
+        where: 'id = ?', whereArgs: [customBlockId], limit: 1);
+    if (cbData.isEmpty) {
+      throw Exception('Custom block not found: $customBlockId');
+    }
+
+    final cb = cbData.first;
+    final blockName = cb['name']?.toString() ?? 'Custom Block';
+    final daysPerWeek = cb['daysPerWeek'] as int? ?? 3;
+
+    final workoutDrafts = await db.query('workout_drafts',
+        where: 'blockId = ?', whereArgs: [customBlockId], orderBy: 'dayIndex');
+
+    return await db.transaction<int>((txn) async {
+      final workoutIds = <int>[];
+
+      for (final w in workoutDrafts) {
+        final newWorkoutId = await txn.insert('workouts', {
+          'workoutName': w['name'] ?? 'Workout',
+        });
+        workoutIds.add(newWorkoutId);
+
+        final lifts = await txn.query('lift_drafts',
+            where: 'workoutId = ?', whereArgs: [w['id']]);
+
+        for (final l in lifts) {
+          final repScheme =
+              '${l['sets'] ?? 3} sets x ${l['repsPerSet'] ?? 10} reps';
+          final newLiftId = await txn.insert('lifts', {
+            'liftName': l['name'] ?? 'Lift',
+            'repScheme': repScheme,
+            'numSets': l['sets'] ?? 3,
+            'scoreMultiplier': (l['multiplier'] as num?)?.toDouble() ?? 1.0,
+            'isDumbbellLift': 0,
+            'scoreType': (l['isBodyweight'] == 1) ? 'bodyweight' : 'multiplier',
+            'youtubeUrl': '',
+            'description': '',
+            'referenceLiftId': null,
+            'percentOfReference': null,
+          });
+
+          await txn.insert('lift_workouts', {
+            'workoutId': newWorkoutId,
+            'liftId': newLiftId,
+            'numSets': l['sets'] ?? 3,
+          });
+        }
+      }
+
+      final scheduleType = daysPerWeek == 2 ? 'ab_alternate' : 'standard';
+
+      final blockId = await txn.insert('blocks', {
+        'blockName': blockName,
+        'scheduleType': scheduleType,
+        'numWorkouts': workoutIds.length,
+      });
+
+      for (final wid in workoutIds) {
+        await txn.insert('workouts_blocks', {
+          'blockId': blockId,
+          'workoutId': wid,
+        });
+      }
+
+      return blockId;
+    });
+  }
 
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
 // ──────────────────────────────────────────────
+  /// Creates a new block instance for the given [blockName]. If the block does
+  /// not exist in the standard `blocks` table, this will look for a matching
+  /// entry in `custom_blocks` and automatically convert it to a standard block
+  /// (along with its workouts and lifts) before creating the instance.
   Future<int> insertNewBlockInstance(String blockName, String userId) async {
     final db = await database;
 
-    // ✅ Fetch blockId from the `blocks` table
-    final blockData = await db.query(
+// ✅ Fetch blockId from the `blocks` table. If not found, attempt to convert
+    // a custom block with the same name into a standard one.
+    var blockData = await db.query(
       'blocks',
       where: 'blockName = ?',
       whereArgs: [blockName],
       limit: 1,
     );
 
-    if (blockData.isEmpty) throw Exception("❌ Block not found: $blockName");
+    int blockId;
 
-    int blockId = blockData.first['blockId'] as int;
+    if (blockData.isEmpty) {
+      final cleanName = blockName.replaceAll(' (draft)', '');
+      final custom = await db.query('custom_blocks',
+          where: 'name = ?', whereArgs: [cleanName], limit: 1);
+      if (custom.isEmpty) {
+        throw Exception('❌ Block not found: $blockName');
+      }
+      blockId = await createBlockFromCustomBlockId(custom.first['id'] as int);
+      blockName = cleanName;
+    } else {
+      blockId = blockData.first['blockId'] as int;
+    }
 
     // ✅ Insert new block instance with userId
     int newBlockInstanceId = await db.insert('block_instances', {
@@ -795,8 +884,6 @@ class DBService {
       'activeBlockName': blockName,
     });
   }
-
-
 
 // ──────────────────────────────────────────────
 // 🔄 INSERT WORKOUT INSTANCES FOR A BLOCK INSTANCE
