@@ -5,11 +5,17 @@ import 'package:lift_league/services/score_multiplier_service.dart';
 
 class WorkoutBuilder extends StatefulWidget {
   final WorkoutDraft workout;
+  final List<WorkoutDraft> allWorkouts;
+  final int currentIndex;
+  final ValueChanged<int> onSelectWorkout;
   final VoidCallback onComplete;
   final bool isLast;
   const WorkoutBuilder({
     super.key,
     required this.workout,
+    required this.allWorkouts,
+    required this.currentIndex,
+    required this.onSelectWorkout,
     required this.onComplete,
     this.isLast = false,
   });
@@ -136,6 +142,26 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             onChanged: (v) => widget.workout.name = v,
           ),
         ),
+        if (widget.allWorkouts.length > 1)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(widget.allWorkouts.length, (i) {
+                final name = widget.allWorkouts[i].name.isNotEmpty
+                    ? widget.allWorkouts[i].name
+                    : 'Workout ${i + 1}';
+                final selected = i == widget.currentIndex;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: ChoiceChip(
+                    label: Text(name),
+                    selected: selected,
+                    onSelected: (_) => widget.onSelectWorkout(i),
+                  ),
+                );
+              }),
+            ),
+          ),
         Expanded(
           child: ListView.builder(
             itemCount: widget.workout.lifts.length,

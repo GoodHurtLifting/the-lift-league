@@ -731,78 +731,76 @@ class DBService {
     await db.delete('custom_blocks', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// Convert a custom block (stored in draft tables) into standard block,
-  /// workout, and lift records. Returns the new `blockId` created in the
-  /// `blocks` table.
-  Future<int> createBlockFromCustomBlockId(int customBlockId) async {
+  Future<CustomBlock?> getCustomBlock(int id) async {
     final db = await database;
-
-    final cbData = await db.query('custom_blocks',
-        where: 'id = ?', whereArgs: [customBlockId], limit: 1);
-    if (cbData.isEmpty) {
-      throw Exception('Custom block not found: $customBlockId');
+    final blockData = await db.query(
+      'custom_blocks',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    if (blockData.isEmpty) return null;
+    final blockRow = blockData.first;
+    final workoutRows = await db.query(
+      'workout_drafts',
+      where: 'blockId = ?',
+      whereArgs: [id],
+      orderBy: 'dayIndex ASC',
+    );
+    final List<WorkoutDraft> workouts = [];
+    for (final w in workoutRows) {
+      final lifts = await db.query(
+        'lift_drafts',
+        where: 'workoutId = ?',
+        whereArgs: [w['id']],
+      );
+      workouts.add(
+        WorkoutDraft(
+          id: w['id'] as int,
+          dayIndex: w['dayIndex'] as int,
+          name: w['name'] as String? ?? '',
+          lifts: lifts
+              .map((l) => LiftDraft(
+                    name: l['name'] as String,
+                    sets: l['sets'] as int,
+                    repsPerSet: l['repsPerSet'] as int,
+                    multiplier: (l['multiplier'] as num).toDouble(),
+                    isBodyweight: (l['isBodyweight'] as int) == 1,
+                  ))
+              .toList(),
+        ),
+      );
     }
 
-    final cb = cbData.first;
-    final blockName = cb['name']?.toString() ?? 'Custom Block';
-    final daysPerWeek = cb['daysPerWeek'] as int? ?? 3;
+    return CustomBlock(
+      id: blockRow['id'] as int,
+      name: blockRow['name'] as String,
+      numWeeks: blockRow['numWeeks'] as int,
+      daysPerWeek: blockRow['daysPerWeek'] as int,
+      coverImagePath: blockRow['coverImagePath'] as String?,
+      workouts: workouts,
+      isDraft: (blockRow['isDraft'] as int) == 1,
+    );
+  }
 
-    final workoutDrafts = await db.query('workout_drafts',
-        where: 'blockId = ?', whereArgs: [customBlockId], orderBy: 'dayIndex');
-
-    return await db.transaction<int>((txn) async {
-      final workoutIds = <int>[];
-
-      for (final w in workoutDrafts) {
-        final newWorkoutId = await txn.insert('workouts', {
-          'workoutName': w['name'] ?? 'Workout',
-        });
-        workoutIds.add(newWorkoutId);
-
-        final lifts = await txn.query('lift_drafts',
-            where: 'workoutId = ?', whereArgs: [w['id']]);
-
-        for (final l in lifts) {
-          final repScheme =
-              '${l['sets'] ?? 3} sets x ${l['repsPerSet'] ?? 10} reps';
-          final newLiftId = await txn.insert('lifts', {
-            'liftName': l['name'] ?? 'Lift',
-            'repScheme': repScheme,
-            'numSets': l['sets'] ?? 3,
-            'scoreMultiplier': (l['multiplier'] as num?)?.toDouble() ?? 1.0,
-            'isDumbbellLift': 0,
-            'scoreType': (l['isBodyweight'] == 1) ? 'bodyweight' : 'multiplier',
-            'youtubeUrl': '',
-            'description': '',
-            'referenceLiftId': null,
-            'percentOfReference': null,
-          });
-
-          await txn.insert('lift_workouts', {
-            'workoutId': newWorkoutId,
-            'liftId': newLiftId,
-            'numSets': l['sets'] ?? 3,
-          });
-        }
-      }
-
-      final scheduleType = daysPerWeek == 2 ? 'ab_alternate' : 'standard';
-
-      final blockId = await txn.insert('blocks', {
-        'blockName': blockName,
-        'scheduleType': scheduleType,
-        'numWorkouts': workoutIds.length,
-      });
-
-      for (final wid in workoutIds) {
-        await txn.insert('workouts_blocks', {
-          'blockId': blockId,
-          'workoutId': wid,
-        });
-      }
-
-      return blockId;
-    });
+  Future<void> updateCustomBlock(CustomBlock block) async {
+    final db = await database;
+    await db.update(
+      'custom_blocks',
+      {
+        'name': block.name,
+        'numWeeks': block.numWeeks,
+        'daysPerWeek': block.daysPerWeek,
+        'isDraft': block.isDraft ? 1 : 0,
+        'coverImagePath': block.coverImagePath,
+      },
+      where: 'id = ?',
+      whereArgs: [block.id],
+    );
+    await db.delete('workout_drafts', where: 'blockId = ?', whereArgs: [block.id]);
+    for (final w in block.workouts) {
+      await insertWorkoutDraft(w, block.id);
+    }
   }
 
 // ──────────────────────────────────────────────
@@ -848,7 +846,6 @@ class DBService {
       'endDate': null,
       'status': "inactive",
     });
-
 
     return newBlockInstanceId;
   }

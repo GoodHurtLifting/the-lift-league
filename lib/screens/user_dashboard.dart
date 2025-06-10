@@ -79,6 +79,18 @@ class _UserDashboardState extends State<UserDashboard> {
     await _fetchCustomBlocks();
   }
 
+  Future<void> _editCustomBlock(int id) async {
+    final block = await DBService().getCustomBlock(id);
+    if (block == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CustomBlockWizard(initialBlock: block),
+      ),
+    );
+    await _fetchCustomBlocks();
+  }
+
   Future<void> registerForPushNotifications() async {
     // Request permissions on iOS, Android 13+, etc.
     final settings = await FirebaseMessaging.instance.requestPermission(
@@ -604,6 +616,7 @@ class _UserDashboardState extends State<UserDashboard> {
                               });
                             },
                             onDeleteCustomBlock: _deleteCustomBlock,
+                            onEditCustomBlock: _editCustomBlock,
                           ),
                         ],
                         const SizedBox(height: 20),
