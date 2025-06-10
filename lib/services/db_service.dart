@@ -33,7 +33,9 @@ class DBService {
 
     return await openDatabase(
       path,
+
       version: 12,
+
       onCreate: (db, version) async {
         await db.execute("PRAGMA foreign_keys = ON;");
 
@@ -78,10 +80,12 @@ class DBService {
         if (oldVersion < 11) {
           await db.execute("ALTER TABLE workout_drafts ADD COLUMN name TEXT;");
         }
+
         if (oldVersion < 12) {
           await db.execute(
               "ALTER TABLE custom_blocks ADD COLUMN isDraft INTEGER DEFAULT 0;");
         }
+
       },
     );
   }

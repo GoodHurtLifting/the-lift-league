@@ -88,6 +88,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       isDraft: false,
     );
 
+
     await DBService().insertCustomBlock(block);
     if (mounted) Navigator.pop(context);
   }
