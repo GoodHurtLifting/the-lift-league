@@ -100,8 +100,10 @@ class _CheckInGraphState extends State<CheckInGraph> {
     );
   }
 
-  double _mean(List<double> values) =>
-      values.reduce((a, b) => a + b) / values.length;
+  double _mean(List<double> values) {
+    if (values.isEmpty) return 0; // or whatever default you want
+    return values.reduce((a, b) => a + b) / values.length;
+  }
 
   double _std(List<double> values, double mean) {
     final variance =
@@ -254,11 +256,12 @@ class _CheckInGraphState extends State<CheckInGraph> {
                   _graphType == GraphType.dualAxis
                       ? _buildDualAxisChart(data)
                       : _buildUnifiedChart(data),
-                  key: ValueKey(_graphType),
-                  swapAnimationDuration: const Duration(milliseconds: 500),
+                  key: ValueKey(_graphType), // this triggers animation on graph type change
+                  // swapAnimationDuration: const Duration(milliseconds: 500), // REMOVE THIS LINE
                 ),
               ),
             ),
+
             const SizedBox(height: 8),
             Row(
               children: const [
