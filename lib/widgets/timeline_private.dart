@@ -145,6 +145,7 @@ class _TimelinePrivateState extends State<TimelinePrivate> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Add Check-In Button
                       SizedBox(
@@ -226,7 +227,7 @@ class _TimelinePrivateState extends State<TimelinePrivate> {
                       // Toggle B&A Button
                       SizedBox(
                         height: 40,
-                        width: 100,
+                        width: 110,
                         child: ElevatedButton(
                           onPressed: hasEnoughForBA
                               ? () {

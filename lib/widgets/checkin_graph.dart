@@ -18,8 +18,8 @@ class _CheckInGraphState extends State<CheckInGraph> {
     final bodyFat = data['bodyFat']!;
     final bmi = data['bmi']!;
     final allX = [...weight, ...bodyFat, ...bmi].map((e) => e.x).toList();
-    final xMin = allX.isNotEmpty ? allX.reduce(min) : 0;
-    final xMax = allX.isNotEmpty ? allX.reduce(max) : 1;
+    final xMin = allX.isNotEmpty ? allX.reduce(min) : 0.0;
+    final xMax = allX.isNotEmpty ? allX.reduce(max) : 1.0;
 
     // --- 1. Add padding to min/max values ---
     double weightMin = weight.isNotEmpty
@@ -28,21 +28,28 @@ class _CheckInGraphState extends State<CheckInGraph> {
     double weightMax = weight.isNotEmpty
         ? weight.map((e) => e.y).reduce(max)
         : 1;
-    double weightPad = (weightMax - weightMin) * 0.1; // 10% padding
-    if (weightMax == weightMin) weightMax += 1;
-    weightMin -= weightPad;
-    weightMax += weightPad;
 
+    if (weightMax == weightMin) {
+      // Add a dummy range so normalization doesn't divide by zero
+      weightMax = weightMin + 1;
+    }
+
+    weightMin -= 8;
+    weightMax += 8;
+
+// --- Body Fat/BMI ---
     final otherValues = [
       ...bodyFat.map((e) => e.y),
       ...bmi.map((e) => e.y),
     ];
     double otherMin = otherValues.isNotEmpty ? otherValues.reduce(min) : 0;
     double otherMax = otherValues.isNotEmpty ? otherValues.reduce(max) : 1;
-    double otherPad = (otherMax - otherMin) * 0.1;
-    if (otherMax == otherMin) otherMax += 1;
-    otherMin -= otherPad;
-    otherMax += otherPad;
+    if (otherMax == otherMin) {
+      otherMax = otherMin + 1;
+    }
+
+    otherMin -= 6;
+    otherMax += 6;
 
     double weightRange = weightMax - weightMin;
     double otherRange = otherMax - otherMin;
@@ -67,27 +74,6 @@ class _CheckInGraphState extends State<CheckInGraph> {
           return Text(
             real.toStringAsFixed(1),
             style: const TextStyle(fontSize: 10),
-          );
-        },
-      );
-    }
-
-    SideTitles dateTitles() {
-      return SideTitles(
-        showTitles: true,
-        reservedSize: 40,
-        interval: ((xMax - xMin) / 4).clamp(1, double.infinity), // About 4 ticks
-        getTitlesWidget: (value, meta) {
-          final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-          final str = "${date.month.toString().padLeft(2, '0')}/"
-              "${date.day.toString().padLeft(2, '0')}/"
-              "${date.year.toString().substring(2)}";
-          return Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Transform.rotate(
-              angle: -0.6, // diagonal
-              child: Text(str, style: const TextStyle(fontSize: 10)),
-            ),
           );
         },
       );
@@ -127,26 +113,12 @@ class _CheckInGraphState extends State<CheckInGraph> {
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(
           sideTitles: makeTitles(weightMin, weightRange, 'Weight (lbs)'),
-          axisNameWidget: const Padding(
-            padding: EdgeInsets.only(right: 4),
-            child: RotatedBox(
-                quarterTurns: -1,
-                child: Text('Weight (lbs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          ),
-          axisNameSize: 24,
         ),
         rightTitles: AxisTitles(
           sideTitles: makeTitles(otherMin, otherRange, 'Body Fat % / BMI'),
-          axisNameWidget: const Padding(
-            padding: EdgeInsets.only(left: 4),
-            child: RotatedBox(
-                quarterTurns: -1,
-                child: Text('Body Fat % / BMI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          ),
-          axisNameSize: 28,
         ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: dateTitles()), // <-- USE YOUR FUNCTION HERE!
+        bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
 
       gridData: const FlGridData(show: true),
@@ -166,7 +138,6 @@ class _CheckInGraphState extends State<CheckInGraph> {
     final weight = <FlSpot>[];
     final bodyFat = <FlSpot>[];
     final bmi = <FlSpot>[];
-    int i = 0;
     for (final doc in snap.docs) {
       final data = doc.data();
       final w = (data['weight'] as num?)?.toDouble();
