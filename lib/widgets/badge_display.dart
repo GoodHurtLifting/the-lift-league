@@ -193,16 +193,19 @@ class BadgeDisplay extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Opacity(
-                        opacity: earned ? 1.0 : 0.5,
-                        child: Image.asset(
-                          badge['icon'],
-                          height: 60,
-                          fit: BoxFit.fitHeight,
-                          errorBuilder: (_, __, ___) =>
-                          const Icon(Icons.error, size: 40),
+                      SizedBox(
+                        width: 60,
+                        height: 60,
+                        child: Opacity(
+                          opacity: earned ? 1.0 : 0.5,
+                          child: Image.asset(
+                            badge['icon'],
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.error, size: 40),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
