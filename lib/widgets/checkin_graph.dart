@@ -3,8 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 
-enum GraphType { dualAxis, unified }
-
 class CheckInGraph extends StatefulWidget {
   final String userId;
   const CheckInGraph({super.key, required this.userId});
@@ -14,20 +12,26 @@ class CheckInGraph extends StatefulWidget {
 }
 
 class _CheckInGraphState extends State<CheckInGraph> {
-  GraphType _graphType = GraphType.dualAxis;
 
   LineChartData _buildDualAxisChart(Map<String, List<FlSpot>> data) {
     final weight = data['weight']!;
     final bodyFat = data['bodyFat']!;
     final bmi = data['bmi']!;
+    final allX = [...weight, ...bodyFat, ...bmi].map((e) => e.x).toList();
+    final xMin = allX.isNotEmpty ? allX.reduce(min) : 0;
+    final xMax = allX.isNotEmpty ? allX.reduce(max) : 1;
 
+    // --- 1. Add padding to min/max values ---
     double weightMin = weight.isNotEmpty
         ? weight.map((e) => e.y).reduce(min)
         : 0;
     double weightMax = weight.isNotEmpty
         ? weight.map((e) => e.y).reduce(max)
         : 1;
+    double weightPad = (weightMax - weightMin) * 0.1; // 10% padding
     if (weightMax == weightMin) weightMax += 1;
+    weightMin -= weightPad;
+    weightMax += weightPad;
 
     final otherValues = [
       ...bodyFat.map((e) => e.y),
@@ -35,30 +39,56 @@ class _CheckInGraphState extends State<CheckInGraph> {
     ];
     double otherMin = otherValues.isNotEmpty ? otherValues.reduce(min) : 0;
     double otherMax = otherValues.isNotEmpty ? otherValues.reduce(max) : 1;
+    double otherPad = (otherMax - otherMin) * 0.1;
     if (otherMax == otherMin) otherMax += 1;
+    otherMin -= otherPad;
+    otherMax += otherPad;
 
     double weightRange = weightMax - weightMin;
     double otherRange = otherMax - otherMin;
 
-    List<FlSpot> _norm(List<FlSpot> spots, double minVal, double range) {
+    List<FlSpot> norm(List<FlSpot> spots, double minVal, double range) {
       return spots
           .map((s) => FlSpot(s.x, (s.y - minVal) / range))
           .toList();
     }
 
-    final weightNorm = _norm(weight, weightMin, weightRange);
-    final bodyFatNorm = _norm(bodyFat, otherMin, otherRange);
-    final bmiNorm = _norm(bmi, otherMin, otherRange);
+    final weightNorm = norm(weight, weightMin, weightRange);
+    final bodyFatNorm = norm(bodyFat, otherMin, otherRange);
+    final bmiNorm = norm(bmi, otherMin, otherRange);
 
-    SideTitles makeTitles(double minVal, double range) {
+    SideTitles makeTitles(double minVal, double range, String label) {
       return SideTitles(
         showTitles: true,
-        reservedSize: 36,
+        reservedSize: 40,
         interval: 0.25,
         getTitlesWidget: (value, meta) {
           final real = minVal + value * range;
-          return Text(real.toStringAsFixed(0),
-              style: const TextStyle(fontSize: 10));
+          return Text(
+            real.toStringAsFixed(1),
+            style: const TextStyle(fontSize: 10),
+          );
+        },
+      );
+    }
+
+    SideTitles dateTitles() {
+      return SideTitles(
+        showTitles: true,
+        reservedSize: 40,
+        interval: ((xMax - xMin) / 4).clamp(1, double.infinity), // About 4 ticks
+        getTitlesWidget: (value, meta) {
+          final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+          final str = "${date.month.toString().padLeft(2, '0')}/"
+              "${date.day.toString().padLeft(2, '0')}/"
+              "${date.year.toString().substring(2)}";
+          return Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Transform.rotate(
+              angle: -0.6, // diagonal
+              child: Text(str, style: const TextStyle(fontSize: 10)),
+            ),
+          );
         },
       );
     }
@@ -66,6 +96,8 @@ class _CheckInGraphState extends State<CheckInGraph> {
     return LineChartData(
       minY: 0,
       maxY: 1,
+      minX: xMin,
+      maxX: xMax,
       lineBarsData: [
         if (weightNorm.isNotEmpty)
           LineChartBarData(
@@ -73,6 +105,7 @@ class _CheckInGraphState extends State<CheckInGraph> {
             isCurved: false,
             color: Colors.redAccent,
             dotData: FlDotData(show: false),
+            barWidth: 2,
           ),
         if (bodyFatNorm.isNotEmpty)
           LineChartBarData(
@@ -80,6 +113,7 @@ class _CheckInGraphState extends State<CheckInGraph> {
             isCurved: false,
             color: Colors.blueAccent,
             dotData: FlDotData(show: false),
+            barWidth: 2,
           ),
         if (bmiNorm.isNotEmpty)
           LineChartBarData(
@@ -87,88 +121,36 @@ class _CheckInGraphState extends State<CheckInGraph> {
             isCurved: false,
             color: Colors.green,
             dotData: FlDotData(show: false),
+            barWidth: 2,
           ),
       ],
       titlesData: FlTitlesData(
-        leftTitles: AxisTitles(sideTitles: makeTitles(weightMin, weightRange)),
-        rightTitles: AxisTitles(sideTitles: makeTitles(otherMin, otherRange)),
+        leftTitles: AxisTitles(
+          sideTitles: makeTitles(weightMin, weightRange, 'Weight (lbs)'),
+          axisNameWidget: const Padding(
+            padding: EdgeInsets.only(right: 4),
+            child: RotatedBox(
+                quarterTurns: -1,
+                child: Text('Weight (lbs)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+          ),
+          axisNameSize: 24,
+        ),
+        rightTitles: AxisTitles(
+          sideTitles: makeTitles(otherMin, otherRange, 'Body Fat % / BMI'),
+          axisNameWidget: const Padding(
+            padding: EdgeInsets.only(left: 4),
+            child: RotatedBox(
+                quarterTurns: -1,
+                child: Text('Body Fat % / BMI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+          ),
+          axisNameSize: 28,
+        ),
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: AxisTitles(sideTitles: dateTitles()), // <-- USE YOUR FUNCTION HERE!
       ),
+
       gridData: const FlGridData(show: true),
-      borderData: FlBorderData(show: false),
-    );
-  }
-
-  double _mean(List<double> values) {
-    if (values.isEmpty) return 0; // or whatever default you want
-    return values.reduce((a, b) => a + b) / values.length;
-  }
-
-  double _std(List<double> values, double mean) {
-    final variance =
-        values.map((v) => pow(v - mean, 2)).reduce((a, b) => a + b) /
-            values.length;
-    return sqrt(variance);
-  }
-
-  LineChartData _buildUnifiedChart(Map<String, List<FlSpot>> data) {
-    Map<String, List<double>> raw = {
-      for (var key in data.keys) key: data[key]!.map((e) => e.y).toList(),
-    };
-
-    Map<String, double> means = {
-      for (var key in raw.keys) key: _mean(raw[key]!)
-    };
-    Map<String, double> stds = {
-      for (var key in raw.keys)
-        key: max(0.0001, _std(raw[key]!, means[key]!))
-    };
-
-    Map<String, List<FlSpot>> zSpots = {};
-    for (var key in data.keys) {
-      zSpots[key] = [
-        for (var s in data[key]!)
-          FlSpot(s.x, (s.y - means[key]!) / stds[key]!)
-      ];
-    }
-
-    final allValues = zSpots.values.expand((l) => l.map((e) => e.y));
-    double minY = allValues.isNotEmpty ? allValues.reduce(min) : -1;
-    double maxY = allValues.isNotEmpty ? allValues.reduce(max) : 1;
-    if (minY == maxY) {
-      maxY = minY + 1;
-    }
-
-    return LineChartData(
-      minY: minY,
-      maxY: maxY,
-      lineBarsData: [
-        if (zSpots['weight']!.isNotEmpty)
-          LineChartBarData(
-            spots: zSpots['weight']!,
-            isCurved: false,
-            color: Colors.redAccent,
-            dotData: FlDotData(show: false),
-          ),
-        if (zSpots['bodyFat']!.isNotEmpty)
-          LineChartBarData(
-            spots: zSpots['bodyFat']!,
-            isCurved: false,
-            color: Colors.blueAccent,
-            dotData: FlDotData(show: false),
-          ),
-        if (zSpots['bmi']!.isNotEmpty)
-          LineChartBarData(
-            spots: zSpots['bmi']!,
-            isCurved: false,
-            color: Colors.green,
-            dotData: FlDotData(show: false),
-          ),
-      ],
-      titlesData: const FlTitlesData(),
-      gridData: const FlGridData(show: true),
-      borderData: FlBorderData(show: false),
+      borderData: FlBorderData(show: true),
     );
   }
 
@@ -190,10 +172,12 @@ class _CheckInGraphState extends State<CheckInGraph> {
       final w = (data['weight'] as num?)?.toDouble();
       final bf = (data['bodyFat'] as num?)?.toDouble();
       final b = (data['bmi'] as num?)?.toDouble();
-      if (w != null) weight.add(FlSpot(i.toDouble(), w));
-      if (bf != null) bodyFat.add(FlSpot(i.toDouble(), bf));
-      if (b != null) bmi.add(FlSpot(i.toDouble(), b));
-      i++;
+      final ts = (data['timestamp'] as Timestamp?)?.toDate();
+      if (ts == null) continue;
+      final x = ts.millisecondsSinceEpoch.toDouble();
+      if (w != null) weight.add(FlSpot(x, w.toDouble()));
+      if (bf != null) bodyFat.add(FlSpot(x, bf.toDouble()));
+      if (b != null) bmi.add(FlSpot(x, b.toDouble()));
     }
     return {'weight': weight, 'bodyFat': bodyFat, 'bmi': bmi};
   }
@@ -216,48 +200,15 @@ class _CheckInGraphState extends State<CheckInGraph> {
             const Text('Check-In Progress',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    setState(() => _graphType = GraphType.dualAxis);
-                  },
-                  child: Text(
-                    'Dual Axis',
-                    style: TextStyle(
-                      fontWeight: _graphType == GraphType.dualAxis
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    setState(() => _graphType = GraphType.unified);
-                  },
-                  child: Text(
-                    'Unified',
-                    style: TextStyle(
-                      fontWeight: _graphType == GraphType.unified
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+
             const SizedBox(height: 12),
             SizedBox(
               height: 200,
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 500),
                 child: LineChart(
-                  _graphType == GraphType.dualAxis
-                      ? _buildDualAxisChart(data)
-                      : _buildUnifiedChart(data),
-                  key: ValueKey(_graphType), // this triggers animation on graph type change
-                  // swapAnimationDuration: const Duration(milliseconds: 500), // REMOVE THIS LINE
+                    _buildDualAxisChart(data),
+                    key: const ValueKey('dualAxis'),
                 ),
               ),
             ),
