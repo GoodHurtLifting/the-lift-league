@@ -63,10 +63,12 @@ class _UserDashboardState extends State<UserDashboard> {
   Future<void> _fetchCustomBlocks() async {
     final db = DBService();
     final blocks = await db.getCustomBlocks(includeDrafts: true);
+    if (!mounted) return;
     setState(() {
       customBlockNames = blocks
-          .map((b) =>
-              b['isDraft'] == 1 ? "${b['name']} (draft)" : b['name'].toString())
+          .map((b) => b['isDraft'] == 1
+          ? "${b['name']} (draft)"
+          : b['name'].toString())
           .toList();
       customBlockIds = blocks.map<int>((b) => b['id'] as int).toList();
       customBlockImages = blocks
@@ -134,6 +136,7 @@ class _UserDashboardState extends State<UserDashboard> {
       final int completed = data['blocksCompleted'] ?? 0;
       final String? url = data['profileImageUrl'];
 
+      if (!mounted) return;
       setState(() {
         displayName = data['displayName'] ?? 'New Lifter';
         blocksCompleted = completed;
@@ -204,6 +207,7 @@ class _UserDashboardState extends State<UserDashboard> {
         'profileImageUrl': downloadUrl,
       });
 
+      if (!mounted) return;
       setState(() {
         profileImageUrl = downloadUrl;
       });
@@ -254,6 +258,7 @@ class _UserDashboardState extends State<UserDashboard> {
       }
     }
 
+    if (!mounted) return;
     setState(() {
       blockInstances = tempBlockInstances;
       isBlockLoading = false;
@@ -296,6 +301,7 @@ class _UserDashboardState extends State<UserDashboard> {
     final lbs = await _userStatsService.getTotalLbsLifted(user.uid);
     final blocks = await _userStatsService.getTotalCompletedBlocks(user.uid);
 
+    if (!mounted) return;
     setState(() {
       totalLbsLifted = lbs;
       blocksCompleted = blocks;
@@ -333,6 +339,7 @@ class _UserDashboardState extends State<UserDashboard> {
                         .update({
                       'displayName': newName,
                     });
+                    if (!mounted) return;
                     setState(() {
                       displayName = newName;
                     });

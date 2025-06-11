@@ -124,7 +124,7 @@ class _TimelinePrivateState extends State<TimelinePrivate> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   child: Text("Timeline",
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -143,101 +143,105 @@ class _TimelinePrivateState extends State<TimelinePrivate> {
                   ),
                 Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 1, vertical: 8),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Add Check-In Button
-                      SizedBox(
-                        height: 40,
-                        width: 110,
-                        child: ElevatedButton(
-                          onPressed: (canUpload && !_hasUploadedThisSession)
-                              ? () async {
-                                  final result = await Navigator.pushNamed(
-                                      context, '/addCheckIn');
-                                  if (result == true) {
-                                    setState(() {
-                                      _hasUploadedThisSession = true;
-                                      _showSeeYouMessage = true;
-                                    });
-                                    widget.onCheckInUploaded?.call();
+                      Expanded(
+                        child: SizedBox(
+                          height: 40,
+                          child: ElevatedButton(
+                            onPressed: (canUpload && !_hasUploadedThisSession)
+                                ? () async {
+                                    final result = await Navigator.pushNamed(
+                                        context, '/addCheckIn');
+                                    if (result == true) {
+                                      setState(() {
+                                        _hasUploadedThisSession = true;
+                                        _showSeeYouMessage = true;
+                                      });
+                                      widget.onCheckInUploaded?.call();
+                                    }
                                   }
-                                }
-                              : null,
-                          child: const Text("Check-In"),
+                                : null,
+                            child: const Text("Check-In"),
+                          ),
                         ),
                       ),
 
                       const SizedBox(width: 10),
 
                       // Drop Clink Button
-                      SizedBox(
-                        height: 40,
-                        width: 110,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            final result = await showGeneralDialog(
-                              context: context,
-                              barrierDismissible: true,
-                              barrierLabel: 'Clink Composer',
-                              barrierColor: Colors.black.withOpacity(0.8),
-                              transitionDuration:
-                                  const Duration(milliseconds: 300),
-                              pageBuilder:
-                                  (context, animation, secondaryAnimation) {
-                                return Align(
-                                  alignment: Alignment.topCenter,
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      top: 16,
-                                      left: 16,
-                                      right: 16,
-                                      bottom: MediaQuery.of(context)
-                                              .viewInsets
-                                              .bottom +
-                                          16,
+                      Expanded(
+                        child: SizedBox(
+                          height: 40,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final result = await showGeneralDialog(
+                                context: context,
+                                barrierDismissible: true,
+                                barrierLabel: 'Clink Composer',
+                                barrierColor: Colors.black.withOpacity(0.8),
+                                transitionDuration:
+                                    const Duration(milliseconds: 300),
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) {
+                                  return Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        top: 16,
+                                        left: 16,
+                                        right: 16,
+                                        bottom: MediaQuery.of(context)
+                                                .viewInsets
+                                                .bottom +
+                                            16,
+                                      ),
+                                      child: const ClinkComposer(),
                                     ),
-                                    child: const ClinkComposer(),
-                                  ),
-                                );
-                              },
-                              transitionBuilder: (context, animation,
-                                  secondaryAnimation, child) {
-                                final offsetAnimation = Tween<Offset>(
-                                  begin: const Offset(0, -1),
-                                  end: Offset.zero,
-                                ).animate(CurvedAnimation(
-                                    parent: animation, curve: Curves.easeOut));
+                                  );
+                                },
+                                transitionBuilder: (context, animation,
+                                    secondaryAnimation, child) {
+                                  final offsetAnimation = Tween<Offset>(
+                                    begin: const Offset(0, -1),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOut));
 
-                                return SlideTransition(
-                                    position: offsetAnimation, child: child);
-                              },
-                            );
-                            if (result == true) {
-                              setState(() {}); // 🔁 refresh timeline
-                            }
-                          },
-                          child: const Text("Clink"),
+                                  return SlideTransition(
+                                      position: offsetAnimation, child: child);
+                                },
+                              );
+                              if (result == true) {
+                                setState(() {}); // 🔁 refresh timeline
+                              }
+                            },
+                            child: const Text("Clink"),
+                          ),
                         ),
                       ),
 
                       const SizedBox(width: 10),
 
                       // Toggle B&A Button
-                      SizedBox(
-                        height: 40,
-                        width: 110,
-                        child: ElevatedButton(
-                          onPressed: hasEnoughForBA
-                              ? () {
-                                  setState(
-                                      () => showBeforeAfter = !showBeforeAfter);
-                                }
-                              : null,
-                          child: Text(
-                            showBeforeAfter ? "Timeline" : "B&A",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                      Expanded(
+                        child: SizedBox(
+                          height: 40,
+                          child: ElevatedButton(
+                            onPressed: hasEnoughForBA
+                                ? () {
+                                    setState(() =>
+                                        showBeforeAfter = !showBeforeAfter);
+                                  }
+                                : null,
+                            child: Text(
+                              showBeforeAfter ? "Timeline" : "B&A",
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ),
