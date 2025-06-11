@@ -170,7 +170,7 @@ class _CheckInGraphState extends State<CheckInGraph> {
           children: [
             const Text('Check-In Progress',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+
 
             const SizedBox(height: 12),
             SizedBox(
@@ -184,7 +184,7 @@ class _CheckInGraphState extends State<CheckInGraph> {
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Row(
               children: const [
                 _Legend(color: Colors.redAccent, label: 'Weight'),
