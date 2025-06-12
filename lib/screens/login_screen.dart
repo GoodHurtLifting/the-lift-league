@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-/*
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-*/
 import 'package:lift_league/data/titles_data.dart';
 import 'user_dashboard.dart';
 
@@ -115,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = false);
   }
 
-  /*Future<void> _signInWithApple() async {
+  Future<void> _signInWithApple() async {
     setState(() => isLoading = true);
     try {
       final appleCred = await SignInWithApple.getAppleIDCredential(
@@ -153,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
     setState(() => isLoading = false);
-  }*/
+  }
 
 
   bool _validateInputs() {

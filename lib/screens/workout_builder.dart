@@ -55,7 +55,11 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     showModalBottomSheet(
       context: context,
       builder: (ctx) {
-        final liftNames = liftDataList.map((e) => e['liftName'] as String).toList();
+        final liftNames = liftDataList
+            .map((e) => e['liftName'] as String)
+            .toSet()
+            .toList()
+          ..sort();
         return Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
