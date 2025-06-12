@@ -2,17 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
-        <key>FirebaseAppDelegateProxyEnabled</key>
-        <false/>
-        <key>NSAppleIDUsageDescription</key>
-        <string>We use your Apple ID to let you sign in securely.</string>
-        <key>UIBackgroundModes</key>
-        <array>
-          <string>fetch</string>
-          <string>remote-notification</string>
-        </array>
-        <key>NSUserNotificationAlertStyle</key>
-        <string>Alert</string>
+		<key>FirebaseAppDelegateProxyEnabled</key>
+		<false/>
+		<key>NSAppleIDUsageDescription</key>
+		<string>We use your Apple ID to let you sign in securely.</string>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
+		<key>NSUserNotificationAlertStyle</key>
+		<string>Alert</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Sign in securely with your Apple ID.</string>
 		<key>CFBundleDevelopmentRegion</key>
@@ -58,18 +58,18 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
-		        <key>UIStatusBarHidden</key>
-                <true/>
-                <key>CFBundleURLTypes</key>
-                <array>
-                        <dict>
-                                <key>CFBundleTypeRole</key>
-                                <string>Editor</string>
-                                <key>CFBundleURLSchemes</key>
-                                <array>
-                                        <string>com.googleusercontent.apps.997251967762-s39ng00ochh7bu3q9l2fi2puuucprpq9</string>
-                                </array>
-                        </dict>
-                </array>
-        </dict>
+		<key>UIStatusBarHidden</key>
+		<false/>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.997251967762-s39ng00ochh7bu3q9l2fi2puuucprpq9</string>
+				</array>
+			</dict>
+		</array>
+	</dict>
 </plist>

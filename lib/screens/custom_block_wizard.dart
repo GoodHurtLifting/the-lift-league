@@ -42,9 +42,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       // Only include the first instance of each workout when editing.
       // This allows the user to edit one week and have the changes
       // applied across all repeated weeks when the block is saved.
-      final firstWeekWorkouts = block.workouts
-          .where((w) => w.dayIndex < block.daysPerWeek)
-          .toList();
+      final firstWeekWorkouts =
+          block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
 
       workouts = firstWeekWorkouts
           .map((w) => WorkoutDraft(
@@ -123,7 +122,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     if (workouts.isEmpty && (daysPerWeek ?? 0) > 0) {
       _createDrafts();
     }
-    final int id = widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
+    final int id =
+        widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
     final block = CustomBlock(
       id: id,
       name: blockName,
@@ -165,7 +165,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       }
     }
 
-    final int id = widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
+    final int id =
+        widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
     final block = CustomBlock(
       id: id,
       name: blockName,
@@ -183,9 +184,12 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     await _uploadBlockToFirestore(block);
     if (mounted) Navigator.pop(context);
   }
+
   Future<void> _uploadBlockToFirestore(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+
+    if (block.isDraft) return;
 
     String? imageUrl;
     if (block.coverImagePath != null &&
@@ -195,41 +199,50 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         final fileName =
             '${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final ref =
-        FirebaseStorage.instance.ref().child('block_covers/$fileName');
+            FirebaseStorage.instance.ref().child('block_covers/$fileName');
         final task = await ref.putFile(file);
         imageUrl = await task.ref.getDownloadURL();
       }
     }
     imageUrl ??= block.coverImagePath;
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('custom_blocks')
-        .doc(block.id.toString())
-        .set({
+    final blockData = {
       'name': block.name,
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
       'isDraft': block.isDraft,
       'coverImageUrl': imageUrl,
+      'ownerId': user.uid,
       'workouts': block.workouts
           .map((w) => {
-        'id': w.id,
-        'dayIndex': w.dayIndex,
-        'name': w.name,
-        'lifts': w.lifts
-            .map((l) => {
-          'name': l.name,
-          'sets': l.sets,
-          'repsPerSet': l.repsPerSet,
-          'multiplier': l.multiplier,
-          'isBodyweight': l.isBodyweight,
-        })
-            .toList(),
-      })
+                'id': w.id,
+                'dayIndex': w.dayIndex,
+                'name': w.name,
+                'lifts': w.lifts
+                    .map((l) => {
+                          'name': l.name,
+                          'sets': l.sets,
+                          'repsPerSet': l.repsPerSet,
+                          'multiplier': l.multiplier,
+                          'isBodyweight': l.isBodyweight,
+                        })
+                    .toList(),
+              })
           .toList(),
-    });
+    };
+    // Save to user's personal collection (for backwards compatibility)
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('custom_blocks')
+        .doc(block.id.toString())
+        .set(blockData);
+
+    // Save to global collection for sharing
+    await FirebaseFirestore.instance
+        .collection('custom_blocks')
+        .doc(block.id.toString())
+        .set(blockData);
   }
 
   @override
@@ -306,14 +319,16 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             content: Column(
               children: [
                 if (_coverImageBytes != null)
-                  Image.memory(_coverImageBytes!, height: 120, fit: BoxFit.cover)
+                  Image.memory(_coverImageBytes!,
+                      height: 120, fit: BoxFit.cover)
                 else
                   Stack(
                     alignment: Alignment.center,
                     children: [
                       Opacity(
                         opacity: 0.5,
-                        child: Image.asset('assets/logo25.jpg', height: 120, fit: BoxFit.cover),
+                        child: Image.asset('assets/logo25.jpg',
+                            height: 120, fit: BoxFit.cover),
                       ),
                       Text(
                         blockName,
@@ -324,9 +339,12 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                         ),
                       ),
                     ],
-                  ),                ElevatedButton(
+                  ),
+                ElevatedButton(
                   onPressed: _pickCoverImage,
-                  child: Text(_coverImageBytes == null ? 'Select Image' : 'Change Image'),
+                  child: Text(_coverImageBytes == null
+                      ? 'Select Image'
+                      : 'Change Image'),
                 ),
               ],
             ),

@@ -78,13 +78,16 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
 
   Future<void> _fetchPublicBlocks() async {
     final snap = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
         .collection('custom_blocks')
+        .where('ownerId', isEqualTo: widget.userId)
         .where('isDraft', isEqualTo: false)
         .get();
     setState(() {
-      _publicBlocks = snap.docs.map((d) => d.data()).toList();
+      _publicBlocks = snap.docs.map((d) {
+        final data = d.data();
+        data['id'] = d.id;
+        return data;
+      }).toList();
       _publicBlockNames =
           _publicBlocks.map((b) => b['name']?.toString() ?? '').toList();
       _publicBlockImages = _publicBlocks
@@ -98,6 +101,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final data = _publicBlocks[index];
     final block = CustomBlock.fromMap(data);
     await DBService().insertCustomBlock(block);
+
+    final user = FirebaseAuth.instance.currentUser;
+    final blockId = data['id']?.toString();
+    if (user != null && blockId != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('customBlockRefs')
+          .doc(blockId)
+          .set({'addedAt': FieldValue.serverTimestamp()});
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Block added to your custom blocks')),
