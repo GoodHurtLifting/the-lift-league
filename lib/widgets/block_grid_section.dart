@@ -47,7 +47,17 @@ class BlockGridSection extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         String blockName = blockNames[index];
-        int? blockInstanceId = blockInstances[blockName];
+        final cleanName = blockName.replaceAll(' (draft)', '');
+        int? blockInstanceId =
+            blockInstances[blockName] ?? blockInstances[cleanName];
+        final path = workoutImages[index];
+        final isAsset = path.startsWith('assets/');
+        final isNetwork = path.startsWith('http');
+        final imageWidget = isAsset
+            ? Image.asset(path, fit: BoxFit.cover)
+            : isNetwork
+                ? Image.network(path, fit: BoxFit.cover)
+                : Image.file(File(path), fit: BoxFit.cover);
 
         return GestureDetector(
           onTap: () async {
@@ -57,7 +67,7 @@ class BlockGridSection extends StatelessWidget {
 
             if (blockInstanceId == null) {
               int newId = await db.insertNewBlockInstance(blockName, user.uid);
-              onNewBlockInstanceCreated(blockName, newId);
+              onNewBlockInstanceCreated(cleanName, newId);
               blockInstanceId = newId;
             }
 
@@ -131,16 +141,9 @@ class BlockGridSection extends StatelessWidget {
                   child: overlayNames
                       ? Opacity(
                           opacity: 0.5,
-                          child: workoutImages[index].startsWith('assets/')
-                              ? Image.asset(workoutImages[index],
-                                  fit: BoxFit.cover)
-                              : Image.file(File(workoutImages[index]),
-                                  fit: BoxFit.cover),
+                          child: imageWidget,
                         )
-                      : workoutImages[index].startsWith('assets/')
-                          ? Image.asset(workoutImages[index], fit: BoxFit.cover)
-                          : Image.file(File(workoutImages[index]),
-                              fit: BoxFit.cover),
+                      : imageWidget,
                 ),
                 if (overlayNames)
                   Center(
