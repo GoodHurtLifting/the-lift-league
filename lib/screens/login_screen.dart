@@ -78,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
+
         setState(() => isLoading = false);
         return;
       }

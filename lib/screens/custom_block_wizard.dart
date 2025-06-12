@@ -5,6 +5,9 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/screens/workout_builder.dart';
@@ -170,7 +173,56 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     } else {
       await DBService().insertCustomBlock(block);
     }
+    await _uploadBlockToFirestore(block);
     if (mounted) Navigator.pop(context);
+  }
+  Future<void> _uploadBlockToFirestore(CustomBlock block) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    String? imageUrl;
+    if (block.coverImagePath != null &&
+        !block.coverImagePath!.startsWith('assets/')) {
+      final file = File(block.coverImagePath!);
+      if (await file.exists()) {
+        final fileName =
+            '${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final ref =
+        FirebaseStorage.instance.ref().child('block_covers/$fileName');
+        final task = await ref.putFile(file);
+        imageUrl = await task.ref.getDownloadURL();
+      }
+    }
+    imageUrl ??= block.coverImagePath;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('custom_blocks')
+        .doc(block.id.toString())
+        .set({
+      'name': block.name,
+      'numWeeks': block.numWeeks,
+      'daysPerWeek': block.daysPerWeek,
+      'isDraft': block.isDraft,
+      'coverImageUrl': imageUrl,
+      'workouts': block.workouts
+          .map((w) => {
+        'id': w.id,
+        'dayIndex': w.dayIndex,
+        'name': w.name,
+        'lifts': w.lifts
+            .map((l) => {
+          'name': l.name,
+          'sets': l.sets,
+          'repsPerSet': l.repsPerSet,
+          'multiplier': l.multiplier,
+          'isBodyweight': l.isBodyweight,
+        })
+            .toList(),
+      })
+          .toList(),
+    });
   }
 
   @override

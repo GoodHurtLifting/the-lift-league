@@ -4,6 +4,8 @@
 	<dict>
         <key>FirebaseAppDelegateProxyEnabled</key>
         <false/>
+        <key>NSAppleIDUsageDescription</key>
+        <string>We use your Apple ID to let you sign in securely.</string>
         <key>UIBackgroundModes</key>
         <array>
           <string>fetch</string>
@@ -12,7 +14,7 @@
         <key>NSUserNotificationAlertStyle</key>
         <string>Alert</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>We need access to your photo library to upload your profile picture.</string>
+		<string>Sign in securely with your Apple ID.</string>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
