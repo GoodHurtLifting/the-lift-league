@@ -5,6 +5,9 @@ import 'user_stats_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_screen.dart';
 import 'package:lift_league/services/user_follow_service.dart';
+import 'package:lift_league/services/db_service.dart';
+import 'package:lift_league/models/custom_block_models.dart';
+import 'package:lift_league/widgets/public_custom_block_grid.dart';
 
 class PublicProfileScreen extends StatefulWidget {
   final String userId;
@@ -19,6 +22,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   bool isLoading = true;
   String? bannerImagePath;
   String? _actionLabel;
+  List<Map<String, dynamic>> _publicBlocks = [];
+  List<String> _publicBlockImages = [];
+  List<String> _publicBlockNames = [];
 
   final Map<String, String> blockBannerImages = {
     "Push Pull Legs": 'assets/images/PushPullLegs.jpg',
@@ -66,6 +72,37 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
       userData = data;
       isLoading = false;
     });
+
+    await _fetchPublicBlocks();
+  }
+
+  Future<void> _fetchPublicBlocks() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .collection('custom_blocks')
+        .where('isDraft', isEqualTo: false)
+        .get();
+    setState(() {
+      _publicBlocks = snap.docs.map((d) => d.data()).toList();
+      _publicBlockNames =
+          _publicBlocks.map((b) => b['name']?.toString() ?? '').toList();
+      _publicBlockImages = _publicBlocks
+          .map((b) => b['coverImageUrl']?.toString() ?? 'assets/logo25.jpg')
+          .toList();
+    });
+  }
+
+  Future<void> _addPublicBlock(int index) async {
+    if (index < 0 || index >= _publicBlocks.length) return;
+    final data = _publicBlocks[index];
+    final block = CustomBlock.fromMap(data);
+    await DBService().insertCustomBlock(block);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Block added to your custom blocks')),
+      );
+    }
   }
 
   @override
@@ -275,6 +312,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               },
             ),
             const SizedBox(height: 20),
+            if (_publicBlocks.isNotEmpty) ...[
+              PublicCustomBlockGrid(
+                images: _publicBlockImages,
+                names: _publicBlockNames,
+                onAdd: (i) => _addPublicBlock(i),
+              ),
+              const SizedBox(height: 20),
+            ],
             if (showTimeline)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: .2),

@@ -56,7 +56,18 @@
 		<true/>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
-		<key>UIStatusBarHidden</key>
-		<true/>
-	</dict>
+		        <key>UIStatusBarHidden</key>
+                <true/>
+                <key>CFBundleURLTypes</key>
+                <array>
+                        <dict>
+                                <key>CFBundleTypeRole</key>
+                                <string>Editor</string>
+                                <key>CFBundleURLSchemes</key>
+                                <array>
+                                        <string>com.googleusercontent.apps.997251967762-s39ng00ochh7bu3q9l2fi2puuucprpq9</string>
+                                </array>
+                        </dict>
+                </array>
+        </dict>
 </plist>

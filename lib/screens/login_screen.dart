@@ -251,11 +251,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _signInWithGoogle,
                       child: const Text('Sign in with Google'),
                     ),
-                    /*const SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     ElevatedButton(
                       onPressed: _signInWithApple,
                       child: const Text('Sign in with Apple'),
-                    ),*/
+                    ),
                   ],
                 ),
               ],
