@@ -43,8 +43,7 @@ class TimelineClinkCard extends StatelessWidget {
       children: urls.map((url) {
         final isAsset = url.startsWith('assets/');
         final image = isAsset ? Image.asset(url) : Image.network(url);
-        return Flexible(
-          flex: 1,
+        return Expanded(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: spacing / 2),
             child: AspectRatio(

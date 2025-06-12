@@ -66,13 +66,13 @@ class _UserDashboardState extends State<UserDashboard> {
     if (!mounted) return;
     setState(() {
       customBlockNames = blocks
-          .map((b) => b['isDraft'] == 1
-          ? "${b['name']} (draft)"
-          : b['name'].toString())
+          .map((b) =>
+              b['isDraft'] == 1 ? "${b['name']} (draft)" : b['name'].toString())
           .toList();
       customBlockIds = blocks.map<int>((b) => b['id'] as int).toList();
       customBlockImages = blocks
-          .map<String>((b) => b['coverImagePath']?.toString() ?? 'assets/logo25.jpg')
+          .map<String>(
+              (b) => b['coverImagePath']?.toString() ?? 'assets/logo25.jpg')
           .toList();
     });
   }
@@ -299,19 +299,27 @@ class _UserDashboardState extends State<UserDashboard> {
     if (user == null) return;
 
     final lbs = await _userStatsService.getTotalLbsLifted(user.uid);
+    if (!mounted) return;
     final blocks = await _userStatsService.getTotalCompletedBlocks(user.uid);
 
     if (!mounted) return;
-    setState(() {
-      totalLbsLifted = lbs;
-      blocksCompleted = blocks;
-    });
+    if (mounted) {
+      setState(() {
+        totalLbsLifted = lbs;
+        blocksCompleted = blocks;
+      });
+    }
 
-    // ✅ Sync to Firestore
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-      'totalLbsLifted': lbs,
-      'blocksCompleted': blocks,
-    });
+    if (mounted) {
+      // ✅ Sync to Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
+        'totalLbsLifted': lbs,
+        'blocksCompleted': blocks,
+      });
+    }
   }
 
   void _showEditDisplayNameDialog() {
@@ -369,6 +377,12 @@ class _UserDashboardState extends State<UserDashboard> {
     if (mounted && result != hasUnread) {
       setState(() => hasUnread = result);
     }
+  }
+
+  @override
+  void dispose() {
+    TitleObserverService.stopObserving();
+    super.dispose();
   }
 
   @override
@@ -645,7 +659,6 @@ class _UserDashboardState extends State<UserDashboard> {
               ],
             ),
           ),
-
         ],
       ),
     );

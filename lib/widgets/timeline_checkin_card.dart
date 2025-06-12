@@ -50,8 +50,7 @@ class TimelineCheckinCard extends StatelessWidget {
               ? MainAxisAlignment.spaceEvenly
               : MainAxisAlignment.spaceBetween,
       children: imageUrls.map((url) {
-        return Flexible(
-          flex: 1,
+        return Expanded(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: spacing / 2),
             child: AspectRatio(

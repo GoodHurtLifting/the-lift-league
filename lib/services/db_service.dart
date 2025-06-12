@@ -33,9 +33,7 @@ class DBService {
 
     return await openDatabase(
       path,
-
       version: 13,
-
       onCreate: (db, version) async {
         await db.execute("PRAGMA foreign_keys = ON;");
 
@@ -44,8 +42,10 @@ class DBService {
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 9) {
-          await db.execute("ALTER TABLE workout_instances ADD COLUMN blockName TEXT;");
-          await db.execute("ALTER TABLE workout_instances ADD COLUMN week INTEGER;");
+          await db.execute(
+              "ALTER TABLE workout_instances ADD COLUMN blockName TEXT;");
+          await db.execute(
+              "ALTER TABLE workout_instances ADD COLUMN week INTEGER;");
         }
         if (oldVersion < 10) {
           await db.execute('''
@@ -90,7 +90,6 @@ class DBService {
           await db.execute(
               "ALTER TABLE custom_blocks ADD COLUMN coverImagePath TEXT;");
         }
-
       },
     );
   }
@@ -221,7 +220,7 @@ class DBService {
       )
     ''');
 
-      await db.execute('''
+    await db.execute('''
       CREATE TABLE IF NOT EXISTS block_totals (
         blockInstanceId INTEGER PRIMARY KEY,
         userId TEXT,
@@ -267,8 +266,6 @@ class DBService {
         FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
       )
     ''');
-
-
   }
 
   // ──────────────────────────────────────────────
@@ -301,7 +298,8 @@ class DBService {
             'youtubeUrl': lift['youtubeUrl'] ?? '',
             'description': lift['description'] ?? '',
             'referenceLiftId': lift['referenceLiftId'],
-            'percentOfReference': (lift['percentOfReference'] as num?)?.toDouble(),
+            'percentOfReference':
+                (lift['percentOfReference'] as num?)?.toDouble(),
           };
 
           await txn.insert(
@@ -310,7 +308,8 @@ class DBService {
             conflictAlgorithm: ConflictAlgorithm.ignore,
           );
         } catch (e) {
-          print("❌ ERROR inserting liftId ${lift['liftId']} (${lift['liftName']}): $e");
+          print(
+              "❌ ERROR inserting liftId ${lift['liftId']} (${lift['liftName']}): $e");
         }
       }
     });
@@ -352,8 +351,6 @@ class DBService {
     await _initDatabase();
   }
 
-
-
   // ──────────────────────────────────────────────
 // 🔍 FETCH ALL BLOCKS FROM BLOCKS TABLE
 // ──────────────────────────────────────────────
@@ -376,11 +373,11 @@ class DBService {
   ''', [userId]);
   }
 
-
   // ──────────────────────────────────────────────
 // 🔍 FETCH LIFT ENTRIES FOR A WORKOUT INSTANCE
 // ──────────────────────────────────────────────
-  Future<List<Map<String, dynamic>>> getLiftEntries(int workoutInstanceId, int liftId) async {
+  Future<List<Map<String, dynamic>>> getLiftEntries(
+      int workoutInstanceId, int liftId) async {
     final db = await database;
 
     List<Map<String, dynamic>> results = await db.rawQuery('''
@@ -389,7 +386,8 @@ class DBService {
     ORDER BY setIndex ASC
   ''', [workoutInstanceId, liftId]);
 
-    print("🔍 Lift Entries for workoutInstanceId $workoutInstanceId, liftId $liftId: ${results.length}");
+    print(
+        "🔍 Lift Entries for workoutInstanceId $workoutInstanceId, liftId $liftId: ${results.length}");
 
     return results;
   }
@@ -397,7 +395,8 @@ class DBService {
   // ──────────────────────────────────────────────
 // 🔍 FETCH ALL LIFTS FOR A WORKOUT INSTANCE
 // ──────────────────────────────────────────────
-  Future<List<Map<String, dynamic>>> getWorkoutLifts(int workoutInstanceId) async {
+  Future<List<Map<String, dynamic>>> getWorkoutLifts(
+      int workoutInstanceId) async {
     final db = await database;
 
     return await db.rawQuery('''
@@ -408,7 +407,6 @@ class DBService {
       WHERE le.workoutInstanceId = ?
     ''', [workoutInstanceId]);
   }
-
 
 // ✅ Fetch lift scores from the DB
   Future<Map<String, dynamic>?> fetchStoredLiftTotals({
@@ -428,7 +426,6 @@ class DBService {
     }
     return null;
   }
-
 
   // ──────────────────────────────────────────────
 // 🔍 FETCH A SPECIFIC WORKOUT INSTANCE BY ID
@@ -475,7 +472,8 @@ class DBService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getBlockInstancesByBlockName(String blockName, String userId) async {
+  Future<List<Map<String, dynamic>>> getBlockInstancesByBlockName(
+      String blockName, String userId) async {
     final db = await database;
     return await db.query(
       'block_instances',
@@ -499,13 +497,12 @@ class DBService {
       orderBy: 'workoutInstanceId ASC', // 👈 key line
     );
 
-
     if (workouts.isEmpty) {
       print(
           "❌ No workout instances found for blockInstanceId: $blockInstanceId");
     } else {
-      print("✅ Found ${workouts
-          .length} workouts for blockInstanceId: $blockInstanceId");
+      print(
+          "✅ Found ${workouts.length} workouts for blockInstanceId: $blockInstanceId");
 
       for (var workout in workouts) {
         print("🔍 DB Workout Name: '${workout['workoutName']}'");
@@ -515,11 +512,11 @@ class DBService {
     return workouts;
   }
 
-
   // ──────────────────────────────────────────────
 // 🔍 FETCH PREVIOUS LIFT ENTRY FOR COMPARISON
 // ──────────────────────────────────────────────
-  Future<List<Map<String, dynamic>>> getPreviousLiftEntry(int workoutInstanceId, int liftId) async {
+  Future<List<Map<String, dynamic>>> getPreviousLiftEntry(
+      int workoutInstanceId, int liftId) async {
     final db = await database;
 
     // Step 1: Get the most recent previous workoutInstanceId for this lift
@@ -543,7 +540,8 @@ class DBService {
   ''', [liftId, previousWorkoutInstanceId]);
   }
 
-  Future<double> getPreviousLiftScore(int currentWorkoutInstanceId, int liftId) async {
+  Future<double> getPreviousLiftScore(
+      int currentWorkoutInstanceId, int liftId) async {
     final db = await database;
     final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
@@ -569,7 +567,8 @@ class DBService {
     return (liftScore as num).toDouble();
   }
 
-  Future<double> getPreviousWorkoutScore(int currentWorkoutInstanceId, int workoutId, String userId) async {
+  Future<double> getPreviousWorkoutScore(
+      int currentWorkoutInstanceId, int workoutId, String userId) async {
     final db = await database;
 
     // Step 1: Get the most recent previous workoutInstanceId for the same workoutId
@@ -593,7 +592,6 @@ class DBService {
 
     return (scoreResult.first['workoutScore'] as num).toDouble();
   }
-
 
   Future<double?> getAverageWeightForLift(int liftId) async {
     final db = await database;
@@ -623,18 +621,24 @@ class DBService {
 
   Future<void> _insertWorkouts(Database db) async {
     for (var workout in workoutDataList) {
-      await db.insert('workouts', {
-        'workoutId': workout['workoutId'],
-        'workoutName': workout['workoutName'],
-      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      await db.insert(
+          'workouts',
+          {
+            'workoutId': workout['workoutId'],
+            'workoutName': workout['workoutName'],
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore);
 
       // ✅ Insert lifts into `lift_workouts` (separately)
       if (workout.containsKey('liftIds') && workout['liftIds'] is List) {
         for (int liftId in workout['liftIds']) {
-          await db.insert('lift_workouts', {
-            'workoutId': workout['workoutId'],
-            'liftId': liftId,
-          }, conflictAlgorithm: ConflictAlgorithm.ignore);
+          await db.insert(
+              'lift_workouts',
+              {
+                'workoutId': workout['workoutId'],
+                'liftId': liftId,
+              },
+              conflictAlgorithm: ConflictAlgorithm.ignore);
         }
       }
     }
@@ -643,20 +647,26 @@ class DBService {
 
   Future<void> _insertBlocks(Database db) async {
     for (var block in blockDataList) {
-      await db.insert('blocks', {
-        'blockId': block['blockId'],
-        'blockName': block['blockName'],
-        'scheduleType': block['scheduleType'],
-        'numWorkouts': block['numWorkouts'],
-      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      await db.insert(
+          'blocks',
+          {
+            'blockId': block['blockId'],
+            'blockName': block['blockName'],
+            'scheduleType': block['scheduleType'],
+            'numWorkouts': block['numWorkouts'],
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore);
 
       // ✅ Insert into workouts_blocks junction table
       List<int> workoutIds = List<int>.from(block['workoutsIds']);
       for (int workoutId in workoutIds) {
-        await db.insert('workouts_blocks', {
-          'blockId': block['blockId'],
-          'workoutId': workoutId,
-        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        await db.insert(
+            'workouts_blocks',
+            {
+              'blockId': block['blockId'],
+              'workoutId': workoutId,
+            },
+            conflictAlgorithm: ConflictAlgorithm.ignore);
       }
     }
 
@@ -668,17 +678,11 @@ class DBService {
 // ──────────────────────────────────────────────
 
   int generateBlockInstanceId() {
-    return DateTime
-        .now()
-        .millisecondsSinceEpoch
-        .remainder(100000);
+    return DateTime.now().millisecondsSinceEpoch.remainder(100000);
   }
 
   int generateWorkoutInstanceId() {
-    return DateTime
-        .now()
-        .millisecondsSinceEpoch
-        .remainder(100000);
+    return DateTime.now().millisecondsSinceEpoch.remainder(100000);
   }
 
   // ──────────────────────────────────────────────
@@ -720,13 +724,14 @@ class DBService {
 
   int? _findLiftIdByName(String name) {
     final match = liftDataList.firstWhere(
-          (l) => (l['liftName'] as String).toLowerCase() == name.toLowerCase(),
+      (l) => (l['liftName'] as String).toLowerCase() == name.toLowerCase(),
       orElse: () => {},
     );
     return match.isNotEmpty ? match['liftId'] as int : null;
   }
 
-  Future<List<Map<String, dynamic>>> getCustomBlocks({bool includeDrafts = false}) async {
+  Future<List<Map<String, dynamic>>> getCustomBlocks(
+      {bool includeDrafts = false}) async {
     final db = await database;
     if (includeDrafts) {
       return db.query('custom_blocks');
@@ -737,6 +742,22 @@ class DBService {
   Future<void> deleteCustomBlock(int id) async {
     final db = await database;
     await db.delete('custom_blocks', where: 'id = ?', whereArgs: [id]);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final docId = id.toString();
+      final userDoc =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+      await userDoc.collection('custom_blocks').doc(docId).delete();
+      await userDoc.collection('customBlockRefs').doc(docId).delete();
+
+      final globalDoc =
+          FirebaseFirestore.instance.collection('custom_blocks').doc(docId);
+      final snap = await globalDoc.get();
+      if (snap.exists && snap.data()?['ownerId'] == user.uid) {
+        await globalDoc.delete();
+      }
+    }
   }
 
   Future<CustomBlock?> getCustomBlock(int id) async {
@@ -805,7 +826,8 @@ class DBService {
       where: 'id = ?',
       whereArgs: [block.id],
     );
-    await db.delete('workout_drafts', where: 'blockId = ?', whereArgs: [block.id]);
+    await db
+        .delete('workout_drafts', where: 'blockId = ?', whereArgs: [block.id]);
     for (final w in block.workouts) {
       await insertWorkoutDraft(w, block.id);
     }
@@ -908,7 +930,9 @@ class DBService {
 
     return newBlockInstanceId;
   }
-  Future<void> activateBlockInstanceIfNeeded(int blockInstanceId, String userId, String blockName) async {
+
+  Future<void> activateBlockInstanceIfNeeded(
+      int blockInstanceId, String userId, String blockName) async {
     final db = await database;
 
     // Check if block is already active
@@ -996,7 +1020,7 @@ class DBService {
 
     // ✅ Generate full distribution of workouts for the block
     final List<Map<String, dynamic>> distribution =
-    await generateWorkoutDistribution(workouts, scheduleType);
+        await generateWorkoutDistribution(workouts, scheduleType);
 
     if (distribution.isEmpty) {
       print("❌ Distribution failed. No workouts to insert.");
@@ -1023,12 +1047,14 @@ class DBService {
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      print("✅ Inserted ${workout['workoutName']} (Week $week, Instance ID: $newWorkoutInstanceId)");
+      print(
+          "✅ Inserted ${workout['workoutName']} (Week $week, Instance ID: $newWorkoutInstanceId)");
 
       await insertLiftsForWorkoutInstance(newWorkoutInstanceId);
     }
 
-    print("✅ All workout instances inserted for blockInstanceId $blockInstanceId");
+    print(
+        "✅ All workout instances inserted for blockInstanceId $blockInstanceId");
   }
 
   Future<void> deleteBlockInstance(int blockInstanceId) async {
@@ -1043,14 +1069,20 @@ class DBService {
 
       for (final row in workoutIds) {
         final id = row['workoutInstanceId'] as int;
-        await txn.delete('lift_totals', where: 'workoutInstanceId = ?', whereArgs: [id]);
-        await txn.delete('workout_totals', where: 'workoutInstanceId = ?', whereArgs: [id]);
+        await txn.delete('lift_totals',
+            where: 'workoutInstanceId = ?', whereArgs: [id]);
+        await txn.delete('workout_totals',
+            where: 'workoutInstanceId = ?', whereArgs: [id]);
       }
 
-      await txn.delete('workout_totals', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
-      await txn.delete('block_totals', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
-      await txn.delete('workout_instances', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
-      await txn.delete('block_instances', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+      await txn.delete('workout_totals',
+          where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+      await txn.delete('block_totals',
+          where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+      await txn.delete('workout_instances',
+          where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+      await txn.delete('block_instances',
+          where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
     });
   }
 
@@ -1065,7 +1097,9 @@ class DBService {
       whereArgs: [blockId],
       limit: 1,
     );
-    return result.isNotEmpty ? result.first['scheduleType'] as String : 'standard';
+    return result.isNotEmpty
+        ? result.first['scheduleType'] as String
+        : 'standard';
   }
 
 // ──────────────────────────────────────────────
@@ -1089,7 +1123,8 @@ class DBService {
 
       case 'texas_method':
         for (int i = 0; i < 2; i++) {
-          pattern.addAll(List.generate(6, (j) => j)); // 6 workouts × 2 = 12 slots
+          pattern
+              .addAll(List.generate(6, (j) => j)); // 6 workouts × 2 = 12 slots
         }
         break;
 
@@ -1154,7 +1189,8 @@ class DBService {
     // ✅ Check if the entry already exists, including userId in the WHERE clause
     List<Map<String, dynamic>> existingEntry = await db.query(
       'lift_entries',
-      where: 'workoutInstanceId = ? AND liftId = ? AND setIndex = ? AND userId = ?',
+      where:
+          'workoutInstanceId = ? AND liftId = ? AND setIndex = ? AND userId = ?',
       whereArgs: [workoutInstanceId, liftId, setIndex, userId],
     );
 
@@ -1167,7 +1203,8 @@ class DBService {
           'weight': weight,
           'userId': userId,
         },
-        where: 'workoutInstanceId = ? AND liftId = ? AND setIndex = ? AND userId = ?',
+        where:
+            'workoutInstanceId = ? AND liftId = ? AND setIndex = ? AND userId = ?',
         whereArgs: [workoutInstanceId, liftId, setIndex, userId],
       );
       print(
@@ -1222,9 +1259,9 @@ class DBService {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    print("✅ Upserted lift_totals for Lift $liftId in Workout $workoutInstanceId");
+    print(
+        "✅ Upserted lift_totals for Lift $liftId in Workout $workoutInstanceId");
   }
-
 
   Future<void> updateLiftTotals(int workoutInstanceId, int liftId) async {
     final db = await database;
@@ -1247,7 +1284,8 @@ class DBService {
     }
 
     final lift = liftData.first;
-    final scoreMultiplier = (lift['scoreMultiplier'] as num?)?.toDouble() ?? 1.0;
+    final scoreMultiplier =
+        (lift['scoreMultiplier'] as num?)?.toDouble() ?? 1.0;
     final isDumbbellLift = (lift['isDumbbellLift'] as int?) == 1;
     final scoreType = lift['scoreType']?.toString() ?? 'multiplier';
 
@@ -1260,7 +1298,8 @@ class DBService {
 
     // Calculate totals correctly
     final liftReps = getLiftRepsFromDb(entries, isDumbbellLift: isDumbbellLift);
-    final liftWorkload = getLiftWorkloadFromDb(entries, isDumbbellLift: isDumbbellLift);
+    final liftWorkload =
+        getLiftWorkloadFromDb(entries, isDumbbellLift: isDumbbellLift);
     final liftScore = calculateLiftScoreFromEntries(
       entries,
       scoreMultiplier,
@@ -1278,12 +1317,11 @@ class DBService {
       },
       where: 'workoutInstanceId = ? AND liftId = ? AND userId = ?',
       whereArgs: [workoutInstanceId, liftId, userId],
-
     );
 
-    print("✅ Updated Lift Totals — Lift ID: $liftId | Reps: $liftReps | Workload: $liftWorkload | Score: $liftScore");
+    print(
+        "✅ Updated Lift Totals — Lift ID: $liftId | Reps: $liftReps | Workload: $liftWorkload | Score: $liftScore");
   }
-
 
   Future<void> insertLiftsForWorkoutInstance(int workoutInstanceId) async {
     final db = await database;
@@ -1348,7 +1386,8 @@ class DBService {
       );
     }
 
-    print("✅ Lifts and Lift Totals inserted for Workout Instance: $workoutInstanceId");
+    print(
+        "✅ Lifts and Lift Totals inserted for Workout Instance: $workoutInstanceId");
   }
 
   Future<void> writeLiftTotalsDirectly({
@@ -1376,10 +1415,12 @@ class DBService {
         'liftWorkload': liftWorkload,
         'liftScore': liftScore,
       },
-      conflictAlgorithm: ConflictAlgorithm.replace, // Overwrites if entry already exists
+      conflictAlgorithm:
+          ConflictAlgorithm.replace, // Overwrites if entry already exists
     );
 
-    print("✅ Updated lift_totals: Lift $liftId | Workout $workoutInstanceId | Reps: $liftReps | Workload: $liftWorkload | Score: $liftScore");
+    print(
+        "✅ Updated lift_totals: Lift $liftId | Workout $workoutInstanceId | Reps: $liftReps | Workload: $liftWorkload | Score: $liftScore");
   }
 
   Future<void> upsertWorkoutTotals({
@@ -1402,7 +1443,6 @@ class DBService {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
-
 
   Future<void> updateWorkoutTotals({
     required int workoutInstanceId,
@@ -1460,7 +1500,7 @@ class DBService {
 
     // 🧠 Step 2: Get liftIds from workoutData
     final workoutDef = workoutDataList.firstWhere(
-          (w) => w['workoutId'] == workoutId,
+      (w) => w['workoutId'] == workoutId,
       orElse: () => {},
     );
 
@@ -1483,13 +1523,15 @@ class DBService {
 
       if (liftTotal.isNotEmpty) {
         totalScore += (liftTotal.first['liftScore'] as num?)?.toDouble() ?? 0.0;
-        totalWorkload += (liftTotal.first['liftWorkload'] as num?)?.toDouble() ?? 0.0;
+        totalWorkload +=
+            (liftTotal.first['liftWorkload'] as num?)?.toDouble() ?? 0.0;
       } else {
         totalScore += 0.0;
       }
     }
 
-    final averageScore = liftIds.isNotEmpty ? (totalScore / liftIds.length) : 0.0;
+    final averageScore =
+        liftIds.isNotEmpty ? (totalScore / liftIds.length) : 0.0;
 
     // 🧠 Step 3: Write to workout_totals
     await upsertWorkoutTotals(
@@ -1500,7 +1542,8 @@ class DBService {
       workoutScore: averageScore,
     );
 
-    print("✅ Updated workout_totals: Workout $workoutInstanceId | Workload: $totalWorkload | Score: $averageScore");
+    print(
+        "✅ Updated workout_totals: Workout $workoutInstanceId | Workload: $totalWorkload | Score: $averageScore");
 
     // 🧠 Step 4: Update block_totals
     await recalculateBlockTotals(blockInstanceId);
@@ -1528,8 +1571,8 @@ class DBService {
     print("✅ Firestore totalLbsLifted updated: $totalLbs lbs");
   }
 
-
-  Future<Map<String, dynamic>?> getWorkoutTotals(int workoutInstanceId, String userId) async {
+  Future<Map<String, dynamic>?> getWorkoutTotals(
+      int workoutInstanceId, String userId) async {
     final db = await database;
     final result = await db.query(
       'workout_totals',
@@ -1546,7 +1589,8 @@ class DBService {
       'workout_instances',
       {
         'completed': 1,
-        'endTime': DateTime.now().toIso8601String(), // optional: remove if unused
+        'endTime':
+            DateTime.now().toIso8601String(), // optional: remove if unused
       },
       where: 'workoutInstanceId = ?',
       whereArgs: [workoutInstanceId],
@@ -1575,14 +1619,12 @@ class DBService {
 
       // Step 4: Recalculate total blocks completed
       final userStatsService = UserStatsService();
-      final totalBlocks = await userStatsService.getTotalCompletedBlocks(userId);
+      final totalBlocks =
+          await userStatsService.getTotalCompletedBlocks(userId);
 
       // Step 5: Update Firestore with new count + title
       final newTitle = getUserTitle(totalBlocks);
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .update({
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'blocksCompleted': totalBlocks,
         'title': newTitle,
       });
@@ -1600,7 +1642,8 @@ class DBService {
     final meatWagon = await badgeService.checkAndAwardMeatWagonBadge(userId);
     final punchCard = await badgeService.checkAndAwardPunchCardBadge(userId);
     final hypeMan = await badgeService.checkAndAwardHypeManBadge(userId);
-    final dailyDriver = await badgeService.checkAndAwardDailyDriverBadge(userId);
+    final dailyDriver =
+        await badgeService.checkAndAwardDailyDriverBadge(userId);
 
     // If you want to include Lift PR-based badges here too (optional)
     final liftPRs = ['Bench Press', 'Squats', 'Deadlift'];
@@ -1625,7 +1668,13 @@ class DBService {
       }
     }
 
-    return [...meatWagon, ...lunchLadyBadges, ...punchCard, ...hypeMan, ...dailyDriver];
+    return [
+      ...meatWagon,
+      ...lunchLadyBadges,
+      ...punchCard,
+      ...hypeMan,
+      ...dailyDriver
+    ];
   }
 
   Future<int> getRemainingUnfinishedWorkouts(int blockInstanceId) async {
@@ -1636,7 +1685,9 @@ class DBService {
     WHERE blockInstanceId = ? AND completed != 1
   ''', [blockInstanceId]);
 
-    return result.first['remaining'] != null ? result.first['remaining'] as int : 0;
+    return result.first['remaining'] != null
+        ? result.first['remaining'] as int
+        : 0;
   }
 
   Future<void> incrementBlocksCompleted(String userId) async {
@@ -1647,7 +1698,8 @@ class DBService {
     });
   }
 
-  Future<void> updateBlockInstanceEndDate(int blockInstanceId, String userId) async {
+  Future<void> updateBlockInstanceEndDate(
+      int blockInstanceId, String userId) async {
     final db = await database;
     await db.update(
       'block_instances',
@@ -1659,7 +1711,8 @@ class DBService {
     );
   }
 
-  Future<void> updateTrainingDaysAndWorkoutsCompleted(String userId, int workoutInstanceId) async {
+  Future<void> updateTrainingDaysAndWorkoutsCompleted(
+      String userId, int workoutInstanceId) async {
     final db = await database;
 
     // Check if this is the first time this workoutInstance is marked completed
@@ -1675,7 +1728,8 @@ class DBService {
     final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
     final userDoc = await userRef.get();
 
-    final existingDays = List<String>.from(userDoc.data()?['loggedTrainingDays'] ?? []);
+    final existingDays =
+        List<String>.from(userDoc.data()?['loggedTrainingDays'] ?? []);
 
     // Track training day if it's new
     if (!existingDays.contains(date)) {
@@ -1691,7 +1745,6 @@ class DBService {
       'workoutsCompleted': FieldValue.increment(1),
     });
   }
-
 
   Future<void> recalculateBlockTotals(int blockInstanceId) async {
     final db = await database;
@@ -1716,7 +1769,8 @@ class DBService {
     }
 
     final blockId = blockData.first['blockId'] as int;
-    final blockName = blockData.first['blockName']?.toString() ?? 'Unknown Block';
+    final blockName =
+        blockData.first['blockName']?.toString() ?? 'Unknown Block';
 
     // 🧠 Collect workouts and reduce redundancy
     final workouts = await getWorkoutInstancesByBlock(blockInstanceId);
@@ -1739,7 +1793,8 @@ class DBService {
 
       totalBlockWorkload += workload;
 
-      if (!bestScores.containsKey(workoutName) || score > bestScores[workoutName]!) {
+      if (!bestScores.containsKey(workoutName) ||
+          score > bestScores[workoutName]!) {
         bestScores[workoutName] = score;
         bestWorkloads[workoutName] = workload;
       }
@@ -1772,7 +1827,8 @@ class DBService {
       }
     }, SetOptions(merge: true));
 
-    print("✅ Recalculated block totals: Block $blockInstanceId | Score: $totalBlockScore | Workload: $totalBlockWorkload");
+    print(
+        "✅ Recalculated block totals: Block $blockInstanceId | Score: $totalBlockScore | Workload: $totalBlockWorkload");
   }
 
   Future<int> getBlockIdFromInstance(int blockInstanceId) async {
@@ -1819,7 +1875,6 @@ class DBService {
     );
   }
 
-
   Future<void> updateBlockTotals({
     required int blockInstanceId,
     required String userId,
@@ -1860,10 +1915,12 @@ class DBService {
       blockName: blockName,
     );
 
-    print("✅ Updated block_totals: BlockInstance $blockInstanceId | $blockName | Workload: $blockWorkload | Score: $blockScore");
+    print(
+        "✅ Updated block_totals: BlockInstance $blockInstanceId | $blockName | Workload: $blockWorkload | Score: $blockScore");
   }
 
-  Future<Map<String, dynamic>?> getBlockTotals(int blockInstanceId, String userId) async {
+  Future<Map<String, dynamic>?> getBlockTotals(
+      int blockInstanceId, String userId) async {
     final db = await database;
     final result = await db.query(
       'block_totals',
@@ -1874,8 +1931,8 @@ class DBService {
     return result.isNotEmpty ? result.first : null;
   }
 
-
-  Future<List<Map<String, dynamic>>> getLeaderboardDataForBlock(int blockId) async {
+  Future<List<Map<String, dynamic>>> getLeaderboardDataForBlock(
+      int blockId) async {
     final db = await database;
 
     // Step 1: Query all block_totals for this blockId
@@ -1891,7 +1948,8 @@ class DBService {
       final userId = row['userId'] as String;
       final score = double.tryParse(row['blockScore'].toString()) ?? 0.0;
 
-      if (!bestPerUser.containsKey(userId) || score > (bestPerUser[userId]!['blockScore'] ?? 0.0)) {
+      if (!bestPerUser.containsKey(userId) ||
+          score > (bestPerUser[userId]!['blockScore'] ?? 0.0)) {
         bestPerUser[userId] = {
           'blockInstanceId': row['blockInstanceId'],
           'blockScore': score,
@@ -1930,7 +1988,10 @@ class DBService {
     ''', [blockInstanceId]);
 
       final workoutScores = workoutScoresRaw
-          .map((e) => double.tryParse(e['workoutScore'].toString())?.toStringAsFixed(1) ?? '0.0')
+          .map((e) =>
+              double.tryParse(e['workoutScore'].toString())
+                  ?.toStringAsFixed(1) ??
+              '0.0')
           .toList();
 
       final userData = userProfiles[userId] ?? {};
@@ -1976,7 +2037,8 @@ class DBService {
     };
   }
 
-  Future<Map<String, dynamic>?> getLastFinishedWorkoutInfo(String userId) async {
+  Future<Map<String, dynamic>?> getLastFinishedWorkoutInfo(
+      String userId) async {
     final db = await database;
     final result = await db.rawQuery(r'''
     SELECT blockName, workoutName, week
@@ -1989,9 +2051,9 @@ class DBService {
     if (result.isEmpty) return null;
     final data = result.first;
     return {
-      'blockName':   data['blockName']   as String? ?? '',
+      'blockName': data['blockName'] as String? ?? '',
       'workoutName': data['workoutName'] as String? ?? '',
-      'week':        data['week']        as int?    ?? 1,
+      'week': data['week'] as int? ?? 1,
     };
   }
 
@@ -2008,12 +2070,11 @@ class DBService {
     if (result.isEmpty) return null;
     final data = result.first;
     return {
-      'blockName':   data['blockName']   as String? ?? '',
+      'blockName': data['blockName'] as String? ?? '',
       'workoutName': data['workoutName'] as String? ?? '',
-      'week':        data['week']        as int?    ?? 1,
+      'week': data['week'] as int? ?? 1,
     };
   }
-
 
   Future<void> postAutoClinkAfterWorkout(String userId,
       {List<String>? badgeImagePaths}) async {
@@ -2056,8 +2117,3 @@ class DBService {
     });
   }
 }
-
-
-
-
-
