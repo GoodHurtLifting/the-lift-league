@@ -39,7 +39,14 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       blockName = block.name;
       numWeeks = block.numWeeks;
       daysPerWeek = block.daysPerWeek;
-      workouts = block.workouts
+      // Only include the first instance of each workout when editing.
+      // This allows the user to edit one week and have the changes
+      // applied across all repeated weeks when the block is saved.
+      final firstWeekWorkouts = block.workouts
+          .where((w) => w.dayIndex < block.daysPerWeek)
+          .toList();
+
+      workouts = firstWeekWorkouts
           .map((w) => WorkoutDraft(
                 id: w.id,
                 dayIndex: w.dayIndex,
