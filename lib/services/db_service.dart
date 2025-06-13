@@ -2244,6 +2244,28 @@ class DBService {
     );
   }
 
+  Future<List<Map<String, dynamic>>> getWorkoutsByBlockId(int blockId) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT wb.workoutId, w.workoutName
+      FROM workouts_blocks wb
+      JOIN workouts w ON wb.workoutId = w.workoutId
+      WHERE wb.blockId = ?
+      ORDER BY w.workoutName ASC
+    ''', [blockId]);
+  }
+
+  Future<List<Map<String, dynamic>>> getLiftsByWorkoutId(int workoutId) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT l.*
+      FROM lift_workouts lw
+      JOIN lifts l ON lw.liftId = l.liftId
+      WHERE lw.workoutId = ?
+      ORDER BY l.liftName ASC
+    ''', [workoutId]);
+  }
+
   Future<List<int>> getWorkoutInstancesByLift(int liftId) async {
     final db = await database;
     final res = await db.rawQuery(
