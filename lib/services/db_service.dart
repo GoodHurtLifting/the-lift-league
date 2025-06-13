@@ -2211,4 +2211,45 @@ class DBService {
     return weeks > 0 ? total / weeks : 0.0;
   }
 
+  // -----------------------------------------------------------------
+  // Lift Management Helpers
+  // -----------------------------------------------------------------
+  Future<List<Map<String, dynamic>>> getAllLifts() async {
+    final db = await database;
+    return await db.query('lifts');
+  }
+
+  Future<void> updateLiftDefinition({
+    required int liftId,
+    required String liftName,
+    required String repScheme,
+    required String scoreType,
+    required double scoreMultiplier,
+    required String youtubeUrl,
+    required String description,
+  }) async {
+    final db = await database;
+    await db.update(
+      'lifts',
+      {
+        'liftName': liftName,
+        'repScheme': repScheme,
+        'scoreType': scoreType,
+        'scoreMultiplier': scoreMultiplier,
+        'youtubeUrl': youtubeUrl,
+        'description': description,
+      },
+      where: 'liftId = ?',
+      whereArgs: [liftId],
+    );
+  }
+
+  Future<List<int>> getWorkoutInstancesByLift(int liftId) async {
+    final db = await database;
+    final res = await db.rawQuery(
+        'SELECT DISTINCT workoutInstanceId FROM lift_entries WHERE liftId = ?',
+        [liftId]);
+    return res.map((e) => e['workoutInstanceId'] as int).toList();
+  }
+
 }
