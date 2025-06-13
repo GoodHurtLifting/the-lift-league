@@ -79,7 +79,9 @@ class UserStatsScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  ConsistencyMeter(userId: userId, blockId: activeBlockId),
+                  ConsistencyMeter(userId: userId,
+                    blockId: int.tryParse(activeBlockId) ?? 0,
+                  ),
                   const SizedBox(height: 20),
                   const Text(
                     'Efficiency',
@@ -93,7 +95,7 @@ class UserStatsScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  MomentumMeter(userId: userId, blockId: activeBlockId),
+                  MomentumMeter(userId: userId),
                   const SizedBox(height: 20),
                 ],
                 if (showCheckInGraph) ...[
