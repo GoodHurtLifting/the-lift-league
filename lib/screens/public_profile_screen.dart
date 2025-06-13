@@ -25,7 +25,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   List<Map<String, dynamic>> _publicBlocks = [];
   List<String> _publicBlockImages = [];
   List<String> _publicBlockNames = [];
-  int _followToggleStep = -1; // -1 indicates uninitialized
   bool _showBeforeAfter = false;
   bool _hasEnoughForBA = false;
 
@@ -255,18 +254,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   .doc(widget.userId)
                   .snapshots(),
               builder: (context, followSnap) {
-                final isFollowing = followSnap.data?.exists ?? false;
                 final currentUserId = FirebaseAuth.instance.currentUser!.uid;
-
-                if (_followToggleStep == -1) {
-                  if (!isFollowing) {
-                    _followToggleStep = 0;
-                  } else if (isInCircle) {
-                    _followToggleStep = 2;
-                  } else {
-                    _followToggleStep = 1;
-                  }
-                }
 
                 return StreamBuilder<DocumentSnapshot>(
                   stream: FirebaseFirestore.instance
@@ -276,110 +264,106 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                       .doc(widget.userId)
                       .snapshots(),
                   builder: (context, circleSnap) {
+                    final isFollowing = followSnap.data?.exists ?? false;
                     final isInCircle = circleSnap.data?.exists ?? false;
-
+                    int followStep;
+                    if (!isFollowing) {
+                      followStep = 0;
+                    } else if (isInCircle) {
+                      followStep = 2;
+                    } else {
+                      followStep = 1;
+                    }
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                    _iconRectButton(
-                      icon: Icons.bar_chart,
-                      onPressed: showStats
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => UserStatsScreen(
-                                    userId: widget.userId,
-                                    showCheckInGraph: false,
-                                  ),
+                        _iconRectButton(
+                          icon: Icons.bar_chart,
+                          onPressed: showStats
+                              ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UserStatsScreen(
+                                  userId: widget.userId,
+                                  showCheckInGraph: false,
                                 ),
-                              );
-                            }
-                          : null,
-                    ),
-                    if (widget.userId != currentUserId) ...[
-                      const SizedBox(width: 16),
-                      _iconRectButton(
-                        icon: _followToggleStep == 0
-                            ? Icons.person_add
-                            : _followToggleStep == 1
-                                ? Icons.control_point
-                                : _followToggleStep == 2
-                                    ? Icons.remove_circle_outline
-                                    : Icons.person_remove,
-                        onPressed: () async {
-                          switch (_followToggleStep) {
-                            case 0:
-                              await UserFollowService()
-                                  .followUser(currentUserId, widget.userId);
-                              _showActionLabel('Followed');
-                              isFollowing = true;
-                              _followToggleStep = 1;
-                              break;
-                            case 1:
-                              final doc = await FirebaseFirestore.instance
-                                  .collection('users')
-                                  .doc(widget.userId)
-                                  .get();
-                              final data = doc.data();
-                              if (data == null) return;
-                              await UserFollowService()
-                                  .addToTrainingCircle(currentUserId, {
-                                'userId': widget.userId,
-                                'displayName': data['displayName'],
-                                'profileImageUrl': data['profileImageUrl'],
-                                'title': data['title'],
-                              });
-                              _showActionLabel('Added to Circle');
-                              isInCircle = true;
-                              _followToggleStep = 2;
-                              break;
-                            case 2:
-                              await UserFollowService()
-                                  .removeFromTrainingCircle(
-                                      currentUserId, widget.userId);
-                              _showActionLabel('Removed');
-                              isInCircle = false;
-                              _followToggleStep = 3;
-                              break;
-                            default:
-                              await UserFollowService()
-                                  .unfollowUser(currentUserId, widget.userId);
-                              _showActionLabel('Unfollowed');
-                              isFollowing = false;
-                              _followToggleStep = 0;
+                              ),
+                            );
                           }
-                          setState(() {});
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      _iconRectButton(
-                        icon: _showBeforeAfter
-                            ? Icons.dynamic_feed
-                            : Icons.compare_arrows,
-                        onPressed: _hasEnoughForBA
-                            ? () => setState(
-                                () => _showBeforeAfter = !_showBeforeAfter)
-                            : null,
-                      ),
-                    ],
-                    const SizedBox(width: 16),
-                    _iconRectButton(
-                      icon: Icons.message,
-                      onPressed: isInCircle
-                          ? () async {
-                              final chatId = await getOrCreateChat(
-                                  currentUserId, widget.userId);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => ChatScreen(chatId: chatId)),
-                              );
-                            }
-                          : null,
-                    ),
-                  ],
-                );
+                              : null,
+                        ),
+                        if (widget.userId != currentUserId) ...[
+                          const SizedBox(width: 16),
+                          _iconRectButton(
+                            icon: followStep == 0
+                                ? Icons.person_add
+                                : followStep == 1
+                                ? Icons.control_point
+                                : followStep == 2
+                                ? Icons.remove_circle_outline
+                                : Icons.person_remove,
+                            onPressed: () async {
+                              switch (followStep) {
+                                case 0:
+                                  await UserFollowService().followUser(currentUserId, widget.userId);
+                                  _showActionLabel('Followed');
+                                  break;
+                                case 1:
+                                  final doc = await FirebaseFirestore.instance
+                                      .collection('users')
+                                      .doc(widget.userId)
+                                      .get();
+                                  final data = doc.data();
+                                  if (data == null) return;
+                                  await UserFollowService().addToTrainingCircle(currentUserId, {
+                                    'userId': widget.userId,
+                                    'displayName': data['displayName'],
+                                    'profileImageUrl': data['profileImageUrl'],
+                                    'title': data['title'],
+                                  });
+                                  _showActionLabel('Added to Circle');
+                                  break;
+                                case 2:
+                                  await UserFollowService()
+                                      .removeFromTrainingCircle(currentUserId, widget.userId);
+                                  _showActionLabel('Removed');
+                                  break;
+                                default:
+                                  await UserFollowService().unfollowUser(currentUserId, widget.userId);
+                                  _showActionLabel('Unfollowed');
+                              }
+                              setState(() {}); // UI will update via streams
+                            },
+                          ),
+                          const SizedBox(width: 16),
+                          _iconRectButton(
+                            icon: _showBeforeAfter
+                                ? Icons.dynamic_feed
+                                : Icons.compare_arrows,
+                            onPressed: _hasEnoughForBA
+                                ? () => setState(
+                                    () => _showBeforeAfter = !_showBeforeAfter)
+                                : null,
+                          ),
+                        ],
+                        const SizedBox(width: 16),
+                        _iconRectButton(
+                          icon: Icons.message,
+                          onPressed: isInCircle
+                              ? () async {
+                            final chatId = await getOrCreateChat(
+                                currentUserId, widget.userId);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => ChatScreen(chatId: chatId)),
+                            );
+                          }
+                              : null,
+                        ),
+                      ],
+                    );
               },
                 );
               },
