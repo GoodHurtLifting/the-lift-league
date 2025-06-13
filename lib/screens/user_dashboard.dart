@@ -23,9 +23,11 @@ import 'chat_list_screen.dart';
 import 'training_circle_screen.dart';
 import 'package:lift_league/services/title_observer_service.dart';
 import 'package:lift_league/services/notifications_service.dart';
+import 'block_manager_screen.dart';
 
 class UserDashboard extends StatefulWidget {
-  const UserDashboard({super.key});
+  final bool isAdmin;
+  const UserDashboard({super.key, this.isAdmin = false});
 
   @override
   State<UserDashboard> createState() => _UserDashboardState();
@@ -47,10 +49,12 @@ class _UserDashboardState extends State<UserDashboard> {
   int blocksCompleted = 0;
   bool hasUploadedCheckIn = false;
   bool hasUnread = false;
+  bool isAdmin = false;
 
   @override
   void initState() {
     super.initState();
+    isAdmin = widget.isAdmin;
     TitleObserverService.startObservingTitle();
     // Load profile & block instances immediately
     registerForPushNotifications();
@@ -135,6 +139,7 @@ class _UserDashboardState extends State<UserDashboard> {
     if (data != null) {
       final int completed = data['blocksCompleted'] ?? 0;
       final String? url = data['profileImageUrl'];
+      final bool admin = data['isAdmin'] ?? false;
 
       if (!mounted) return;
       setState(() {
@@ -146,6 +151,7 @@ class _UserDashboardState extends State<UserDashboard> {
             ? url
             : 'assets/images/flatLogo.jpg';
         isProfileLoading = false;
+        isAdmin = admin;
       });
     }
   }
@@ -603,6 +609,18 @@ class _UserDashboardState extends State<UserDashboard> {
                       },
                     ),
                     CustomBlockButton(onReturn: _fetchCustomBlocks),
+                    if (isAdmin)
+                      IconButton(
+                        icon: const Icon(Icons.admin_panel_settings,
+                            color: Colors.white, size: 28),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const WorkoutManagerScreen()),
+                          );
+                        },
+                      ),
                     const DevTools(),
                   ],
                 ),

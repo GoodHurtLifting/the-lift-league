@@ -18,6 +18,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   bool isLoading = false;
 
+  Future<void> _navigateToDashboard() async {
+    final user = FirebaseAuth.instance.currentUser;
+    bool isAdmin = false;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      isAdmin = doc.data()?['isAdmin'] ?? false;
+    }
+
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => UserDashboard(isAdmin: isAdmin)),
+          (route) => false,
+    );
+  }
+
   Future<void> _login() async {
     if (!_validateInputs()) return;
 
@@ -29,12 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordController.text.trim(),
       );
 
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const UserDashboard()),
-          (route) => false,
-      );
+      await _navigateToDashboard();
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString());
@@ -59,13 +73,11 @@ class _LoginScreenState extends State<LoginScreen> {
         'blocksCompleted': 0,
         'totalLbsLifted': 0,
         'profileImageUrl': '',
+        'isAdmin': false,
       });
 
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const UserDashboard()),
-      );
+      await _navigateToDashboard();
+
     } catch (e) {
       if (!mounted) return;
       _showError(e.toString());
@@ -101,11 +113,8 @@ class _LoginScreenState extends State<LoginScreen> {
           'profileImageUrl': userCred.user!.photoURL ?? '',
         });
       }
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const UserDashboard()),
-      );
+      await _navigateToDashboard();
+
     } catch (e) {
       if (mounted) {
         _showError(e.toString());
@@ -141,11 +150,8 @@ class _LoginScreenState extends State<LoginScreen> {
           'profileImageUrl': '',
         });
       }
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const UserDashboard()),
-      );
+      await _navigateToDashboard();
+
     } catch (e) {
       if (mounted) {
         _showError(e.toString());
