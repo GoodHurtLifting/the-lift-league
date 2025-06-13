@@ -690,17 +690,22 @@ class DBService {
   // ──────────────────────────────────────────────
   Future<int> insertCustomBlock(CustomBlock block) async {
     final db = await database;
-    final blockId = await db.insert('custom_blocks', {
-      'name': block.name,
-      'numWeeks': block.numWeeks,
-      'daysPerWeek': block.daysPerWeek,
-      'isDraft': block.isDraft ? 1 : 0,
-      'coverImagePath': block.coverImagePath,
-    });
+    await db.insert(
+      'custom_blocks',
+      {
+        'id': block.id,
+        'name': block.name,
+        'numWeeks': block.numWeeks,
+        'daysPerWeek': block.daysPerWeek,
+        'isDraft': block.isDraft ? 1 : 0,
+        'coverImagePath': block.coverImagePath,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
     for (final workout in block.workouts) {
-      await insertWorkoutDraft(workout, blockId);
+      await insertWorkoutDraft(workout, block.id);
     }
-    return blockId;
+    return block.id;
   }
 
   Future<void> insertWorkoutDraft(WorkoutDraft w, int blockId) async {
@@ -2116,4 +2121,94 @@ class DBService {
       'timestamp': Timestamp.now(),
     });
   }
+// ──────────────────────────────────────────────────────────────
+  // 📈 Momentum Metrics
+  // ──────────────────────────────────────────────────────────────
+
+  Future<int> getCurrentWeekNumber(int blockInstanceId) async {
+    final db = await database;
+    final result = await db.query('block_instances',
+        columns: ['startDate'],
+        where: 'blockInstanceId = ?',
+        whereArgs: [blockInstanceId],
+        limit: 1);
+    if (result.isEmpty || result.first['startDate'] == null) return 1;
+    final start = DateTime.parse(result.first['startDate'] as String);
+    final diff = DateTime.now().difference(start).inDays;
+    return diff ~/ 7 + 1;
+  }
+
+  Future<Map<String, double>> _getWeekStats(
+      String userId, int blockInstanceId, int week) async {
+    final db = await database;
+
+    final totalRaw = await db.rawQuery('''
+      SELECT COUNT(*) as total
+      FROM workout_instances
+      WHERE blockInstanceId = ? AND week = ?
+    ''', [blockInstanceId, week]);
+    final total = totalRaw.first['total'] as int? ?? 0;
+
+    final completedRaw = await db.rawQuery('''
+      SELECT COUNT(*) as completed
+      FROM workout_instances
+      WHERE blockInstanceId = ? AND week = ? AND completed = 1
+    ''', [blockInstanceId, week]);
+    final completed = completedRaw.first['completed'] as int? ?? 0;
+
+    final consistency = total > 0 ? (completed / total) * 100 : 0.0;
+
+    final currentScoreRaw = await db.rawQuery('''
+      SELECT AVG(workoutScore) as avgScore
+      FROM workout_totals
+      WHERE blockInstanceId = ? AND workoutInstanceId IN (
+        SELECT workoutInstanceId FROM workout_instances
+        WHERE blockInstanceId = ? AND week = ? AND completed = 1
+      )
+    ''', [blockInstanceId, blockInstanceId, week]);
+    final currentAvg =
+        (currentScoreRaw.first['avgScore'] as num?)?.toDouble() ?? 0.0;
+
+    final prevScoreRaw = await db.rawQuery('''
+      SELECT AVG(workoutScore) as avgScore
+      FROM workout_totals
+      WHERE blockInstanceId = ? AND workoutInstanceId IN (
+        SELECT workoutInstanceId FROM workout_instances
+        WHERE blockInstanceId = ? AND week < ? AND completed = 1
+      )
+    ''', [blockInstanceId, blockInstanceId, week]);
+    final prevAvg = (prevScoreRaw.first['avgScore'] as num?)?.toDouble() ?? 0.0;
+
+    double efficiency;
+    if (prevAvg == 0) {
+      efficiency = currentAvg > 0 ? 100.0 : 0.0;
+    } else {
+      efficiency = (currentAvg / prevAvg) * 100;
+    }
+
+    return {
+      'consistency': double.parse(consistency.toStringAsFixed(1)),
+      'efficiency': double.parse(efficiency.toStringAsFixed(1))
+    };
+  }
+
+  Future<double> getWeeklyMomentum(
+      String userId, int blockInstanceId, int week) async {
+    final stats = await _getWeekStats(userId, blockInstanceId, week);
+    return (stats['consistency']! + stats['efficiency']!) / 2.0;
+  }
+
+  Future<double> getRunningMomentumAverage(
+      String userId, int blockInstanceId, int currentWeek) async {
+    double total = 0.0;
+    int weeks = 0;
+    for (int w = 1; w <= currentWeek; w++) {
+      final stats = await _getWeekStats(userId, blockInstanceId, w);
+      if (stats['consistency']! == 0 && stats['efficiency']! == 0) continue;
+      total += (stats['consistency']! + stats['efficiency']!) / 2.0;
+      weeks++;
+    }
+    return weeks > 0 ? total / weeks : 0.0;
+  }
+
 }
