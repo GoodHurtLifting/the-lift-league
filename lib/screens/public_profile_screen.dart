@@ -25,6 +25,9 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   List<Map<String, dynamic>> _publicBlocks = [];
   List<String> _publicBlockImages = [];
   List<String> _publicBlockNames = [];
+  int _followToggleStep = -1; // -1 indicates uninitialized
+  bool _showBeforeAfter = false;
+  bool _hasEnoughForBA = false;
 
   final Map<String, String> blockBannerImages = {
     "Push Pull Legs": 'assets/images/PushPullLegs.jpg',
@@ -74,6 +77,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     });
 
     await _fetchPublicBlocks();
+    await _checkBeforeAfterAvailability();
   }
 
   Future<void> _fetchPublicBlocks() async {
@@ -94,6 +98,23 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
           .map((b) => b['coverImageUrl']?.toString() ?? 'assets/logo25.jpg')
           .toList();
     });
+  }
+
+  Future<void> _checkBeforeAfterAvailability() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .collection('timeline_entries')
+        .where('type', isEqualTo: 'checkin')
+        .get();
+    final count = snap.docs.where((d) {
+      final data = d.data();
+      final urls = data['imageUrls'];
+      return urls is List && urls.isNotEmpty;
+    }).length;
+    if (mounted) {
+      setState(() => _hasEnoughForBA = count >= 3);
+    }
   }
 
   Future<void> _addPublicBlock(int index) async {
@@ -226,19 +247,40 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
               ),
             ),
             const SizedBox(height: 55),
-            FutureBuilder<List<bool>>(
-              future: _getFollowAndCircleStatus(
-                FirebaseAuth.instance.currentUser!.uid,
-                widget.userId,
-              ),
-              builder: (context, snapshot) {
-                final isFollowing = snapshot.data?[0] ?? false;
-                final isInCircle = snapshot.data?[1] ?? false;
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                  .collection('following')
+                  .doc(widget.userId)
+                  .snapshots(),
+              builder: (context, followSnap) {
+                final isFollowing = followSnap.data?.exists ?? false;
                 final currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+                if (_followToggleStep == -1) {
+                  if (!isFollowing) {
+                    _followToggleStep = 0;
+                  } else if (isInCircle) {
+                    _followToggleStep = 2;
+                  } else {
+                    _followToggleStep = 1;
+                  }
+                }
+
+                return StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(currentUserId)
+                      .collection('training_circle')
+                      .doc(widget.userId)
+                      .snapshots(),
+                  builder: (context, circleSnap) {
+                    final isInCircle = circleSnap.data?.exists ?? false;
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
                     _iconRectButton(
                       icon: Icons.bar_chart,
                       onPressed: showStats
@@ -258,52 +300,66 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     if (widget.userId != currentUserId) ...[
                       const SizedBox(width: 16),
                       _iconRectButton(
-                        icon: isFollowing
-                            ? Icons.person_remove
-                            : Icons.person_add,
+                        icon: _followToggleStep == 0
+                            ? Icons.person_add
+                            : _followToggleStep == 1
+                                ? Icons.control_point
+                                : _followToggleStep == 2
+                                    ? Icons.remove_circle_outline
+                                    : Icons.person_remove,
                         onPressed: () async {
-                          if (isFollowing) {
-                            await UserFollowService()
-                                .unfollowUser(currentUserId, widget.userId);
-                            _showActionLabel('Unfollowed');
-                          } else {
-                            await UserFollowService()
-                                .followUser(currentUserId, widget.userId);
-                            _showActionLabel('Followed');
+                          switch (_followToggleStep) {
+                            case 0:
+                              await UserFollowService()
+                                  .followUser(currentUserId, widget.userId);
+                              _showActionLabel('Followed');
+                              isFollowing = true;
+                              _followToggleStep = 1;
+                              break;
+                            case 1:
+                              final doc = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(widget.userId)
+                                  .get();
+                              final data = doc.data();
+                              if (data == null) return;
+                              await UserFollowService()
+                                  .addToTrainingCircle(currentUserId, {
+                                'userId': widget.userId,
+                                'displayName': data['displayName'],
+                                'profileImageUrl': data['profileImageUrl'],
+                                'title': data['title'],
+                              });
+                              _showActionLabel('Added to Circle');
+                              isInCircle = true;
+                              _followToggleStep = 2;
+                              break;
+                            case 2:
+                              await UserFollowService()
+                                  .removeFromTrainingCircle(
+                                      currentUserId, widget.userId);
+                              _showActionLabel('Removed');
+                              isInCircle = false;
+                              _followToggleStep = 3;
+                              break;
+                            default:
+                              await UserFollowService()
+                                  .unfollowUser(currentUserId, widget.userId);
+                              _showActionLabel('Unfollowed');
+                              isFollowing = false;
+                              _followToggleStep = 0;
                           }
                           setState(() {});
                         },
                       ),
                       const SizedBox(width: 16),
                       _iconRectButton(
-                        icon: isInCircle
-                            ? Icons.remove_circle_outline
-                            : Icons.control_point,
-                        onPressed: isFollowing
-                            ? () async {
-                                if (isInCircle) {
-                                  await UserFollowService()
-                                      .removeFromTrainingCircle(
-                                          currentUserId, widget.userId);
-                                  _showActionLabel('Removed');
-                                } else {
-                                  final doc = await FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(widget.userId)
-                                      .get();
-                                  final data = doc.data();
-                                  if (data == null) return;
-                                  await UserFollowService()
-                                      .addToTrainingCircle(currentUserId, {
-                                    'userId': widget.userId,
-                                    'displayName': data['displayName'],
-                                    'profileImageUrl': data['profileImageUrl'],
-                                    'title': data['title'],
-                                  });
-                                  _showActionLabel('Added to Circle');
-                                }
-                                setState(() {});
-                              }
+                        icon: _showBeforeAfter
+                            ? Icons.dynamic_feed
+                            : Icons.compare_arrows,
+                        onPressed: _hasEnoughForBA
+                            ? () => setState(
+                                () => _showBeforeAfter = !_showBeforeAfter)
                             : null,
                       ),
                     ],
@@ -325,6 +381,8 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                   ],
                 );
               },
+                );
+              },
             ),
             const SizedBox(height: 20),
             if (_publicBlocks.isNotEmpty) ...[
@@ -344,6 +402,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                     TimelinePublic(
                       userId: widget.userId,
                       checkInInfo: showCheckInInfo,
+                      showBeforeAfter: _showBeforeAfter,
                     ),
                   ],
                 ),
@@ -356,20 +415,6 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     );
   }
 
-  Future<List<bool>> _getFollowAndCircleStatus(
-      String currentUserId, String targetUserId) async {
-    final followService = UserFollowService();
-    final isFollowing =
-        await followService.isFollowing(currentUserId, targetUserId);
-    final isInCircle = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUserId)
-        .collection('training_circle')
-        .doc(targetUserId)
-        .get()
-        .then((doc) => doc.exists);
-    return [isFollowing, isInCircle];
-  }
 
   Future<String> getOrCreateChat(String userId1, String userId2) async {
     final chatId = userId1.hashCode <= userId2.hashCode

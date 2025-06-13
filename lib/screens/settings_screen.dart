@@ -22,6 +22,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool isLoading = true;
   bool notifyMessages = true;
   bool notifyTrainingCircle = true;
+  bool notifyFollow = true;
+  bool notifyCircleAdd = true;
   bool playRestSound = true;
   bool googleLinked = false;
   bool appleLinked = false;
@@ -54,6 +56,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // notificationPrefs with defaults
         notifyMessages = notif['messages'] ?? true;
         notifyTrainingCircle = notif['trainingCircle'] ?? true;
+        notifyFollow = notif['follow'] ?? true;
+        notifyCircleAdd = notif['trainingCircleAdd'] ?? true;
         isLoading = false;
       });
     }
@@ -91,6 +95,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       if (key == 'messages') notifyMessages = value;
       if (key == 'trainingCircle') notifyTrainingCircle = value;
+      if (key == 'follow') notifyFollow = value;
+      if (key == 'trainingCircleAdd') notifyCircleAdd = value;
     });
     await FirebaseFirestore.instance.collection('users').doc(uid).set({
       'notificationPrefs': {
@@ -100,6 +106,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final labelMap = {
       'messages': 'Message notifications',
       'trainingCircle': 'Training Circle notifications',
+      'follow': 'Follower notifications',
+      'trainingCircleAdd': 'Training Circle Add notifications',
     };
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -335,13 +343,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SwitchListTile(
                 activeColor: Colors.green,
+                title: const Text('New Followers', style: TextStyle(color: Colors.white)),
+                value: notifyFollow,
+                onChanged: (val) => _updateNotificationPref('follow', val),
+              ),
+              SwitchListTile(
+                activeColor: Colors.green,
+                title: const Text('Added to Training Circle', style: TextStyle(color: Colors.white)),
+                value: notifyCircleAdd,
+                onChanged: (val) => _updateNotificationPref('trainingCircleAdd', val),
+              ),
+              SwitchListTile(
+                activeColor: Colors.green,
                 title: const Text('Rest Timer Sound', style: TextStyle(color: Colors.white)),
                 value: playRestSound,
                 onChanged: (val) => _updateRestSoundPref(val),
               ),
             ],
           ),
-          const Divider(color: Colors.white54),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
             child: Text(

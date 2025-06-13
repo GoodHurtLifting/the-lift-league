@@ -43,6 +43,7 @@ class _TimelinePrivateState extends State<TimelinePrivate> {
           return Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
