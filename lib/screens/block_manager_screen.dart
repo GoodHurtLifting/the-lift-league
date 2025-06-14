@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/services/block_manager_service.dart';
+import 'package:lift_league/data/block_data.dart';
+import 'package:lift_league/utils/workout_utils.dart';
 
 class BlockManagerScreen extends StatefulWidget {
   const BlockManagerScreen({super.key});
@@ -25,8 +27,10 @@ class _BlockManagerScreenState extends State<BlockManagerScreen> {
 
   Future<void> _loadGroupedLifts() async {
     final data = await _db.getLiftsByBlockAndWorkout();
-    final Map<String, Map<String, List<Map<String, dynamic>>>> grouped = {};
+    final Map<String, Map<String, List<Map<String, dynamic>>>> temp = {};
+    final Map<String, int> blockIds = {};
     final List<Map<String, dynamic>> all = [];
+
     for (final row in data) {
       final blockName = (row['blockName'] ?? '') as String;
       final workoutName = (row['workoutName'] ?? '') as String;
@@ -39,13 +43,44 @@ class _BlockManagerScreenState extends State<BlockManagerScreen> {
         'youtubeUrl': row['youtubeUrl'],
         'description': row['description'],
       };
+
       all.add(lift);
-      grouped.putIfAbsent(blockName, () => {});
-      grouped[blockName]!.putIfAbsent(workoutName, () => []);
-      grouped[blockName]![workoutName]!.add(lift);
+      blockIds[blockName] = row['blockId'] as int;
+      temp.putIfAbsent(blockName, () => {});
+      temp[blockName]!.putIfAbsent(workoutName, () => []);
+      temp[blockName]![workoutName]!.add(lift);
     }
+
+    final Map<String, Map<String, List<Map<String, dynamic>>>> ordered = {};
+    final List<String> blockOrder =
+        blockDataList.map((b) => b['blockName'] as String).toList();
+
+    for (final name in blockOrder) {
+      if (!temp.containsKey(name)) continue;
+      final workouts = temp[name]!;
+      final int? id = blockIds[name];
+      final List<String> workoutOrder =
+          id != null ? getOrderedWorkoutNamesForBlock(id) : workouts.keys.toList();
+
+      final Map<String, List<Map<String, dynamic>>> wMap = {};
+      for (final w in workoutOrder) {
+        if (workouts.containsKey(w)) {
+          wMap[w] = workouts[w]!;
+        }
+      }
+      for (final entry in workouts.entries) {
+        wMap.putIfAbsent(entry.key, () => entry.value);
+      }
+      ordered[name] = wMap;
+    }
+
+    // Append any blocks not specified in blockOrder
+    for (final entry in temp.entries) {
+      ordered.putIfAbsent(entry.key, () => entry.value);
+    }
+
     setState(() {
-      groupedLifts = grouped;
+      groupedLifts = ordered;
       lifts = all;
       loading = false;
     });
