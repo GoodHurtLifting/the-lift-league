@@ -2,69 +2,52 @@ import 'package:flutter/material.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/services/block_manager_service.dart';
 
-class WorkoutManagerScreen extends StatefulWidget {
-  const WorkoutManagerScreen({super.key});
+class BlockManagerScreen extends StatefulWidget {
+  const BlockManagerScreen({super.key});
 
   @override
-  State<WorkoutManagerScreen> createState() => _WorkoutManagerScreenState();
+  State<BlockManagerScreen> createState() => _BlockManagerScreenState();
 }
 
-class _WorkoutManagerScreenState extends State<WorkoutManagerScreen> {
+class _BlockManagerScreenState extends State<BlockManagerScreen> {
   final DBService _db = DBService();
   final BlockManagerService _manager = BlockManagerService();
   List<Map<String, dynamic>> lifts = [];
-  List<Map<String, dynamic>> blocks = [];
-  List<Map<String, dynamic>> workouts = [];
-  int? selectedBlockId;
-  int? selectedWorkoutId;
-  bool sortAsc = true;
+  Map<String, Map<String, List<Map<String, dynamic>>>> groupedLifts = {};
   bool loading = true;
   bool executing = false;
 
   @override
   void initState() {
     super.initState();
-    _loadBlocks();
-    _loadLifts();
+    _loadGroupedLifts();
   }
 
-  Future<void> _loadLifts() async {
-    final all = await _db.getAllLifts();
+  Future<void> _loadGroupedLifts() async {
+    final data = await _db.getLiftsByBlockAndWorkout();
+    final Map<String, Map<String, List<Map<String, dynamic>>>> grouped = {};
+    final List<Map<String, dynamic>> all = [];
+    for (final row in data) {
+      final blockName = (row['blockName'] ?? '') as String;
+      final workoutName = (row['workoutName'] ?? '') as String;
+      final lift = {
+        'liftId': row['liftId'],
+        'liftName': row['liftName'],
+        'repScheme': row['repScheme'],
+        'scoreType': row['scoreType'],
+        'scoreMultiplier': row['scoreMultiplier'],
+        'youtubeUrl': row['youtubeUrl'],
+        'description': row['description'],
+      };
+      all.add(lift);
+      grouped.putIfAbsent(blockName, () => {});
+      grouped[blockName]!.putIfAbsent(workoutName, () => []);
+      grouped[blockName]![workoutName]!.add(lift);
+    }
     setState(() {
+      groupedLifts = grouped;
       lifts = all;
       loading = false;
-    });
-    _sortLifts();
-  }
-
-  Future<void> _loadBlocks() async {
-    final b = await _db.getAllBlocks();
-    setState(() => blocks = b);
-  }
-
-  Future<void> _loadWorkoutsForBlock(int blockId) async {
-    final w = await _db.getWorkoutsByBlockId(blockId);
-    setState(() {
-      workouts = w;
-      selectedWorkoutId = null;
-    });
-  }
-
-  Future<void> _loadLiftsForWorkout(int workoutId) async {
-    setState(() => loading = true);
-    final l = await _db.getLiftsByWorkoutId(workoutId);
-    setState(() {
-      lifts = l;
-      loading = false;
-    });
-    _sortLifts();
-  }
-
-  void _sortLifts() {
-    lifts.sort((a, b) {
-      final nameA = (a['liftName'] ?? '').toString().toLowerCase();
-      final nameB = (b['liftName'] ?? '').toString().toLowerCase();
-      return sortAsc ? nameA.compareTo(nameB) : nameB.compareTo(nameA);
     });
   }
 
@@ -80,7 +63,6 @@ class _WorkoutManagerScreenState extends State<WorkoutManagerScreen> {
         'description': '',
       });
     });
-    _sortLifts();
   }
 
   Future<void> _execute() async {
@@ -98,8 +80,7 @@ class _WorkoutManagerScreenState extends State<WorkoutManagerScreen> {
     setState(() => executing = false);
   }
 
-  Widget _buildLiftCard(int index) {
-    final lift = lifts[index];
+  Widget _buildLiftCard(Map<String, dynamic> lift) {
     return ExpansionTile(
         title: Text(
             '${lift['liftName'] ?? 'New Lift'} • ${lift['repScheme'] ?? ''}'),
@@ -163,102 +144,44 @@ class _WorkoutManagerScreenState extends State<WorkoutManagerScreen> {
     );
   }
 
-  Widget _buildFilterRow() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: DropdownButton<int>(
-              isExpanded: true,
-              hint: const Text('Block'),
-              value: selectedBlockId,
-              items: blocks
-                  .map((b) => DropdownMenuItem<int>(
-                        value: b['blockId'] as int,
-                        child: Text(b['blockName'] as String),
-                      ))
-                  .toList(),
-              onChanged: (v) {
-                if (v == null) return;
-                setState(() {
-                  selectedBlockId = v;
-                });
-                _loadWorkoutsForBlock(v);
-              },
-            ),
+  Widget _buildGroupedList() {
+    final List<Widget> items = [];
+    groupedLifts.forEach((blockName, workouts) {
+      items.add(Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        color: Colors.grey.shade300,
+        child: Text(
+          blockName,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ));
+      workouts.forEach((workoutName, lifts) {
+        items.add(
+          ExpansionTile(
+            title: Text(workoutName),
+            children: lifts.map(_buildLiftCard).toList(),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: DropdownButton<int>(
-              isExpanded: true,
-              hint: const Text('Workout'),
-              value: selectedWorkoutId,
-              items: workouts
-                  .map((w) => DropdownMenuItem<int>(
-                        value: w['workoutId'] as int,
-                        child: Text(w['workoutName'] as String),
-                      ))
-                  .toList(),
-              onChanged: (v) {
-                if (v == null) return;
-                setState(() {
-                  selectedWorkoutId = v;
-                });
-                _loadLiftsForWorkout(v);
-              },
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.clear),
-            onPressed: () {
-              setState(() {
-                selectedBlockId = null;
-                selectedWorkoutId = null;
-                workouts.clear();
-              });
-              _loadLifts();
-            },
-          )
-        ],
-      ),
-    );
+        );
+      });
+    });
+
+    return ListView(children: items);
   }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Workout Manager'),
-        actions: [
-          IconButton(
-            icon: Icon(sortAsc ? Icons.arrow_upward : Icons.arrow_downward),
-            onPressed: () {
-              setState(() {
-                sortAsc = !sortAsc;
-                _sortLifts();
-              });
-            },
-          ),
-        ],
+        title: const Text('Block Manager'),
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
+          : Stack(
               children: [
-                _buildFilterRow(),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      ListView.builder(
-                        itemCount: lifts.length,
-                        itemBuilder: (c, i) => _buildLiftCard(i),
-                      ),
-                      if (executing)
-                        const Center(child: CircularProgressIndicator()),
-                    ],
-                  ),
-                ),
+                _buildGroupedList(),
+                if (executing)
+                  const Center(child: CircularProgressIndicator()),
               ],
             ),
       floatingActionButton: Column(

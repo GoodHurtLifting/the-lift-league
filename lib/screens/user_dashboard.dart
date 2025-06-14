@@ -617,7 +617,7 @@ class _UserDashboardState extends State<UserDashboard> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => const WorkoutManagerScreen()),
+                                builder: (_) => const BlockManagerScreen()),
                           );
                         },
                       ),
