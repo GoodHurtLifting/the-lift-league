@@ -9,6 +9,21 @@ class BlockManagerScreen extends StatefulWidget {
   State<BlockManagerScreen> createState() => _BlockManagerScreenState();
 }
 
+final List<String> blockOrder = [
+  "Push Pull Legs",
+  "Upper Lower",
+  "Full Body",
+  "Full Body Plus",
+  "5 X 5",
+  "Texas Method",
+  "Wuehr Hammer",
+  "Gran Moreno",
+  "Body Split",
+  "Shatner",
+  "Super Split",
+  "PPL Plus",
+];
+
 class _BlockManagerScreenState extends State<BlockManagerScreen> {
   final DBService _db = DBService();
   final BlockManagerService _manager = BlockManagerService();
@@ -146,15 +161,21 @@ class _BlockManagerScreenState extends State<BlockManagerScreen> {
 
   Widget _buildGroupedList() {
     final List<Widget> items = [];
-    groupedLifts.forEach((blockName, workouts) {
-      items.add(Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        color: Colors.grey.shade300,
-        child: Text(
-          blockName,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    final sortedKeys = groupedLifts.keys.toList()
+      ..sort((a, b) => blockOrder.indexOf(a).compareTo(blockOrder.indexOf(b)));
+
+    for (final blockName in sortedKeys) {
+      final workouts = groupedLifts[blockName]!;
+      items.add(
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          color: Colors.grey.shade300,
+          child: Text(
+            blockName,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
         ),
-      ));
+      );
       workouts.forEach((workoutName, lifts) {
         items.add(
           ExpansionTile(
@@ -163,7 +184,8 @@ class _BlockManagerScreenState extends State<BlockManagerScreen> {
           ),
         );
       });
-    });
+    }
+
 
     return ListView(children: items);
   }
