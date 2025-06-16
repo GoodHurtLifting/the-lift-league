@@ -24,6 +24,7 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
   List<String> badgeAssetPaths = [];
   bool isLoading = true;
   String feedbackMessage = '';
+  Map<String, double> newBig3Prs = {};
 
 
   @override
@@ -41,6 +42,7 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
     final days = await _statsService.getDaysTakenForBlock(widget.blockInstanceId);
     final calendarDays = await _statsService.getCalendarDaysForBlock(widget.blockInstanceId);
     final badges = await _statsService.getBlockEarnedBadges(userId, widget.blockInstanceId);
+    final prs = await _statsService.getBigThreePRsForBlock(userId, widget.blockInstanceId);
 
     final expectedDays = 28;
 
@@ -62,6 +64,7 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
       totalCalendarDays = calendarDays;
       badgeAssetPaths = badges.map((b) => b['imagePath'] as String).toList();
       feedbackMessage = feedback;
+      newBig3Prs = prs;
       isLoading = false;
     });
   }
@@ -104,6 +107,16 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
             Text('Block Workload: ${blockWorkload.toStringAsFixed(1)} lbs'),
             Text('Workouts Completed: $workoutsCompleted'),
             Text('Days Taken: $daysTaken'),
+            if (newBig3Prs.isNotEmpty) ...[
+              const SizedBox(height: 30),
+              const Text(
+                'Big Three PRs:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              ...newBig3Prs.entries.map((e) =>
+                  Text('${e.key}: ${e.value.toStringAsFixed(0)} lbs')),
+            ],
             if (feedbackMessage.isNotEmpty)
               Text(
                 feedbackMessage,

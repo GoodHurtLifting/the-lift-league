@@ -1,4 +1,5 @@
 import 'db_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class UserStatsService {
@@ -110,5 +111,54 @@ class UserStatsService {
   ''', [userId]);
 
     return (result.first['totalBlocks'] as int?) ?? 0;
+  }
+
+  Future<Map<String, double>> getBigThreePRsForBlock(
+      String userId, int blockInstanceId) async {
+    final db = await _dbService.database;
+    final result = await db.query('block_instances',
+        columns: ['startDate', 'endDate'],
+        where: 'blockInstanceId = ?',
+        whereArgs: [blockInstanceId],
+        limit: 1);
+
+    if (result.isEmpty) return {};
+    final startStr = result.first['startDate'] as String?;
+    if (startStr == null) return {};
+    final endStr = result.first['endDate'] as String?;
+
+    final start = DateTime.parse(startStr);
+    final end = endStr != null ? DateTime.parse(endStr) : DateTime.now();
+
+    final startTs = Timestamp.fromDate(start);
+    final endTs = Timestamp.fromDate(end);
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('timeline_entries')
+        .where('timestamp', isGreaterThanOrEqualTo: startTs)
+        .where('timestamp', isLessThanOrEqualTo: endTs)
+        .where('type', isEqualTo: 'clink')
+        .get();
+
+    final prs = <String, double>{};
+    final regex =
+    RegExp(r'New (Bench Press|Squats|Deadlift) PR - (\d+(?:\.\d+)?)');
+
+    for (final doc in snapshot.docs) {
+      final clink = doc.data()['clink'] as String? ?? '';
+      final match = regex.firstMatch(clink);
+      if (match != null) {
+        final lift = match.group(1)!;
+        final weight = double.tryParse(match.group(2)!) ?? 0.0;
+        final current = prs[lift] ?? 0.0;
+        if (weight > current) {
+          prs[lift] = weight;
+        }
+      }
+    }
+
+    return prs;
   }
 }
