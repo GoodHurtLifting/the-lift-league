@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:lift_league/web_tools/poss_block_builder.dart';
+import 'package:lift_league/web_tools/poss_home_page.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -143,7 +143,7 @@ class LiftLeagueApp extends StatelessWidget {
         '/publicProfile': (context) => PublicProfileScreen(
           userId: (ModalRoute.of(context)?.settings.arguments as Map?)?['userId'] ?? '',
         ),
-        '/poss': (context) => const POSSBlockBuilder(),
+        '/poss': (context) => const POSSHomePage(),
 
       },
       home: const AuthGate(),
