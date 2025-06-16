@@ -76,7 +76,7 @@ exports.notifyTrainingCircle = onDocumentCreated(
   'users/{userId}/timeline_entries/{entryId}',
   async (event) => {
     const snap = event.data;
-    if (!snap) return; // <-- add null check
+    if (!snap) return;
     const entry = snap.data();
     const userId = event.params.userId;
 
