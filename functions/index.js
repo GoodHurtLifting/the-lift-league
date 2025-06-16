@@ -141,3 +141,37 @@ exports.notifyTrainingCircle = onDocumentCreated(
      }
    );
 
+   const { Configuration, OpenAIApi } = require('openai');
+
+   const configuration = new Configuration({
+     apiKey: functions.config().openai.key,
+   });
+   const openai = new OpenAIApi(configuration);
+
+   exports.evaluateTrainingBlock = functions.https.onCall(async (data, context) => {
+     try {
+       const blockData = data.block;
+
+       const prompt = `
+   You are a strength training coach reviewing a user's custom training block. Evaluate the overall structure, balance, and effectiveness of the block using the following data:
+
+   ${JSON.stringify(blockData, null, 2)}
+
+   Provide 2–3 specific points of feedback. Be encouraging but honest. Sound like a knowledgeable gym coach.
+       `;
+
+       const response = await openai.createChatCompletion({
+         model: "gpt-4o",
+         messages: [{ role: "user", content: prompt }],
+       });
+
+       const feedback = response.data.choices[0].message.content;
+       return { feedback };
+
+     } catch (error) {
+       console.error("AI feedback error:", error);
+       throw new functions.https.HttpsError('internal', 'Failed to generate feedback.');
+     }
+   });
+
+
