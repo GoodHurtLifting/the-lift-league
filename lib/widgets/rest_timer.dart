@@ -1,9 +1,7 @@
 // rest_timer.dart
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
-import 'package:vibration/vibration.dart';
+import 'package:lift_league/services/rest_timer_service.dart';
 
 class RestTimer extends StatefulWidget {
   const RestTimer({super.key});
@@ -14,52 +12,26 @@ class RestTimer extends StatefulWidget {
 
 class _RestTimerState extends State<RestTimer> {
   int _remainingSeconds = 0;
-  Timer? _timer;
   int _lastUsedDuration = 60; // Default initial value
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _playSound = true;
+  final RestTimerService _service = RestTimerService();
+  StreamSubscription<int>? _sub;
 
   @override
   void initState() {
     super.initState();
-    _loadPrefs();
-  }
-
-  Future<void> _loadPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _playSound = prefs.getBool('playRestSound') ?? true;
+    _sub = _service.stream.listen((seconds) {
+      setState(() {
+        _remainingSeconds = seconds;
+      });
     });
   }
 
-  Future<void> _playChime() async {
-    if (!_playSound) return;
-    try {
-      await _audioPlayer.play(AssetSource('sounds/chime.wav'));
-    } catch (_) {}
-  }
 
   void _startTimer(int seconds) {
-    _timer?.cancel();
     setState(() {
-      _remainingSeconds = seconds;
       _lastUsedDuration = seconds;
     });
-
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds > 1) {
-        setState(() => _remainingSeconds--);
-      } else {
-        timer.cancel();
-        setState(() => _remainingSeconds = 0);
-        Vibration.hasVibrator().then((hasVibrator) {
-          if(hasVibrator ?? false) {
-            Vibration.vibrate(duration: 500);
-          }
-        });
-        _playChime();
-      }
-    });
+    _service.start(seconds);
   }
 
   String _formatTime(int seconds) {
@@ -88,7 +60,7 @@ class _RestTimerState extends State<RestTimer> {
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _sub?.cancel();
     super.dispose();
   }
 
