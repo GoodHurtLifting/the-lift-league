@@ -48,11 +48,22 @@ class _POSSHomePageState extends State<POSSHomePage> {
         setState(() => _showGrid = false);
       });
     } else {
-      body = POSSBlockBuilder(onSaved: _onSaved);
+      body = const Center(child: Text('There are no saved blocks yet'));
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('The Lift League')),
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('The Lift League'),
+            Text(
+              'Progressive Overload Scoring System',
+              style: TextStyle(fontSize: 14),
+            ),
+          ],
+        ),
+      ),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
