@@ -3,6 +3,12 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
+const { Configuration, OpenAIApi } = require('openai');
+const configuration = new Configuration({
+  apiKey: functions.config().openai.key,
+});
+const openai = new OpenAIApi(configuration);
+
 exports.notifyNewMessage = onDocumentCreated(
   'chats/{chatId}/messages/{messageId}',
   async (event) => {
@@ -10,7 +16,6 @@ exports.notifyNewMessage = onDocumentCreated(
     if (!snap) return;
     const message = snap.data();
     const chatId = event.params.chatId;
-
     const senderId = message.senderId;
 
     // Get parent chat doc to find all members
@@ -49,7 +54,6 @@ exports.notifyNewMessage = onDocumentCreated(
       return;
     }
 
-    // MISSING PIECE: the payload and sendToDevice
     const payload = {
       notification: {
         title: "New Message",
@@ -60,23 +64,22 @@ exports.notifyNewMessage = onDocumentCreated(
         messageId: event.params.messageId,
       }
     };
-await admin.messaging().sendEachForMulticast({
-  tokens,
-  notification: payload.notification,
-  data: payload.data,
-});
+    await admin.messaging().sendEachForMulticast({
+      tokens,
+      notification: payload.notification,
+      data: payload.data,
+    });
     console.log(`DM notification sent to ${tokens.length} devices.`);
   }
 );
-
 
 exports.notifyTrainingCircle = onDocumentCreated(
   'users/{userId}/timeline_entries/{entryId}',
   async (event) => {
     const snap = event.data;
-    const context = event;
+    if (!snap) return; // <-- add null check
     const entry = snap.data();
-    const userId = context.params.userId;
+    const userId = event.params.userId;
 
     // 1. Get all members from this user's training_circle subcollection
     const circleSnap = await admin.firestore()
@@ -128,50 +131,41 @@ exports.notifyTrainingCircle = onDocumentCreated(
       },
       data: {
         userId,
-        entryId: context.params.entryId,
+        entryId: event.params.entryId,
       }
     };
 
-   await admin.messaging().sendEachForMulticast({
-     tokens,
-     notification: payload.notification,
-     data: payload.data,
-   });
-       console.log(`DM notification sent to ${tokens.length} devices.`);
-     }
-   );
+    await admin.messaging().sendEachForMulticast({
+      tokens,
+      notification: payload.notification,
+      data: payload.data,
+    });
+    console.log(`DM notification sent to ${tokens.length} devices.`);
+  }
+);
 
-   const { Configuration, OpenAIApi } = require('openai');
+exports.evaluateTrainingBlock = functions.https.onCall(async (data, context) => {
+  try {
+    const blockData = data.block;
 
-   const configuration = new Configuration({
-     apiKey: functions.config().openai.key,
-   });
-   const openai = new OpenAIApi(configuration);
+    const prompt = `
+You are a strength training coach reviewing a user's custom training block. Evaluate the overall structure, balance, and effectiveness of the block using the following data:
 
-   exports.evaluateTrainingBlock = functions.https.onCall(async (data, context) => {
-     try {
-       const blockData = data.block;
+${JSON.stringify(blockData, null, 2)}
 
-       const prompt = `
-   You are a strength training coach reviewing a user's custom training block. Evaluate the overall structure, balance, and effectiveness of the block using the following data:
+Provide 2–3 specific points of feedback. Be encouraging but honest. Sound like a knowledgeable gym coach.
+    `.trim();
 
-   ${JSON.stringify(blockData, null, 2)}
+    const response = await openai.createChatCompletion({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+    });
 
-   Provide 2–3 specific points of feedback. Be encouraging but honest. Sound like a knowledgeable gym coach.
-       `;
+    const feedback = response.data.choices[0].message.content;
+    return { feedback };
 
-       const response = await openai.createChatCompletion({
-         model: "gpt-4o",
-         messages: [{ role: "user", content: prompt }],
-       });
-
-       const feedback = response.data.choices[0].message.content;
-       return { feedback };
-
-     } catch (error) {
-       console.error("AI feedback error:", error);
-       throw new functions.https.HttpsError('internal', 'Failed to generate feedback.');
-     }
-   });
-
-
+  } catch (error) {
+    console.error("AI feedback error:", error);
+    throw new functions.https.HttpsError('internal', 'Failed to generate feedback.');
+  }
+});
