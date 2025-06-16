@@ -48,6 +48,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
 
   final Map<String, TextEditingController> _controllerMap = {};
   final Map<String, FocusNode> _focusMap = {};
+  final Map<int, GlobalKey> _liftEntryKeys = {};
 
 
 // ──────────────────────────────────────────────
@@ -257,6 +258,16 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
         }
         break;
       case 'done':
+        if (_activeFieldKey != null) {
+          final liftId = int.tryParse(_activeFieldKey!.split('_').first);
+          if (liftId != null) {
+            final key = _liftEntryKeys[liftId];
+            if (key?.currentState != null) {
+              final dynamic state = key!.currentState;
+              state.finalizeLift();
+            }
+          }
+        }
         _closeInlineNumpad();
         break;
       case 'decimal':
@@ -535,8 +546,10 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
 
           return StatefulBuilder(
             builder: (context, setLocalState) {
+              final liftKey = _liftEntryKeys.putIfAbsent(
+                  lift.liftId, () => GlobalKey());
               return LiftEntry(
-                key: ValueKey('lift_${widget.workoutInstanceId}_${index}_${lift.liftId}'),
+                key: liftKey,
                 blockInstanceId: widget.blockInstanceId,
                 blockName: workout!.blockName,
                 liftIndex: index,
