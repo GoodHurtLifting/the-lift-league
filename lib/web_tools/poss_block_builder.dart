@@ -11,7 +11,8 @@ import '../models/custom_block_models.dart';
 import '../screens/workout_builder.dart';
 
 class POSSBlockBuilder extends StatefulWidget {
-  const POSSBlockBuilder({super.key});
+  final VoidCallback? onSaved;
+  const POSSBlockBuilder({super.key, this.onSaved});
 
   @override
   State<POSSBlockBuilder> createState() => _POSSBlockBuilderState();
@@ -218,6 +219,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Block saved!')));
     }
+    widget.onSaved?.call();
   }
 
   @override
@@ -352,5 +354,11 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
   }
 }
