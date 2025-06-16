@@ -3,11 +3,10 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp();
 
-const { Configuration, OpenAIApi } = require('openai');
-const configuration = new Configuration({
+const OpenAI = require('openai');
+const openai = new OpenAI({
   apiKey: functions.config().openai.key,
 });
-const openai = new OpenAIApi(configuration);
 
 exports.notifyNewMessage = onDocumentCreated(
   'chats/{chatId}/messages/{messageId}',
@@ -156,12 +155,11 @@ ${JSON.stringify(blockData, null, 2)}
 Provide 2–3 specific points of feedback. Be encouraging but honest. Sound like a knowledgeable gym coach.
     `.trim();
 
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
     });
-
-    const feedback = response.data.choices[0].message.content;
+    const feedback = response.choices[0].message.content;
     return { feedback };
 
   } catch (error) {
