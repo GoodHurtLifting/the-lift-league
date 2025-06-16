@@ -89,4 +89,38 @@ class NotificationService {
     );
   }
 
+  static const int restTimerNotificationId = 999;
+
+  String _format(int seconds) {
+    final mins = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return '$mins:$secs';
+  }
+
+  Future<void> showOngoingTimerNotification(int seconds) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'rest_timer',
+      'Rest Timer',
+      importance: Importance.max,
+      priority: Priority.high,
+      icon: 'ic_stat_liftleague',
+      ongoing: true,
+      showWhen: false,
+      onlyAlertOnce: true,
+    );
+
+    const NotificationDetails details = NotificationDetails(android: androidDetails);
+
+    await _localNotifications.show(
+      restTimerNotificationId,
+      'Rest Timer',
+      _format(seconds),
+      details,
+    );
+  }
+
+  Future<void> cancelOngoingTimerNotification() async {
+    await _localNotifications.cancel(restTimerNotificationId);
+  }
+
 }
