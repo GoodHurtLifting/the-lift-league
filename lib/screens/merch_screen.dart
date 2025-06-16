@@ -5,7 +5,7 @@ class MerchScreen extends StatelessWidget {
   const MerchScreen({super.key});
 
   Future<void> _openStore() async {
-    const url = 'https://example.com/merch';
+    const url = 'https://theliftleague.com/merch';
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);

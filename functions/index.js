@@ -148,7 +148,7 @@ exports.evaluateTrainingBlock = functions.https.onCall(async (data, context) => 
     const blockData = data.block;
 
     const prompt = `
-You are a strength training coach reviewing a user's custom training block. Evaluate the overall structure, balance, and effectiveness of the block using the following data:
+You are a strength training coach reviewing a users custom training block. Evaluate the overall structure, balance, and effectiveness of the block using the following data:
 
 ${JSON.stringify(blockData, null, 2)}
 
