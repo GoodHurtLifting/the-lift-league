@@ -4,6 +4,8 @@ import 'package:lift_league/widgets/timeline_public.dart';
 import 'user_stats_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'chat_screen.dart';
+import 'following_screen.dart';
+import 'training_circle_members_screen.dart';
 import 'package:lift_league/services/user_follow_service.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/models/custom_block_models.dart';
@@ -281,18 +283,43 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                           icon: Icons.bar_chart,
                           onPressed: showStats
                               ? () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => UserStatsScreen(
-                                  userId: widget.userId,
-                                  showCheckInGraph: false,
-                                ),
-                              ),
-                            );
-                          }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => UserStatsScreen(
+                                        userId: widget.userId,
+                                        showCheckInGraph: false,
+                                      ),
+                                    ),
+                                  );
+                                }
                               : null,
                         ),
+                        if (widget.userId == currentUserId) ...[
+                          const SizedBox(width: 16),
+                          _iconRectButton(
+                            icon: Icons.list_alt,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const FollowingScreen()),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 16),
+                          _iconRectButton(
+                            icon: Icons.group,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const TrainingCircleMembersScreen()),
+                              );
+                            },
+                          ),
+                        ],
                         if (widget.userId != currentUserId) ...[
                           const SizedBox(width: 16),
                           _iconRectButton(
