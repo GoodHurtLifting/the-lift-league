@@ -117,11 +117,33 @@ void main() async {
     await setupPushNotifications();
   }
 
-  runApp(const LiftLeagueApp());
+  if (kIsWeb) {
+    runApp(const POSSApp());
+  } else {
+    runApp(const LiftLeagueApp());
+  }
 }
+class POSSApp extends StatelessWidget {
+  const POSSApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'POSS Tool',
+      theme: ThemeData.dark(), // or your custom theme
+      home: const POSSHomePage(),
+      routes: {
+        '/poss': (context) => const POSSHomePage(),
+      },
+    );
+  }
+}
+
 
 class LiftLeagueApp extends StatelessWidget {
   const LiftLeagueApp({super.key});
+
 
   @override
   Widget build(BuildContext context) {
