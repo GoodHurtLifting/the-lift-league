@@ -82,6 +82,5 @@ devtools_options.yaml
 *.hprof
 /.metadatathethee
 /test/widget_test.dart
-/web/
 /macos/
 /linux/
