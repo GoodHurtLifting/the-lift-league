@@ -6,7 +6,6 @@ import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/services/badge_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/services/pr_service.dart';
-import 'dart:async';
 
 class LiftEntry extends StatefulWidget {
   final int liftIndex;
@@ -55,7 +54,6 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
   double _prevLiftScore = 0.0;
   double _liftScore = 0.0;
   double _liftWorkload = 0.0;
-  Timer? _debounce; // Debounce Timer
   double? _recommendedWeight;
   bool isLoading = true;
   String liftName = "";
@@ -136,21 +134,8 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
   }
 
   void _onFieldChanged() {
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 750), () {
-      if (!mounted) return;
-      _recalculateLiftTotals(); // updates _liftScore and _liftWorkload
-      updateStoredData();       // saves to DB
-
-      widget.onLiftDataChanged?.call(
-        _liftScore,
-        _liftWorkload,
-        _repsControllers.map((c) => c.text).toList(),
-        _weightControllers.map((c) => c.text).toList(),
-      );
-
-      setState(() {});
-    });
+    // 🚫 Do nothing here. Calculations and DB updates are triggered
+    // when the user presses the Done button in the numpad modal.
   }
 
   Future<void> _checkLunchLadyBadge() async {
@@ -290,6 +275,22 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
 
   void updateTotals() {
     setState(() {}); // ✅ Forces UI to refresh with updated totals
+  }
+
+  // 🔒 Public method called when the numpad "Done" button is pressed
+  // to force calculation and persistence of lift data.
+  void finalizeLift() {
+    _recalculateLiftTotals();
+    updateStoredData();
+
+    widget.onLiftDataChanged?.call(
+      _liftScore,
+      _liftWorkload,
+      _repsControllers.map((c) => c.text).toList(),
+      _weightControllers.map((c) => c.text).toList(),
+    );
+
+    updateTotals();
   }
 
   void _openYouTubeVideo() async {
