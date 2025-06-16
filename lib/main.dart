@@ -1,4 +1,6 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:lift_league/web_tools/poss_home_page.dart';
@@ -91,23 +93,29 @@ void main() async {
   };
 
   // ✅ Enable App Check (debug mode for dev)
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
-  );
-
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.debug,
+    );
+  }
   // Set up local notifications
-  await NotificationService().init();
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    await NotificationService().init();
+  }
 
+  // Set FCM presentation options — Only for mobile!
+  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  // 🔥 SETUP FCM PERMISSIONS AND LISTENERS
-  await setupPushNotifications();
+    // 🔥 SETUP FCM PERMISSIONS AND LISTENERS
+    await setupPushNotifications();
+  }
 
   runApp(const LiftLeagueApp());
 }
