@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/about_screen.dart';
-import '../screens/merch_screen.dart';
+import 'about_screen.dart';
 import 'custom_blocks_screen.dart';
 import 'poss_block_builder.dart';
 import '../services/db_service.dart';
@@ -56,9 +55,9 @@ class _POSSHomePageState extends State<POSSHomePage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
-            Text('The Lift League'),
+            Text('Progressive Overload Scoring System'),
             Text(
-              'Progressive Overload Scoring System',
+              'Build Workouts • Get Feedback',
               style: TextStyle(fontSize: 14),
             ),
           ],
@@ -81,7 +80,7 @@ class _POSSHomePageState extends State<POSSHomePage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.info),
+              leading: const Icon(Icons.settings),
               title: const Text('About'),
               onTap: () {
                 Navigator.pop(context);
@@ -93,12 +92,12 @@ class _POSSHomePageState extends State<POSSHomePage> {
             ),
             ListTile(
               leading: const Icon(Icons.shopping_cart),
-              title: const Text('Merch'),
+              title: const Text('Block Builder'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const MerchScreen()),
+                  MaterialPageRoute(builder: (_) => const POSSBlockBuilder()),
                 );
               },
             ),
