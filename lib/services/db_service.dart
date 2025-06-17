@@ -1857,6 +1857,25 @@ class DBService {
     return result.first['blockInstanceId'] as int;
   }
 
+  /// Returns the block instance ID marked as `active` for the given [userId].
+  ///
+  /// If no active block exists, `null` is returned.
+  Future<String?> getActiveBlockInstanceId(String userId) async {
+    final db = await database;
+    final result = await db.query(
+      'block_instances',
+      columns: ['blockInstanceId'],
+      where: 'userId = ? AND status = ?',
+      whereArgs: [userId, 'active'],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty && result.first['blockInstanceId'] != null) {
+      return result.first['blockInstanceId'].toString();
+    }
+    return null;
+  }
+
   Future<void> upsertBlockTotals({
     required int blockInstanceId,
     required String userId,

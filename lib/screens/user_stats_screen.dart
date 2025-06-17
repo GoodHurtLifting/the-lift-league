@@ -7,6 +7,7 @@ import 'package:lift_league/widgets/checkin_graph.dart';
 import 'package:lift_league/widgets/consistency_meter.dart';
 import 'package:lift_league/widgets/efficiency_meter.dart';
 import 'package:lift_league/widgets/momentum_meter.dart';
+import 'package:lift_league/services/db_service.dart';
 
 class UserStatsScreen extends StatelessWidget {
   final String userId;
@@ -21,13 +22,23 @@ class UserStatsScreen extends StatelessWidget {
   });
 
   Future<Map<String, dynamic>?> _fetchUserData() async {
-    final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    return doc.data();
+    final doc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    final data = doc.data();
+
+    if (blockId == null) {
+      String? activeId = data?['activeBlockInstanceId']?.toString();
+      activeId ??= await DBService().getActiveBlockInstanceId(userId);
+      if (activeId != null) {
+        data?['activeBlockInstanceId'] = activeId;
+      }
+    }
+
+    return data;
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeBlockId = blockId;
     return Scaffold(
       appBar: AppBar(title: const Text('Stats')),
       body: FutureBuilder<Map<String, dynamic>?>(
@@ -38,6 +49,8 @@ class UserStatsScreen extends StatelessWidget {
           }
 
           final userData = snapshot.data!;
+          final activeBlockId =
+              blockId ?? userData['activeBlockInstanceId']?.toString();
           final displayName = userData['displayName'] ?? 'Unknown User';
           final title = userData['title'] ?? '';
 
