@@ -3,17 +3,37 @@ import 'package:lift_league/services/notifications_service.dart';
 import 'dart:math';
 
 import 'package:sqflite/sqflite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MomentumService {
   final DBService _db = DBService();
   final NotificationService _notifier = NotificationService();
-  bool _notifiedRising = false;
+  static const String _prefsKeyPrefix = 'lastMomentumRise_';
+  DateTime? _lastRiseDate;
+
+  Future<void> _loadLastRiseDate(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final millis = prefs.getInt('$_prefsKeyPrefix$userId');
+    if (millis != null) {
+      _lastRiseDate = DateTime.fromMillisecondsSinceEpoch(millis);
+    }
+  }
+
+  Future<void> _saveLastRiseDate(String userId, DateTime? date) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (date == null) {
+      await prefs.remove('$_prefsKeyPrefix$userId');
+    } else {
+      await prefs.setInt('$_prefsKeyPrefix$userId', date.millisecondsSinceEpoch);
+    }
+  }
 
   Future<Map<String, dynamic>> calculateMomentum({
     required String userId,
     double dropPerMissedDay = 0.02,
     int lookbackDays = 14,
   }) async {
+    await _loadLastRiseDate(userId);
     final db = await _db.database;
 
     final workouts = await db.rawQuery('''
@@ -64,6 +84,7 @@ class MomentumService {
     final trend = <double>[];
     final drops = <bool>[];
     bool increased = false;
+    DateTime? lastIncreaseDate;
 
     for (int i = 0; i < lookbackDays; i++) {
       final day = DateTime(start.year, start.month, start.day + i);
@@ -75,6 +96,7 @@ class MomentumService {
             ((stats['consistency'] + stats['efficiency']) / 2.0).clamp(0.0, 100.0);
         if (declining && momentum > (trend.isNotEmpty ? trend.last : 0)) {
           increased = true;
+          lastIncreaseDate = day;
         }
         declining = false;
         drops.add(false);
@@ -86,12 +108,18 @@ class MomentumService {
       trend.add(double.parse(momentum.toStringAsFixed(1)));
     }
 
-    if (increased && !_notifiedRising) {
-      _notifier.showSimpleNotification(
-          'Momentum Rising', 'Great job getting back on track!');
-      _notifiedRising = true;
-    } else if (!increased) {
-      _notifiedRising = false;
+    if (increased) {
+      if (_lastRiseDate == null || _lastRiseDate != lastIncreaseDate) {
+        _notifier.showSimpleNotification(
+            'Momentum Rising', 'Great job getting back on track!');
+        _lastRiseDate = lastIncreaseDate;
+        await _saveLastRiseDate(userId, _lastRiseDate);
+      }
+    } else {
+      if (_lastRiseDate != null) {
+        _lastRiseDate = null;
+        await _saveLastRiseDate(userId, null);
+      }
     }
 
     return {
