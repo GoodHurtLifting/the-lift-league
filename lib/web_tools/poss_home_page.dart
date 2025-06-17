@@ -51,7 +51,13 @@ class _POSSHomePageState extends State<POSSHomePage> {
         setState(() => _showGrid = false);
       });
     } else {
-      body = const Center(child: Text('There are no saved blocks yet'));
+      body = const Center(
+        child: Text(
+          'There are no saved blocks yet',
+          textAlign: TextAlign.center,
+          softWrap: true,
+        ),
+      );
     }
 
     return DefaultTextStyle(
@@ -59,12 +65,20 @@ class _POSSHomePageState extends State<POSSHomePage> {
       child: Scaffold(
         appBar: AppBar(
           foregroundColor: _lightGrey,
+          centerTitle: true,
+
           title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: const [
-              Text('Progressive Overload Scoring System'),
               Text(
-                'Build Workouts • Get Feedback',
+                'Progressive Overload Scoring System',
+                textAlign: TextAlign.center,
+                softWrap: true,
+              ),
+              Text(
+                'Build Workouts • Stay Motivated\n Get Feedback',
+                textAlign: TextAlign.center,
+                softWrap: true,
                 style: TextStyle(fontSize: 14),
               ),
             ],

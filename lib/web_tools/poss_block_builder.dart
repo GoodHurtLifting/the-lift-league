@@ -231,6 +231,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       style: const TextStyle(color: _lightGrey),
       child: Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           foregroundColor: _lightGrey,
           title: const Text('Build Training Block'),
         ),

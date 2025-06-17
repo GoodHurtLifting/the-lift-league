@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-const Color _lightGrey = Color(0xFFD0D0D0);
+const Color lightGrey = Color(0xFFD0D0D0);
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -8,10 +8,11 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle(
-      style: const TextStyle(color: _lightGrey),
+      style: const TextStyle(color: lightGrey),
       child: Scaffold(
         appBar: AppBar(
-          foregroundColor: _lightGrey,
+          automaticallyImplyLeading: false,
+          foregroundColor: lightGrey,
           title: const Text('POSS Block Builder'),
         ),
         body: Padding(
