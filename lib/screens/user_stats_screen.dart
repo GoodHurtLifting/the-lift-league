@@ -7,7 +7,7 @@ import 'package:lift_league/widgets/checkin_graph.dart';
 import 'package:lift_league/widgets/consistency_meter.dart';
 import 'package:lift_league/widgets/efficiency_meter.dart';
 import 'package:lift_league/widgets/momentum_meter.dart';
-import 'package:lift_league/widgets/stats/calories_chart.dart';
+import 'package:lift_league/widgets/stats/calories_workout_chart.dart';
 import 'package:lift_league/widgets/stats/body_weight_chart.dart';
 import 'package:lift_league/widgets/stats/widget_picker_bottom_sheet.dart';
 import 'package:lift_league/services/db_service.dart';
@@ -138,7 +138,7 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
           }
           break;
         case 'caloriesChart':
-          widgets.add(CaloriesChart(userId: widget.userId));
+          widgets.add(CaloriesWorkoutChart(userId: widget.userId));
           widgets.add(const SizedBox(height: 20));
           break;
         case 'bodyWeightChart':
