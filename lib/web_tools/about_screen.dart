@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'poss_drawer.dart';
 
 
-const Color lightGrey = Color(0xFFFFAFAF);
+const Color lightGrey = Color(0xFFFFFFFF);
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -31,7 +31,7 @@ class AboutScreen extends StatelessWidget {
                 // 1
                 RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey[50]),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[350]),
                     children: const [
                       TextSpan(
                         text: '1. Build & save structured workouts\n',
@@ -46,11 +46,11 @@ class AboutScreen extends StatelessWidget {
                 ),
                 // 2
                 RichText(
-                  text: const TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                    children: [
+                  text: TextSpan(
+                    style: TextStyle(fontSize: 16, color: Colors.grey[350]),
+                    children: const [
                       TextSpan(
-                        text: '2. Turn every set into one score\n',
+                        text: '2. Turn every workout into a single score to beat\n',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       TextSpan(
@@ -62,9 +62,9 @@ class AboutScreen extends StatelessWidget {
                 ),
                 // 3
                 RichText(
-                  text: const TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                    children: [
+                  text: TextSpan(
+                    style: TextStyle(fontSize: 16, color: Colors.grey[350]),
+                    children: const [
                       TextSpan(
                         text: '3. AI checks program balance\n',
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -95,9 +95,9 @@ class AboutScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Text('Build, score, refine—right in your browser.',
+                Text('Build, score, refine—right in your browser.',
                     style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[350])),
                 const SizedBox(height: 6),
                 const Text(
                   'Powered by The Lift League',
