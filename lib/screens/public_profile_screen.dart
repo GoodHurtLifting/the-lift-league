@@ -298,7 +298,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                         if (widget.userId == currentUserId) ...[
                           const SizedBox(width: 16),
                           _iconRectButton(
-                            icon: Icons.list_alt,
+                            icon: Icons.group,
                             onPressed: () {
                               Navigator.push(
                                 context,
@@ -309,7 +309,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                           ),
                           const SizedBox(width: 16),
                           _iconRectButton(
-                            icon: Icons.group,
+                            icon: Icons.circle,
                             onPressed: () {
                               Navigator.push(
                                 context,

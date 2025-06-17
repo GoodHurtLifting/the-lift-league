@@ -580,7 +580,7 @@ class _UserDashboardState extends State<UserDashboard> {
                     ),
                     IconButton(
                       icon: const Icon(
-                        Icons.group,
+                        Icons.circle,
                         color: Colors.white,
                         size: 28,
                       ),
