@@ -66,22 +66,10 @@ class _POSSHomePageState extends State<POSSHomePage> {
         appBar: AppBar(
           foregroundColor: _lightGrey,
           centerTitle: true,
-
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: const [
-              Text(
-                'Progressive Overload\nScoring System',
-                textAlign: TextAlign.center,
-                softWrap: true,
-              ),
-              Text(
-                'Build Workouts • Stay Motivated\nGet Feedback',
-                textAlign: TextAlign.center,
-                softWrap: true,
-                style: TextStyle(fontSize: 14),
-              ),
-            ],
+          title: const Text(
+            'Progressive Overload\nScoring System',
+            textAlign: TextAlign.center,
+            softWrap: true,
           ),
         ),
         drawer: Drawer(
@@ -126,7 +114,20 @@ class _POSSHomePageState extends State<POSSHomePage> {
             ],
           ),
         ),
-        body: body,
+        body: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: Text(
+                'Build Workouts • Stay Motivated\nGet Feedback',
+                textAlign: TextAlign.center,
+                softWrap: true,
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+            Expanded(child: body),
+          ],
+        ),
       ),
     );
   }
