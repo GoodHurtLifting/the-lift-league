@@ -3,48 +3,47 @@ import 'package:flutter/material.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:background_fetch/background_fetch.dart';
 
-void _workmanagerCallbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    final service = HealthService();
-    service.registerAvailableProviders();
-    await service.sync(DateTimeRange(
-      start: DateTime.now().subtract(const Duration(hours: 24)),
-      end: DateTime.now(),
-    ));
-    return Future.value(true);
-  });
-}
-
-void _backgroundFetchTask(String taskId) async {
-  final service = HealthService();
-  service.registerAvailableProviders();
-  await service.sync(DateTimeRange(
-    start: DateTime.now().subtract(const Duration(hours: 24)),
-    end: DateTime.now(),
-  ));
-  BackgroundFetch.finish(taskId);
-}
-
 import 'apple_health_provider.dart';
 import 'fitbit_provider.dart';
 import 'google_fit_provider.dart';
 import 'health_data_provider.dart';
 
+/// Top-level background sync task for Workmanager (Android)
+void healthSyncWorkmanagerDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await HealthService.runBackgroundSync();
+    return Future.value(true);
+  });
+}
+
+/// Top-level background fetch callback (iOS)
+void healthSyncBackgroundFetch(String taskId) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await HealthService.runBackgroundSync();
+  BackgroundFetch.finish(taskId);
+}
+
 class HealthService {
   final List<HealthDataProvider> _providers = [];
 
+  /// Registers only the appropriate providers for the current platform.
   void registerAvailableProviders() {
-    // In a real implementation you would check platform/permissions
     _providers.clear();
-    // These are stubs, but we register them so callers can use the facade
-    _providers.add(AppleHealthProvider());
-    _providers.add(GoogleFitProvider());
-    _providers.add(FitbitProvider());
+    if (Platform.isIOS) _providers.add(AppleHealthProvider());
+    if (Platform.isAndroid) _providers.add(GoogleFitProvider());
+    _providers.add(FitbitProvider()); // Fitbit can be available on both
   }
 
-  void registerBackgroundSync() {
+  /// Sets up background sync for health data.
+  ///
+  /// Call **once in main()** after app and Firebase init.
+  static void registerBackgroundSync() {
     if (Platform.isAndroid) {
-      Workmanager().initialize(_workmanagerCallbackDispatcher);
+      Workmanager().initialize(
+        healthSyncWorkmanagerDispatcher,
+        isInDebugMode: false,
+      );
       Workmanager().registerPeriodicTask(
         'healthSync',
         'healthSync',
@@ -52,22 +51,42 @@ class HealthService {
       );
     } else if (Platform.isIOS) {
       BackgroundFetch.configure(
-        const BackgroundFetchConfig(
-          minimumFetchInterval: 360,
+        BackgroundFetchConfig(
+          minimumFetchInterval: 360, // minutes (6 hours)
           enableHeadless: true,
           startOnBoot: true,
         ),
-        _backgroundFetchTask,
+        healthSyncBackgroundFetch,
       );
     }
   }
 
+  /// Call this to trigger background sync logic in both bg fetch and workmanager.
+  /// Should be called only from top-level background functions.
+  static Future<void> runBackgroundSync() async {
+    try {
+      final service = HealthService();
+      service.registerAvailableProviders();
+      await service.sync(DateTimeRange(
+        start: DateTime.now().subtract(const Duration(hours: 24)),
+        end: DateTime.now(),
+      ));
+      // You could add custom logs or analytics here
+    } catch (e, stack) {
+      // Print/log errors, you could also use Crashlytics here if desired
+      print('[HealthService] Background sync failed: $e\n$stack');
+    }
+  }
+
+  /// Runs sync for the given time range for all providers.
   Future<void> sync(DateTimeRange range) async {
     for (final provider in _providers) {
       try {
-        await provider.fetch(range);
-      } catch (_) {
-        // ignore individual provider errors
+        final samples = await provider.fetch(range);
+        // TODO: Persist [samples] into your database (SQLite, etc)
+        // Example: await DBService().saveHealthSamples(samples);
+      } catch (e, stack) {
+        print('[HealthService] Error syncing ${provider.runtimeType}: $e\n$stack');
       }
     }
   }
