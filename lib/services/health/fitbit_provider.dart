@@ -54,7 +54,7 @@ class FitbitProvider implements HealthDataProvider {
   }
 
   @override
-  Future<List<HealthSample>> fetch(DateTimeRange range) async {
+  Future<List<HealthDataPoint>> fetch(DateTimeRange range) async {
     if (!await isConnected()) return [];
     final db = DBService();
     await db.insertWeightSample(
@@ -72,7 +72,7 @@ class FitbitProvider implements HealthDataProvider {
   }
 
   @override
-  Stream<HealthSample> watchChanges() {
+  Stream<HealthDataPoint> watchChanges() {
     // Fitbit does not support realtime updates in this stub
     return const Stream.empty();
   }

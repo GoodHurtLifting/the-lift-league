@@ -27,7 +27,7 @@ class GoogleFitProvider implements HealthDataProvider {
   }
 
   @override
-  Future<List<HealthSample>> fetch(DateTimeRange range) async {
+  Future<List<HealthDataPoint>> fetch(DateTimeRange range) async {
     if (!await isConnected()) return [];
     final db = DBService();
     await db.insertWeightSample(
@@ -45,7 +45,7 @@ class GoogleFitProvider implements HealthDataProvider {
   }
 
   @override
-  Stream<HealthSample> watchChanges() {
+  Stream<HealthDataPoint> watchChanges() {
     // TODO: implement change stream via HealthFactory
     return const Stream.empty();
   }

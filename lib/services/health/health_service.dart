@@ -84,7 +84,7 @@ class HealthService {
       try {
         final samples = await provider.fetch(range);
         // TODO: Persist [samples] into your database (SQLite, etc)
-        // Example: await DBService().saveHealthSamples(samples);
+        // Example: await DBService().saveHealthDataPoints(samples);
       } catch (e, stack) {
         print('[HealthService] Error syncing ${provider.runtimeType}: $e\n$stack');
       }
