@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'poss_drawer.dart';
 
 
-const Color lightGrey = Color(0xFFFFFFFF);
+Color? lightGrey = Colors.grey[400];
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -10,7 +10,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTextStyle(
-      style: const TextStyle(color: lightGrey),
+      style: TextStyle(color: lightGrey),
       child: Scaffold(
         appBar: AppBar(
           foregroundColor: lightGrey,

@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+34
+version: 1.0.0+35
 
 environment:
   sdk: ^3.6.1
@@ -48,7 +48,7 @@ dependencies:
   image: ^4.5.4
   flutter_image_compress: ^2.2.0
   photo_view: ^0.15.0
-  intl: ^0.20.2
+  intl: ^0.19.0
   share_plus: ^11.0.0
   timeago: ^3.6.1
   audioplayers: ^5.2.1
@@ -58,10 +58,9 @@ dependencies:
   firebase_messaging: ^15.2.6
   flutter_local_notifications: ^19.2.1
   fl_chart: ^1.0.0
-  health: ^4.0.0
-  health_kit_reporter: ^2.4.0      # iOS only
-  health_connect: ^1.1.0           # Android 14+ (optional)
-  fitbitter: ^2.1.0                # Fitbit REST
+  health: ^13.1.0
+  health_kit_reporter: ^2.3.1     # iOS only
+  fitbitter: ^2.0.4             # Fitbit REST
   flutter_secure_storage: ^9.0.0
   dio: ^5.4.0
   permission_handler: ^11.3.0
