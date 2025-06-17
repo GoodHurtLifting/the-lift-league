@@ -31,7 +31,7 @@ class AboutScreen extends StatelessWidget {
                 // 1
                 RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey[350]),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[400]),
                     children: const [
                       TextSpan(
                         text: '1. Build & save structured workouts\n',
@@ -47,7 +47,7 @@ class AboutScreen extends StatelessWidget {
                 // 2
                 RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey[350]),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[400]),
                     children: const [
                       TextSpan(
                         text: '2. Turn every workout into a single score to beat\n',
@@ -63,7 +63,7 @@ class AboutScreen extends StatelessWidget {
                 // 3
                 RichText(
                   text: TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey[350]),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[400]),
                     children: const [
                       TextSpan(
                         text: '3. AI checks program balance\n',
