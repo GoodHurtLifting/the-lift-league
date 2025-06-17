@@ -4,6 +4,7 @@ import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'poss_block_builder.dart';
 import 'terms_of_service_screen.dart';
+import 'download_app_screen.dart';
 
 class POSSDrawer extends StatelessWidget {
   final VoidCallback? onHome;
@@ -72,6 +73,17 @@ class POSSDrawer extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.download),
+            title: const Text('Get the App'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const DownloadAppScreen()),
               );
             },
           ),

@@ -4,6 +4,7 @@ import 'custom_blocks_screen.dart';
 import 'poss_block_builder.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
+import 'download_app_screen.dart';
 import '../services/db_service.dart';
 import '../services/promo_popup_service.dart';
 
@@ -132,6 +133,17 @@ class _POSSHomePageState extends State<POSSHomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.download),
+                title: const Text('Get the App'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DownloadAppScreen()),
                   );
                 },
               ),
