@@ -322,6 +322,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
           ),
+          ListTile(
+            leading: const Icon(Icons.fitness_center, color: Colors.white),
+            title: const Text('Connected Apps', style: TextStyle(color: Colors.white)),
+            onTap: () => Navigator.pushNamed(context, '/connectedApps'),
+          ),
           ExpansionTile(
             leading: const Icon(Icons.notifications, color: Colors.white),
             title: const Text('Notifications', style: TextStyle(color: Colors.white)),
