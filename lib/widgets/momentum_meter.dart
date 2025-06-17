@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/services/momentum_service.dart';
 
 
@@ -22,21 +21,40 @@ class MomentumMeter extends StatefulWidget {
 class _MomentumMeterState extends State<MomentumMeter> {
   final MomentumService _service = MomentumService();
 
+  late final StreamController<Map<String, dynamic>> _momentumController;
+  Timer? _timer;
+
+  Stream<Map<String, dynamic>> get _momentumStream => _momentumController.stream;
+
   Color _colorFor(double value) {
     if (value >= 80) return Colors.green;
     if (value >= 60) return Colors.yellow.shade700;
     return Colors.red;
   }
 
-  Stream<Map<String, dynamic>> _momentumStream() async* {
-    while (true) {
+  @override
+  void initState() {
+    super.initState();
+    _momentumController = StreamController<Map<String, dynamic>>();
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) async {
       final data = await _service.calculateMomentum(
         userId: widget.userId,
         dropPerMissedDay: widget.dropPerMissedDay,
       );
-      yield data;
-      await Future.delayed(const Duration(seconds: 2));
-    }
+      if (!_momentumController.isClosed) {
+        _momentumController.add(data);
+      }
+    });
+    _service
+        .calculateMomentum(
+          userId: widget.userId,
+          dropPerMissedDay: widget.dropPerMissedDay,
+        )
+        .then((data) {
+      if (!_momentumController.isClosed) {
+        _momentumController.add(data);
+      }
+    });
   }
 
   List<BarChartGroupData> _buildBars(List<double> trend, List<bool> drops) {
@@ -57,9 +75,16 @@ class _MomentumMeterState extends State<MomentumMeter> {
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    _momentumController.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<Map<String, dynamic>>(
-      stream: _momentumStream(),
+      stream: _momentumStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
