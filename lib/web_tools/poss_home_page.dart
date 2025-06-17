@@ -4,6 +4,8 @@ import 'custom_blocks_screen.dart';
 import 'poss_block_builder.dart';
 import '../services/db_service.dart';
 
+const Color _lightGrey = Color(0xFFD0D0D0);
+
 class POSSHomePage extends StatefulWidget {
   const POSSHomePage({super.key});
 
@@ -50,61 +52,65 @@ class _POSSHomePageState extends State<POSSHomePage> {
       body = const Center(child: Text('There are no saved blocks yet'));
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text('Progressive Overload Scoring System'),
-            Text(
-              'Build Workouts • Get Feedback',
-              style: TextStyle(fontSize: 14),
-            ),
-          ],
+    return DefaultTextStyle(
+      style: const TextStyle(color: _lightGrey),
+      child: Scaffold(
+        appBar: AppBar(
+          foregroundColor: _lightGrey,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text('Progressive Overload Scoring System'),
+              Text(
+                'Build Workouts • Get Feedback',
+                style: TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
         ),
-      ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.black54),
-              child: Text('Menu', style: TextStyle(color: Colors.white)),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _showGrid = true);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('About'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AboutScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.shopping_cart),
-              title: const Text('Block Builder'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const POSSBlockBuilder()),
-                );
-              },
-            ),
-          ],
+        drawer: Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              const DrawerHeader(
+                decoration: BoxDecoration(color: Colors.black54),
+                child: Text('Menu'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: const Text('Home'),
+                onTap: () {
+                  Navigator.pop(context);
+                  setState(() => _showGrid = true);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Block Builder'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const POSSBlockBuilder()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.info),
+                title: const Text('About'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AboutScreen()),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
+        body: body,
       ),
-      body: body,
     );
   }
 }
