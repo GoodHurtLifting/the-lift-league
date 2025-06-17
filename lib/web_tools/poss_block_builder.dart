@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'poss_drawer.dart';
 
 import '../models/custom_block_models.dart';
 import '../screens/workout_builder.dart';
@@ -231,10 +232,10 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       style: const TextStyle(color: _lightGrey),
       child: Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false,
           foregroundColor: _lightGrey,
           title: const Text('Build Training Block'),
         ),
+        drawer: const POSSDrawer(),
         body: Stepper(
           currentStep: _currentStep,
           onStepContinue: () {

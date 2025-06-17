@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'poss_drawer.dart';
+
 
 const Color lightGrey = Color(0xFFD0D0D0);
 
@@ -11,10 +13,10 @@ class AboutScreen extends StatelessWidget {
       style: const TextStyle(color: lightGrey),
       child: Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false,
           foregroundColor: lightGrey,
           title: const Text('POSS Block Builder'),
         ),
+        drawer: const POSSDrawer(),
         body: Padding(
           padding: const EdgeInsets.all(16),
           child: SingleChildScrollView(
