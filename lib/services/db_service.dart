@@ -33,7 +33,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 13,
+      version: 14,
       onCreate: (db, version) async {
         await db.execute("PRAGMA foreign_keys = ON;");
 
@@ -89,6 +89,25 @@ class DBService {
         if (oldVersion < 13) {
           await db.execute(
               "ALTER TABLE custom_blocks ADD COLUMN coverImagePath TEXT;");
+        }
+        if (oldVersion < 14) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS health_weight_samples (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              date TEXT,
+              value REAL,
+              source TEXT
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS health_energy_samples (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              date TEXT,
+              kcalIn REAL,
+              kcalOut REAL,
+              source TEXT
+            )
+          ''');
         }
       },
     );
@@ -264,6 +283,25 @@ class DBService {
         multiplier REAL,
         isBodyweight INTEGER,
         FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS health_weight_samples (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        value REAL,
+        source TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS health_energy_samples (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        date TEXT,
+        kcalIn REAL,
+        kcalOut REAL,
+        source TEXT
       )
     ''');
   }
@@ -2306,6 +2344,34 @@ class DBService {
         'SELECT DISTINCT workoutInstanceId FROM lift_entries WHERE liftId = ?',
         [liftId]);
     return res.map((e) => e['workoutInstanceId'] as int).toList();
+  }
+
+  Future<void> insertWeightSample({
+    required DateTime date,
+    required double value,
+    required String source,
+  }) async {
+    final db = await database;
+    await db.insert('health_weight_samples', {
+      'date': date.toIso8601String(),
+      'value': value,
+      'source': source,
+    });
+  }
+
+  Future<void> insertEnergySample({
+    required DateTime date,
+    required double kcalIn,
+    required double kcalOut,
+    required String source,
+  }) async {
+    final db = await database;
+    await db.insert('health_energy_samples', {
+      'date': date.toIso8601String(),
+      'kcalIn': kcalIn,
+      'kcalOut': kcalOut,
+      'source': source,
+    });
   }
 
 }
