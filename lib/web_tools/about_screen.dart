@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'poss_drawer.dart';
 
 
-const Color lightGrey = Color(0xFFD0D0D0);
+const Color lightGrey = Color(0xFFFFAFAF);
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -30,9 +30,9 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 // 1
                 RichText(
-                  text: const TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                    children: [
+                  text: TextSpan(
+                    style: TextStyle(fontSize: 16, color: Colors.grey[50]),
+                    children: const [
                       TextSpan(
                         text: '1. Build & save structured workouts\n',
                         style: TextStyle(fontWeight: FontWeight.bold),
