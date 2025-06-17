@@ -19,6 +19,7 @@ import 'package:lift_league/screens/custom_block_wizard.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
 import 'package:lift_league/screens/settings/connected_apps_screen.dart';
 import 'package:lift_league/services/notifications_service.dart';
+import 'package:lift_league/services/health/health_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 late FirebaseAnalytics analytics;
@@ -83,6 +84,8 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  HealthService().registerBackgroundSync();
 
   analytics = FirebaseAnalytics.instance;
 
