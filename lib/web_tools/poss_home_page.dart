@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'about_screen.dart';
 import 'custom_blocks_screen.dart';
 import 'poss_block_builder.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 import '../services/db_service.dart';
 import '../services/promo_popup_service.dart';
 
@@ -108,6 +110,28 @@ class _POSSHomePageState extends State<POSSHomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const AboutScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.privacy_tip),
+                title: const Text('Privacy Policy'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.description),
+                title: const Text('Terms of Service'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
                   );
                 },
               ),
