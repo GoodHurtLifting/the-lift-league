@@ -3,6 +3,7 @@ import 'about_screen.dart';
 import 'custom_blocks_screen.dart';
 import 'poss_block_builder.dart';
 import '../services/db_service.dart';
+import '../services/promo_popup_service.dart';
 
 const Color _lightGrey = Color(0xFFD0D0D0);
 
@@ -37,6 +38,7 @@ class _POSSHomePageState extends State<POSSHomePage> {
 
   void _onSaved() {
     _checkBlocks();
+    PromoPopupService().showPromoDialog(context);
   }
 
   @override
@@ -91,7 +93,8 @@ class _POSSHomePageState extends State<POSSHomePage> {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const POSSBlockBuilder()),
+                    MaterialPageRoute(
+                        builder: (_) => POSSBlockBuilder(onSaved: _onSaved)),
                   );
                 },
               ),
