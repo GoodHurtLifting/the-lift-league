@@ -85,7 +85,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  HealthService().registerBackgroundSync();
+  HealthService.registerBackgroundSync();
 
   analytics = FirebaseAnalytics.instance;
 

@@ -28,6 +28,7 @@ class GoogleFitProvider implements HealthDataProvider {
 
   @override
   Future<List<HealthSample>> fetch(DateTimeRange range) async {
+    if (!await isConnected()) return [];
     final db = DBService();
     await db.insertWeightSample(
       date: range.end,
