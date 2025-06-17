@@ -206,7 +206,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
                           padding: const EdgeInsets.all(2),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                            border: Border.all(color: Colors.white, width: 1),
                           ),
                           child: CircleAvatar(
                             radius: 48,
