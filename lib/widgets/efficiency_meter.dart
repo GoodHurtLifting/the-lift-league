@@ -16,12 +16,26 @@ class EfficiencyMeter extends StatefulWidget {
 class _EfficiencyMeterState extends State<EfficiencyMeter> {
   bool _notified = false;
 
-  Stream<Map<String, dynamic>> _statsStream() async* {
-    while (true) {
+  late final StreamController<Map<String, dynamic>> _statsController;
+  Timer? _timer;
+
+  Stream<Map<String, dynamic>> get _statsStream => _statsController.stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _statsController = StreamController<Map<String, dynamic>>();
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) async {
       final data = await _calculateEfficiency();
-      yield data;
-      await Future.delayed(const Duration(seconds: 2));
-    }
+      if (!_statsController.isClosed) {
+        _statsController.add(data);
+      }
+    });
+    _calculateEfficiency().then((data) {
+      if (!_statsController.isClosed) {
+        _statsController.add(data);
+      }
+    });
   }
 
   Future<int> _currentWeek(Database db, int blockInstanceId) async {
@@ -143,9 +157,16 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
   }
 
   @override
+  void dispose() {
+    _timer?.cancel();
+    _statsController.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<Map<String, dynamic>>(
-      stream: _statsStream(),
+      stream: _statsStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
