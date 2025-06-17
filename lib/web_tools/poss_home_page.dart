@@ -5,7 +5,7 @@ import 'poss_block_builder.dart';
 import '../services/db_service.dart';
 import '../services/promo_popup_service.dart';
 
-const Color _lightGrey = Color(0xFFD0D0D0);
+Color? _lightGrey = Colors.grey[400];
 
 class POSSHomePage extends StatefulWidget {
   const POSSHomePage({super.key});
@@ -61,7 +61,7 @@ class _POSSHomePageState extends State<POSSHomePage> {
     }
 
     return DefaultTextStyle(
-      style: const TextStyle(color: _lightGrey),
+      style: TextStyle(color: _lightGrey),
       child: Scaffold(
         appBar: AppBar(
           foregroundColor: _lightGrey,
@@ -71,12 +71,12 @@ class _POSSHomePageState extends State<POSSHomePage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: const [
               Text(
-                'Progressive Overload Scoring System',
+                'Progressive Overload\nScoring System',
                 textAlign: TextAlign.center,
                 softWrap: true,
               ),
               Text(
-                'Build Workouts • Stay Motivated\n Get Feedback',
+                'Build Workouts • Stay Motivated\nGet Feedback',
                 textAlign: TextAlign.center,
                 softWrap: true,
                 style: TextStyle(fontSize: 14),
