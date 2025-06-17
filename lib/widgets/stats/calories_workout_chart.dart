@@ -77,6 +77,8 @@ class _CaloriesWorkoutChartState extends State<CaloriesWorkoutChart> {
   LineChartData _buildChart(Map<String, dynamic> data) {
     final List<FlSpot> inSpots = List<FlSpot>.from(data['in']);
     final List<FlSpot> outSpots = List<FlSpot>.from(data['out']);
+    final List<double> workoutIndices = List<double>.from(data['workouts'] ?? []);
+    final List<FlSpot> workoutSpots = workoutIndices.map((x) => FlSpot(x, 1)).toList();
     final dates = data['dates'] as List<DateTime>;
 
     final xMax = dates.isNotEmpty ? dates.length - 1.0 : 1.0;
@@ -142,6 +144,25 @@ class _CaloriesWorkoutChartState extends State<CaloriesWorkoutChart> {
             dotData: FlDotData(show: false),
             barWidth: 2,
           ),
+        if (workoutSpots.isNotEmpty)
+          LineChartBarData(
+            spots: workoutSpots,
+            isCurved: false,
+            color: Colors.orange,
+            barWidth: 0,
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, barData, index) =>
+                  FlDotCirclePainter(
+                    radius: 6,
+                    color: Colors.orange,
+                    strokeWidth: 0,
+                    strokeColor: Colors.transparent,
+                  ),
+            ),
+            belowBarData: BarAreaData(show: false),
+          ),
+
       ],
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(sideTitles: makeTitles(inMin, inRange)),
@@ -169,27 +190,6 @@ class _CaloriesWorkoutChartState extends State<CaloriesWorkoutChart> {
     );
   }
 
-  ScatterChartData _buildScatter(Map<String, dynamic> data) {
-    final List<double> workoutIdx = List<double>.from(data['workouts']);
-    final dates = data['dates'] as List<DateTime>;
-    final xMax = dates.isNotEmpty ? dates.length - 1.0 : 1.0;
-    final scatterSpots = workoutIdx
-        .map((x) => ScatterSpot(x, 1,
-            color: Colors.orange, radius: 4))
-        .toList();
-    return ScatterChartData(
-      scatterSpots: scatterSpots,
-      minX: 0,
-      maxX: xMax,
-      minY: 0,
-      maxY: 1,
-      borderData: FlBorderData(show: false),
-      gridData: const FlGridData(show: false),
-      titlesData: const FlTitlesData(show: false),
-      scatterTouchData: const ScatterTouchData(enabled: false),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>>(
@@ -213,7 +213,6 @@ class _CaloriesWorkoutChartState extends State<CaloriesWorkoutChart> {
               child: Stack(
                 children: [
                   LineChart(_buildChart(data)),
-                  ScatterChart(_buildScatter(data)),
                 ],
               ),
             ),
