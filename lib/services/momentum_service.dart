@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart';
 class MomentumService {
   final DBService _db = DBService();
   final NotificationService _notifier = NotificationService();
+  bool _notifiedRising = false;
 
   Future<Map<String, dynamic>> calculateMomentum({
     required String userId,
@@ -85,9 +86,12 @@ class MomentumService {
       trend.add(double.parse(momentum.toStringAsFixed(1)));
     }
 
-    if (increased) {
+    if (increased && !_notifiedRising) {
       _notifier.showSimpleNotification(
           'Momentum Rising', 'Great job getting back on track!');
+      _notifiedRising = true;
+    } else if (!increased) {
+      _notifiedRising = false;
     }
 
     return {
