@@ -16,6 +16,7 @@ import 'package:lift_league/services/leaderboard_service.dart';
 import 'package:lift_league/modals/numpad_modal.dart';
 import 'package:lift_league/services/pr_service.dart';
 import 'package:lift_league/services/consistency_service.dart';
+import 'package:lift_league/services/promo_popup_service.dart';
 
 
 class WorkoutLogScreen extends StatefulWidget {
@@ -433,6 +434,10 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
       );
     } else {
       _navigateAfterWorkout(remaining);
+    }
+
+    if (mounted) {
+      await PromoPopupService().showPromoDialog(context);
     }
   }
 
