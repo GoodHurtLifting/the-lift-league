@@ -9,6 +9,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'dart:async';
+import '../services/db_service.dart';
 
 class AddCheckInScreen extends StatefulWidget {
   const AddCheckInScreen({super.key});
@@ -25,6 +26,26 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
   String? _selectedBlock;
   bool _isUploading = false;
   List<File> _imageFiles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _prefillFromFitbit();
+  }
+
+  Future<void> _prefillFromFitbit() async {
+    final sample = await DBService()
+        .getLatestWeightSampleForDay(DateTime.now(), source: 'fitbit');
+    if (sample == null) return;
+    setState(() {
+      final weight = sample['value'] as num?;
+      final bodyFat = sample['bodyFat'] as num?;
+      final bmi = sample['bmi'] as num?;
+      if (weight != null) _weightController.text = weight.toString();
+      if (bodyFat != null) _bodyFatController.text = bodyFat.toString();
+      if (bmi != null) _bmiController.text = bmi.toString();
+    });
+  }
 
 
   Future<List<File>> _pickAndCropImages() async {
