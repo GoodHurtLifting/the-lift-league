@@ -2371,6 +2371,29 @@ class DBService {
     });
   }
 
+  Future<Map<String, dynamic>?> getLatestWeightSampleForDay(
+    DateTime day, {
+    String source = 'fitbit',
+  }) async {
+    final db = await database;
+    final start = DateTime(day.year, day.month, day.day);
+    final end = start.add(const Duration(days: 1));
+    final rows = await db.query(
+      'health_weight_samples',
+      columns: ['value', 'bmi', 'bodyFat'],
+      where: 'date >= ? AND date < ? AND source = ?',
+      whereArgs: [
+        start.toIso8601String(),
+        end.toIso8601String(),
+        source,
+      ],
+      orderBy: 'date DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first;
+  }
+
   Future<void> insertEnergySample({
     required DateTime date,
     required double kcalIn,
