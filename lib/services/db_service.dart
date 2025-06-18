@@ -33,7 +33,7 @@ class DBService {
 
     return await openDatabase(
       path,
-      version: 14,
+      version: 15,
       onCreate: (db, version) async {
         await db.execute("PRAGMA foreign_keys = ON;");
 
@@ -96,6 +96,8 @@ class DBService {
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               date TEXT,
               value REAL,
+              bmi REAL,
+              bodyFat REAL,
               source TEXT
             )
           ''');
@@ -108,6 +110,10 @@ class DBService {
               source TEXT
             )
           ''');
+        }
+        if (oldVersion < 15) {
+          await db.execute("ALTER TABLE health_weight_samples ADD COLUMN bmi REAL;");
+          await db.execute("ALTER TABLE health_weight_samples ADD COLUMN bodyFat REAL;");
         }
       },
     );
@@ -291,6 +297,8 @@ class DBService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT,
         value REAL,
+        bmi REAL,
+        bodyFat REAL,
         source TEXT
       )
     ''');
@@ -2348,13 +2356,17 @@ class DBService {
 
   Future<void> insertWeightSample({
     required DateTime date,
-    required double value,
+    double? value,
+    double? bmi,
+    double? bodyFat,
     required String source,
   }) async {
     final db = await database;
     await db.insert('health_weight_samples', {
       'date': date.toIso8601String(),
       'value': value,
+      'bmi': bmi,
+      'bodyFat': bodyFat,
       'source': source,
     });
   }
