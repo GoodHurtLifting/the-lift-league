@@ -18,7 +18,18 @@ class RestTimerService {
   final StreamController<int> _streamController = StreamController<int>.broadcast();
   Stream<int> get stream => _streamController.stream;
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _audioPlayer = AudioPlayer()
+    ..audioContext = const AudioContext(
+      android: AudioContextAndroid(
+        usageType: AndroidUsageType.assistanceSonification,
+        contentType: AndroidContentType.sonification,
+        audioFocus: AndroidAudioFocus.gainTransient,
+      ),
+      iOS: AudioContextIOS(
+        category: AVAudioSessionCategory.ambient,
+        options: <AVAudioSessionOptions>{AVAudioSessionOptions.mixWithOthers},
+      ),
+    );
   bool _playSound = true;
 
   Future<void> _loadPrefs() async {
