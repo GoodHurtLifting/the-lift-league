@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../services/health/apple_health_provider_stub.dart'
-    if (dart.library.io) '../../services/health/apple_health_provider.dart';
-import '../../services/health/google_fit_provider_stub.dart'
-    if (dart.library.io) '../../services/health/google_fit_provider.dart';
+import '../../services/health/apple_health_provider_stub.dart' if (dart.library.io)
+    '../../services/health/apple_health_provider.dart';
+import '../../services/health/google_fit_provider_stub.dart' if (dart.library.io)
+    '../../services/health/google_fit_provider.dart';
 import '../../services/health/fitbit_provider.dart';
 
 class ConnectedAppsScreen extends StatefulWidget {
