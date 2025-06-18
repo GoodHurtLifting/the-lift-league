@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:health/health.dart';
+import 'health_stub.dart'
+    if (dart.library.io) 'package:health/health.dart';
 
 import 'health_data_provider.dart';
 
