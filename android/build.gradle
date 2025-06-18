@@ -17,7 +17,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url("${project(':react-native-background-fetch').projectDir}/libs")}
+        maven { url 'https://maven.transistorsoft.com' }
     }
 }
 
