@@ -39,7 +39,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       TextSpan(
                         text:
-                            '    Craft multi-week training blocks and store everything in-browser—no downloads, no exports.\n\n',
+                            '    Craft multi-week training blocks and store everything in-browser. No downloads, no exports.\n\n',
                       ),
                     ],
                   ),
