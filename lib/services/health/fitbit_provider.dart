@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:health/health.dart';
+import 'health_stub.dart'
+    if (dart.library.io) 'package:health/health.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
