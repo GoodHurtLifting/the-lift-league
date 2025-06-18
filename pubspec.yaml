@@ -58,8 +58,6 @@ dependencies:
   firebase_messaging: ^15.2.6
   flutter_local_notifications: ^19.2.1
   fl_chart: ^1.0.0
-  health: ^13.1.0
-  health_kit_reporter: ^2.3.1     # iOS only
   fitbitter: ^2.0.4             # Fitbit REST
   flutter_appauth: ^6.0.2
   flutter_secure_storage: ^9.0.0
