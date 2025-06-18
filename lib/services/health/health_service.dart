@@ -52,7 +52,7 @@ class HealthService {
         'healthSync',
         frequency: const Duration(hours: 6),
       );
-    } else if (Platform.isIOS) {
+    } else if (!kIsWeb && Platform.isIOS) {
       BackgroundFetch.configure(
         BackgroundFetchConfig(
           minimumFetchInterval: 360, // minutes (6 hours)
