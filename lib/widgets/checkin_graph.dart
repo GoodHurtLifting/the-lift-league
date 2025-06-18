@@ -1,7 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
+
+import '../services/db_service.dart';
 
 class CheckInGraph extends StatefulWidget {
   final String userId;
@@ -127,28 +128,29 @@ class _CheckInGraphState extends State<CheckInGraph> {
   }
 
   Future<Map<String, List<FlSpot>>> _fetchData() async {
-    final snap = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .collection('timeline_entries')
-        .where('type', isEqualTo: 'checkin')
-        .orderBy('timestamp')
-        .get();
+    final db = await DBService().database;
+    final rows = await db.rawQuery('''
+      SELECT date(date) as d,
+             AVG(value) as weight,
+             AVG(bodyFat) as bodyFat,
+             AVG(bmi) as bmi
+      FROM health_weight_samples
+      GROUP BY d
+      ORDER BY d
+    ''');
 
     final weight = <FlSpot>[];
     final bodyFat = <FlSpot>[];
     final bmi = <FlSpot>[];
-    for (final doc in snap.docs) {
-      final data = doc.data();
-      final w = (data['weight'] as num?)?.toDouble();
-      final bf = (data['bodyFat'] as num?)?.toDouble();
-      final b = (data['bmi'] as num?)?.toDouble();
-      final ts = (data['timestamp'] as Timestamp?)?.toDate();
-      if (ts == null) continue;
-      final x = ts.millisecondsSinceEpoch.toDouble();
-      if (w != null) weight.add(FlSpot(x, w.toDouble()));
-      if (bf != null) bodyFat.add(FlSpot(x, bf.toDouble()));
-      if (b != null) bmi.add(FlSpot(x, b.toDouble()));
+    for (var i = 0; i < rows.length; i++) {
+      final row = rows[i];
+      final w = (row['weight'] as num?)?.toDouble();
+      final bf = (row['bodyFat'] as num?)?.toDouble();
+      final b = (row['bmi'] as num?)?.toDouble();
+      final x = i.toDouble();
+      if (w != null) weight.add(FlSpot(x, w));
+      if (bf != null) bodyFat.add(FlSpot(x, bf));
+      if (b != null) bmi.add(FlSpot(x, b));
     }
     return {'weight': weight, 'bodyFat': bodyFat, 'bmi': bmi};
   }
