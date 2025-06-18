@@ -134,7 +134,13 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           title: const Text('Save Block'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Text(
+                'To keep this block we need a way to attach it to you.\n'
+                'Sign in with Google or provide an email to link it to your account.',
+              ),
+              const SizedBox(height: 12),
               TextField(
                 controller: emailCtrl,
                 decoration: const InputDecoration(labelText: 'Email'),
