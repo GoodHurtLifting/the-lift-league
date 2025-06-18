@@ -81,17 +81,17 @@ class AboutScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 24, bottom: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Text('• balanced muscle-group coverage',
-                          style: TextStyle(fontSize: 16)),
+                          style: TextStyle(fontSize: 16, color: Colors.grey[400])),
                       Text(
                           '• rep-scheme fit for your goal (strength / power / hypertrophy)',
-                          style: TextStyle(fontSize: 16)),
+                          style: TextStyle(fontSize: 16, color: Colors.grey[400])),
                       Text('• useful mixes of training styles',
-                          style: TextStyle(fontSize: 16)),
+                          style: TextStyle(fontSize: 16, color: Colors.grey[400])),
                       Text(
                           '• lagging areas (e.g., add triceps to match biceps work)',
-                          style: TextStyle(fontSize: 16)),
+                          style: TextStyle(fontSize: 16, color: Colors.grey[400])),
                     ],
                   ),
                 ),
