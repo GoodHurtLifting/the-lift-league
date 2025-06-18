@@ -5,8 +5,9 @@ import 'poss_block_builder.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_of_service_screen.dart';
 import 'download_app_screen.dart';
-import '../services/db_service.dart';
+import 'web_custom_block_service.dart';
 import '../services/promo_popup_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 Color? _lightGrey = Colors.grey[400];
 
@@ -29,7 +30,7 @@ class _POSSHomePageState extends State<POSSHomePage> {
 
   Future<void> _checkBlocks() async {
     try {
-      final blocks = await DBService().getCustomBlocks();
+      final blocks = await WebCustomBlockService().getCustomBlocks();
       setState(() {
         _showGrid = blocks.isNotEmpty;
         _loading = false;
@@ -41,7 +42,9 @@ class _POSSHomePageState extends State<POSSHomePage> {
 
   void _onSaved() {
     _checkBlocks();
-    PromoPopupService().showPromoDialog(context);
+    if (kIsWeb) {
+      PromoPopupService().showPromoDialog(context);
+    }
   }
 
   @override

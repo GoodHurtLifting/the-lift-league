@@ -1,6 +1,5 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:lift_league/services/db_service.dart';
+import 'web_custom_block_service.dart';
 
 class CustomBlocksScreen extends StatefulWidget {
   final VoidCallback onCreateNew;
@@ -21,7 +20,7 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
   }
 
   Future<void> _loadBlocks() async {
-    final blocks = await DBService().getCustomBlocks(includeDrafts: true);
+    final blocks = await WebCustomBlockService().getCustomBlocks();
     setState(() {
       _blocks = blocks;
       _loading = false;
@@ -59,7 +58,7 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
               if (path.startsWith('assets/')) {
                 imageWidget = Image.asset(path, fit: BoxFit.cover);
               } else {
-                imageWidget = Image.file(File(path), fit: BoxFit.cover);
+                imageWidget = Image.network(path, fit: BoxFit.cover);
               }
               return Card(
                 clipBehavior: Clip.antiAlias,

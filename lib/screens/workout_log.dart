@@ -17,7 +17,7 @@ import 'package:lift_league/modals/numpad_modal.dart';
 import 'package:lift_league/services/pr_service.dart';
 import 'package:lift_league/services/consistency_service.dart';
 import 'package:lift_league/services/promo_popup_service.dart';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class WorkoutLogScreen extends StatefulWidget {
   final int workoutInstanceId;
@@ -436,7 +436,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
       _navigateAfterWorkout(remaining);
     }
 
-    if (mounted) {
+    if (mounted && kIsWeb) {
       await PromoPopupService().showPromoDialog(context);
     }
   }

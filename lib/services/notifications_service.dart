@@ -107,6 +107,7 @@ class NotificationService {
       ongoing: true,
       showWhen: false,
       onlyAlertOnce: true,
+      enableVibration: false,
     );
 
     const NotificationDetails details = NotificationDetails(android: androidDetails);

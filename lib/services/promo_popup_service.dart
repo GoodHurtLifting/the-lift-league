@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -30,6 +31,7 @@ class PromoPopupService {
   ];
 
   Future<void> showPromoDialog(BuildContext context) async {
+    if (!kIsWeb) return;
     final prefs = await SharedPreferences.getInstance();
     int index = prefs.getInt(_prefsKey) ?? 0;
     final message = _messages[index % _messages.length];

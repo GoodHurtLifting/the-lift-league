@@ -66,6 +66,7 @@ class _UserDashboardState extends State<UserDashboard> {
 
   Future<void> _fetchCustomBlocks() async {
     final db = DBService();
+    await db.syncCustomBlocksFromFirestore();
     final blocks = await db.getCustomBlocks(includeDrafts: true);
     if (!mounted) return;
     setState(() {

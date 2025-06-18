@@ -884,6 +884,26 @@ class DBService {
     }
   }
 
+  Future<void> syncCustomBlocksFromFirestore() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final snap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('custom_blocks')
+        .get();
+    for (final doc in snap.docs) {
+      final id = int.tryParse(doc.id) ?? 0;
+      final db = await database;
+      final existing =
+      await db.query('custom_blocks', where: 'id = ?', whereArgs: [id]);
+      if (existing.isNotEmpty) continue;
+      final data = doc.data();
+      data['id'] = id;
+      await insertCustomBlock(CustomBlock.fromMap(data));
+    }
+  }
+
   Future<int> createBlockFromCustomBlockId(int customId, String userId) async {
     final customBlock = await getCustomBlock(customId);
     if (customBlock == null) {

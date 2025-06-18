@@ -4,6 +4,7 @@ import 'package:lift_league/screens/user_dashboard.dart';
 import 'package:lift_league/services/user_stats_service.dart';
 import 'package:lift_league/widgets/badge_grid.dart';
 import 'package:lift_league/services/promo_popup_service.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class BlockSummaryScreen extends StatefulWidget {
   final int blockInstanceId;
@@ -33,7 +34,9 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
     super.initState();
     _loadSummaryData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      PromoPopupService().showPromoDialog(context);
+      if (kIsWeb) {
+        PromoPopupService().showPromoDialog(context);
+      }
     });
   }
 
