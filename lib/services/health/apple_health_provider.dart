@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'health_stub.dart'
-if (dart.library.io) 'package:health/health.dart';
+    if (dart.library.io) 'package:health/health.dart' as health;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'health_data_provider.dart';
 import '../db_service.dart';
 
 class AppleHealthProvider implements HealthDataProvider {
-  final HealthFactory _health = HealthFactory();
+  final health.HealthFactory _health = health.HealthFactory();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   static const connectedKey = 'appleHealthConnected';
 
   Future<bool> requestAuthorization() async {
-    final types = <HealthDataType>[HealthDataType.STEPS, HealthDataType.ACTIVE_ENERGY_BURNED];
+    final types = <health.HealthDataType>[health.HealthDataType.STEPS, health.HealthDataType.ACTIVE_ENERGY_BURNED];
     final granted = await _health.requestAuthorization(types);
     if (granted) {
       await _storage.write(key: connectedKey, value: 'true');
@@ -28,7 +28,7 @@ class AppleHealthProvider implements HealthDataProvider {
   }
 
   @override
-  Future<List<HealthDataPoint>> fetch(DateTimeRange range) async {
+  Future<List<health.HealthDataPoint>> fetch(DateTimeRange range) async {
     if (!await isConnected()) return [];
     final db = DBService();
     await db.insertWeightSample(
@@ -46,7 +46,7 @@ class AppleHealthProvider implements HealthDataProvider {
   }
 
   @override
-  Stream<HealthDataPoint> watchChanges() {
+  Stream<health.HealthDataPoint> watchChanges() {
     // TODO: implement change stream via HealthFactory
     return const Stream.empty();
   }

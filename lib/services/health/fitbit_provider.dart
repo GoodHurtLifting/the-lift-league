@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'health_stub.dart'
-    if (dart.library.io) 'package:health/health.dart';
+    if (dart.library.io) 'package:health/health.dart' as health;
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
@@ -57,7 +57,7 @@ class FitbitProvider implements HealthDataProvider {
   }
 
   @override
-  Future<List<HealthDataPoint>> fetch(DateTimeRange range) async {
+  Future<List<health.HealthDataPoint>> fetch(DateTimeRange range) async {
     if (!await isConnected()) return [];
     final token = accessToken ?? await _storage.read(key: tokenKey);
     if (token == null) return [];
@@ -106,7 +106,7 @@ class FitbitProvider implements HealthDataProvider {
   }
 
   @override
-  Stream<HealthDataPoint> watchChanges() {
+  Stream<health.HealthDataPoint> watchChanges() {
     // Fitbit does not support realtime updates in this stub
     return const Stream.empty();
   }
