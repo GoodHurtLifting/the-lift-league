@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/material.dart';
 import 'package:vibration/vibration.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'package:lift_league/services/notifications_service.dart';
 
 class RestTimerService {
@@ -18,18 +16,8 @@ class RestTimerService {
   final StreamController<int> _streamController = StreamController<int>.broadcast();
   Stream<int> get stream => _streamController.stream;
 
-  final AudioPlayer _audioPlayer = AudioPlayer()
-    ..audioContext = const AudioContext(
-      android: AudioContextAndroid(
-        usageType: AndroidUsageType.assistanceSonification,
-        contentType: AndroidContentType.sonification,
-        audioFocus: AndroidAudioFocus.gainTransient,
-      ),
-      iOS: AudioContextIOS(
-        category: AVAudioSessionCategory.ambient,
-        options: <AVAudioSessionOptions>{AVAudioSessionOptions.mixWithOthers},
-      ),
-    );
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   bool _playSound = true;
 
   Future<void> _loadPrefs() async {
@@ -40,11 +28,23 @@ class RestTimerService {
   Future<void> _playChime() async {
     if (!_playSound) return;
     try {
+      await _audioPlayer.setAudioContext(const AudioContext(
+        android: AudioContextAndroid(
+          usageType: AndroidUsageType.assistanceSonification,
+          contentType: AndroidContentType.sonification,
+          audioFocus: AndroidAudioFocus.gainTransient,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: <AVAudioSessionOptions>[AVAudioSessionOptions.mixWithOthers],
+        ),
+      ));
       await _audioPlayer.play(AssetSource('sounds/chime.wav'));
       await _audioPlayer.onPlayerComplete.first;
       await _audioPlayer.release();
     } catch (_) {}
   }
+
 
   void start(int seconds) {
     _timer?.cancel();
@@ -64,7 +64,7 @@ class RestTimerService {
         _streamController.add(_remainingSeconds);
         NotificationService().cancelOngoingTimerNotification();
         Vibration.hasVibrator().then((hasVibrator) {
-          if (hasVibrator ?? false) {
+          if (hasVibrator) {
             Vibration.vibrate(duration: 500);
           }
         });

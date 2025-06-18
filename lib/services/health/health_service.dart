@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:background_fetch/background_fetch.dart';
@@ -32,8 +33,8 @@ class HealthService {
   /// Registers only the appropriate providers for the current platform.
   void registerAvailableProviders() {
     _providers.clear();
-    if (Platform.isIOS) _providers.add(AppleHealthProvider());
-    if (Platform.isAndroid) _providers.add(GoogleFitProvider());
+    if (!kIsWeb && Platform.isIOS) _providers.add(AppleHealthProvider());
+    if (!kIsWeb && Platform.isAndroid) _providers.add(GoogleFitProvider());
     _providers.add(FitbitProvider()); // Fitbit can be available on both
   }
 
@@ -41,7 +42,7 @@ class HealthService {
   ///
   /// Call **once in main()** after app and Firebase init.
   static void registerBackgroundSync() {
-    if (Platform.isAndroid) {
+    if (!kIsWeb && Platform.isAndroid) {
       Workmanager().initialize(
         healthSyncWorkmanagerDispatcher,
         isInDebugMode: false,
