@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:background_fetch/background_fetch.dart';
 
-import 'apple_health_provider.dart';
+import 'apple_health_provider_stub.dart'
+    if (dart.library.io) 'apple_health_provider.dart';
 import 'fitbit_provider.dart';
-import 'google_fit_provider.dart';
+import 'google_fit_provider_stub.dart'
+    if (dart.library.io) 'google_fit_provider.dart';
 import 'health_data_provider.dart';
 
 /// Top-level background sync task for Workmanager (Android)
