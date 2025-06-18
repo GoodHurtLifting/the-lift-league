@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:health/health.dart';
-import 'package:fitbitter/fitbitter.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 
+import 'fitbit_credentials.dart';
 import 'health_data_provider.dart';
 import '../db_service.dart';
 
@@ -22,13 +23,14 @@ class FitbitProvider implements HealthDataProvider {
   Future<bool> authorize() async {
     final result = await _appAuth.authorizeAndExchangeCode(
       AuthorizationTokenRequest(
-        '<your_client_id>',
-        '<your_redirect_uri>',
+        fitbitClientId,
+        fitbitRedirectUri,
+        clientSecret: fitbitClientSecret.isEmpty ? null : fitbitClientSecret,
         serviceConfiguration: const AuthorizationServiceConfiguration(
           authorizationEndpoint: 'https://www.fitbit.com/oauth2/authorize',
           tokenEndpoint: 'https://api.fitbit.com/oauth2/token',
         ),
-        scopes: ['activity', 'heartrate', 'sleep', 'nutrition', 'profile'],
+        scopes: ['weight', 'profile'],
       ),
     );
 
@@ -56,18 +58,49 @@ class FitbitProvider implements HealthDataProvider {
   @override
   Future<List<HealthDataPoint>> fetch(DateTimeRange range) async {
     if (!await isConnected()) return [];
+    final token = accessToken ?? await _storage.read(key: tokenKey);
+    if (token == null) return [];
+
+    final dio = Dio();
+    final headers = {'Authorization': 'Bearer $token'};
+    final dateStr = range.end.toIso8601String().split('T').first;
     final db = DBService();
-    await db.insertWeightSample(
-      date: range.end,
-      value: 72.0,
-      source: 'fitbit',
-    );
-    await db.insertEnergySample(
-      date: range.end,
-      kcalIn: 2100,
-      kcalOut: 2400,
-      source: 'fitbit',
-    );
+
+    try {
+      final weightRes = await dio.get(
+        'https://api.fitbit.com/1/user/-/body/log/weight/date/$dateStr/1d.json',
+        options: Options(headers: headers),
+      );
+      final List<dynamic> logs = weightRes.data['weight'] ?? [];
+      for (final l in logs) {
+        final date = DateTime.parse('${l['date']} ${l['time']}');
+        await db.insertWeightSample(
+          date: date,
+          value: (l['weight'] as num).toDouble(),
+          bmi: (l['bmi'] as num?)?.toDouble(),
+          source: 'fitbit',
+        );
+      }
+    } on DioException catch (_) {
+      // Ignore errors in this simple implementation
+    }
+
+    try {
+      final fatRes = await dio.get(
+        'https://api.fitbit.com/1/user/-/body/log/fat/date/$dateStr/1d.json',
+        options: Options(headers: headers),
+      );
+      final List<dynamic> logs = fatRes.data['fat'] ?? [];
+      for (final l in logs) {
+        final date = DateTime.parse('${l['date']} ${l['time']}');
+        await db.insertWeightSample(
+          date: date,
+          bodyFat: (l['fat'] as num).toDouble(),
+          source: 'fitbit',
+        );
+      }
+    } on DioException catch (_) {}
+
     return [];
   }
 
