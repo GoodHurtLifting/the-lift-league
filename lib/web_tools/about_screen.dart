@@ -39,7 +39,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       TextSpan(
                         text:
-                            '   Craft multi-week training blocks and store everything in-browser—no downloads, no exports.\n\n',
+                            '    Craft multi-week training blocks and store everything in-browser—no downloads, no exports.\n\n',
                       ),
                     ],
                   ),
@@ -55,7 +55,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       TextSpan(
                         text:
-                            '   The Progressive Overload Scoring System condenses all your reps, sets, and weights into a single number. Chase that number upward to see—instantly—whether you’re actually making gains.\n\n',
+                            '    The Progressive Overload Scoring System condenses all your reps, sets, and weights into a single number. Chase that number upward, make gains.\n\n',
                       ),
                     ],
                   ),
@@ -70,34 +70,20 @@ class AboutScreen extends StatelessWidget {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       TextSpan(
-                        text:
-                            '   An integrated assistant reviews each block for:\n',
+                        text: '    An integrated assistant reviews each block for:\n',
+                      ),
+                      TextSpan(
+                        text: '        • balanced muscle-group coverage\n'
+                            '        • rep-scheme fit for your goal (strength / power / hypertrophy)\n'
+                            '        • useful mixes of training styles\n'
+                            '        • lagging areas (e.g., add triceps to match biceps work)\n\n',
                       ),
                     ],
                   ),
                 ),
-                // AI balance bullet points
-                Padding(
-                  padding: const EdgeInsets.only(left: 24, bottom: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('• balanced muscle-group coverage',
-                          style: TextStyle(fontSize: 16, color: Colors.grey[400])),
-                      Text(
-                          '• rep-scheme fit for your goal (strength / power / hypertrophy)',
-                          style: TextStyle(fontSize: 16, color: Colors.grey[400])),
-                      Text('• useful mixes of training styles',
-                          style: TextStyle(fontSize: 16, color: Colors.grey[400])),
-                      Text(
-                          '• lagging areas (e.g., add triceps to match biceps work)',
-                          style: TextStyle(fontSize: 16, color: Colors.grey[400])),
-                    ],
-                  ),
-                ),
-                Text('Build, score, refine—right in your browser.',
+                Text('Build, score, refine in your browser.',
                     style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[350])),
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[400])),
                 const SizedBox(height: 6),
                 const Text(
                   'Powered by The Lift League',
