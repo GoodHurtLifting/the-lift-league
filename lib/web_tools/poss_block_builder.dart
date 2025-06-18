@@ -95,6 +95,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                           'repsPerSet': l.repsPerSet,
                           'multiplier': l.multiplier,
                           'isBodyweight': l.isBodyweight,
+                          'isDumbbellLift': l.isDumbbellLift,
                         })
                     .toList(),
               })
@@ -195,6 +196,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                   repsPerSet: l.repsPerSet,
                   multiplier: l.multiplier,
                   isBodyweight: l.isBodyweight,
+                  isDumbbellLift: l.isDumbbellLift,
                 ))
             .toList();
         allWorkouts.add(WorkoutDraft(
@@ -351,6 +353,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                         onSelectWorkout: (i) =>
                             setState(() => _workoutIndex = i),
                         isLast: _workoutIndex == workouts.length - 1,
+                        showDumbbellOption: true,
                         onComplete: () async {
                           if (_workoutIndex < workouts.length - 1) {
                             setState(() => _workoutIndex++);

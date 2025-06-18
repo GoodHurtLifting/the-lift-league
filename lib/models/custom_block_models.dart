@@ -39,6 +39,7 @@ class CustomBlock {
               repsPerSet: l['repsPerSet'] ?? 0,
               multiplier: (l['multiplier'] as num?)?.toDouble() ?? 1.0,
               isBodyweight: l['isBodyweight'] ?? false,
+              isDumbbellLift: l['isDumbbellLift'] ?? false,
             );
           }).toList(),
         );
@@ -66,11 +67,13 @@ class LiftDraft {
   int repsPerSet;
   double multiplier;
   bool isBodyweight;
+  bool isDumbbellLift;
   LiftDraft({
     required this.name,
     required this.sets,
     required this.repsPerSet,
     required this.multiplier,
     required this.isBodyweight,
+    this.isDumbbellLift = false,
   });
 }

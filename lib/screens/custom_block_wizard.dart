@@ -52,12 +52,13 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                 name: w.name,
                 lifts: w.lifts
                     .map(
-                      (l) => LiftDraft(
+                    (l) => LiftDraft(
                         name: l.name,
                         sets: l.sets,
                         repsPerSet: l.repsPerSet,
                         multiplier: l.multiplier,
                         isBodyweight: l.isBodyweight,
+                        isDumbbellLift: l.isDumbbellLift,
                       ),
                     )
                     .toList(),
@@ -154,6 +155,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   repsPerSet: l.repsPerSet,
                   multiplier: l.multiplier,
                   isBodyweight: l.isBodyweight,
+                  isDumbbellLift: l.isDumbbellLift,
                 ))
             .toList();
         allWorkouts.add(WorkoutDraft(
@@ -225,6 +227,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                           'repsPerSet': l.repsPerSet,
                           'multiplier': l.multiplier,
                           'isBodyweight': l.isBodyweight,
+                          'isDumbbellLift': l.isDumbbellLift,
                         })
                     .toList(),
               })

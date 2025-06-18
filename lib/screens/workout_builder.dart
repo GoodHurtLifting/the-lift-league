@@ -10,6 +10,7 @@ class WorkoutBuilder extends StatefulWidget {
   final ValueChanged<int> onSelectWorkout;
   final VoidCallback onComplete;
   final bool isLast;
+  final bool showDumbbellOption;
   const WorkoutBuilder({
     super.key,
     required this.workout,
@@ -18,6 +19,7 @@ class WorkoutBuilder extends StatefulWidget {
     required this.onSelectWorkout,
     required this.onComplete,
     this.isLast = false,
+    this.showDumbbellOption = false,
   });
 
   @override
@@ -51,6 +53,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     int sets = 3;
     int reps = 10;
     bool isBodyweight = false;
+    bool isDumbbellLift = false;
 
     showModalBottomSheet(
       context: context,
@@ -104,6 +107,13 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                 onChanged: (v) => setState(() => isBodyweight = v ?? false),
                 title: const Text('Body-weight move'),
               ),
+              if (widget.showDumbbellOption)
+                CheckboxListTile(
+                  value: isDumbbellLift,
+                  onChanged: (v) =>
+                      setState(() => isDumbbellLift = v ?? false),
+                  title: const Text('Dumbbell lift'),
+                ),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () {
@@ -118,10 +128,11 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     widget.workout.lifts.add(LiftDraft(
                       name: name,
                       sets: sets,
-                      repsPerSet: reps,
-                      multiplier: multiplier,
-                      isBodyweight: isBodyweight,
-                    ));
+                    repsPerSet: reps,
+                    multiplier: multiplier,
+                    isBodyweight: isBodyweight,
+                    isDumbbellLift: isDumbbellLift,
+                  ));
                   });
                   Navigator.pop(context);
                 },
