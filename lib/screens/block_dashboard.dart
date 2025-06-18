@@ -5,6 +5,7 @@ import 'package:lift_league/models/workout.dart';
 import 'package:lift_league/screens/user_dashboard.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/screens/leaderboard_screen.dart';
+import 'package:lift_league/screens/workout_411.dart';
 
 
 class BlockDashboard extends StatefulWidget {
@@ -345,12 +346,23 @@ class BlockDashboardState extends State<BlockDashboard> {
               else
                 const SizedBox.shrink(),
 
-              const Text(
-                "The 411",
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 20,
-                  fontStyle: FontStyle.italic,
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Workout411Screen(blockName: blockName),
+                    ),
+                  );
+                },
+                child: const Text(
+                  "The 411",
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 20,
+                    fontStyle: FontStyle.italic,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
