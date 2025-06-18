@@ -24,13 +24,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
         coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
-        jvmTarget = "11" // ✅ Kotlin requires string, not JavaVersion enum
+        jvmTarget = "1.8" // ✅ Kotlin requires string, not JavaVersion enum
     }
 
     signingConfigs {
@@ -57,6 +57,6 @@ flutter {
 
 dependencies {
     implementation 'com.google.firebase:firebase-analytics:22.4.0'
-    implementation 'com.google.firebase:firebase-crashlytics:19.4.3'
+    implementation 'com.google.firebase:firebase-crashlytics:19.4.4'
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }
