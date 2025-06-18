@@ -14,12 +14,19 @@ class MerchScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Merch')),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: _openStore,
-          child: const Text('Visit Store'),
+    final Color? lightGrey = Colors.grey[400];
+    return DefaultTextStyle(
+      style: TextStyle(color: lightGrey),
+      child: Scaffold(
+        appBar: AppBar(
+          foregroundColor: lightGrey,
+          title: const Text('Merch'),
+        ),
+        body: Center(
+          child: ElevatedButton(
+            onPressed: _openStore,
+            child: const Text('Visit Store'),
+          ),
         ),
       ),
     );

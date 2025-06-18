@@ -5,9 +5,16 @@ class POSSScoringTool extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('POSS: Lift League Scoring Tool')),
-      body: const Center(child: Text('Coming Soon')),
+    final Color? lightGrey = Colors.grey[400];
+    return DefaultTextStyle(
+      style: TextStyle(color: lightGrey),
+      child: Scaffold(
+        appBar: AppBar(
+          foregroundColor: lightGrey,
+          title: const Text('POSS: Lift League Scoring Tool'),
+        ),
+        body: const Center(child: Text('Coming Soon')),
+      ),
     );
   }
 }
