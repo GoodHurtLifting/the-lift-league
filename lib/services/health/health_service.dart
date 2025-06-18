@@ -2,13 +2,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:background_fetch/background_fetch.dart';
 
 import 'fitbit_provider.dart';
 
 import 'health_data_provider.dart';
 
-/// Top-level background sync task for Workmanager (Android)
+/// Top-level background sync task for Workmanager
 void healthSyncWorkmanagerDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -17,12 +16,6 @@ void healthSyncWorkmanagerDispatcher() {
   });
 }
 
-/// Top-level background fetch callback (iOS)
-void healthSyncBackgroundFetch(String taskId) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await HealthService.runBackgroundSync();
-  BackgroundFetch.finish(taskId);
-}
 
 class HealthService {
   final List<HealthDataProvider> _providers = [];
@@ -37,7 +30,7 @@ class HealthService {
   ///
   /// Call **once in main()** after app and Firebase init.
   static void registerBackgroundSync() {
-    if (!kIsWeb && Platform.isAndroid) {
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       Workmanager().initialize(
         healthSyncWorkmanagerDispatcher,
         isInDebugMode: false,
@@ -47,19 +40,10 @@ class HealthService {
         'healthSync',
         frequency: const Duration(hours: 6),
       );
-    } else if (!kIsWeb && Platform.isIOS) {
-      BackgroundFetch.configure(
-        BackgroundFetchConfig(
-          minimumFetchInterval: 360, // minutes (6 hours)
-          enableHeadless: true,
-          startOnBoot: true,
-        ),
-        healthSyncBackgroundFetch,
-      );
     }
   }
 
-  /// Call this to trigger background sync logic in both bg fetch and workmanager.
+  /// Call this to trigger background sync logic in Workmanager.
   /// Should be called only from top-level background functions.
   static Future<void> runBackgroundSync() async {
     try {
