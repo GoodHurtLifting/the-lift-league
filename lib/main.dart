@@ -135,7 +135,15 @@ class POSSApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'POSS Tool',
-      theme: ThemeData.dark(), // or your custom theme
+      theme: ThemeData.dark().copyWith(
+        textTheme: ThemeData.dark().textTheme.apply(
+              bodyColor: Colors.grey[400],
+              displayColor: Colors.grey[400],
+            ),
+        appBarTheme: AppBarTheme(
+          foregroundColor: Colors.grey[400],
+        ),
+      ),
       home: const POSSHomePage(),
       routes: {
         '/poss': (context) => const POSSHomePage(),
