@@ -1,3 +1,5 @@
+library health;
+
 class HealthDataPoint {
   const HealthDataPoint();
 }

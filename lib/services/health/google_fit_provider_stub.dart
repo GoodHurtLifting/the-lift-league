@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'health_stub.dart'
-    if (dart.library.io) 'package:health/health.dart';
+    if (dart.library.io) 'package:health/health.dart' as health;
 
 import 'health_data_provider.dart';
 
@@ -15,8 +15,8 @@ class GoogleFitProvider implements HealthDataProvider {
   Future<void> disconnect() async {}
 
   @override
-  Future<List<HealthDataPoint>> fetch(DateTimeRange range) async => [];
+  Future<List<health.HealthDataPoint>> fetch(DateTimeRange range) async => [];
 
   @override
-  Stream<HealthDataPoint> watchChanges() => const Stream.empty();
+  Stream<health.HealthDataPoint> watchChanges() => const Stream.empty();
 }
