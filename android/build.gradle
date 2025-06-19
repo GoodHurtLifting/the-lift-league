@@ -37,6 +37,9 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
     }
 }
 
+// Some third-party Flutter plugins omit the required Android namespace.
+// AGP 8.0+ fails without it, so we set it dynamically for flutter_web_auth.
+
 subprojects { project ->
     project.plugins.withId('com.android.library') {
         if ((project.name == 'flutter_web_auth' || project.name == 'flutter_web_auth_2') &&
