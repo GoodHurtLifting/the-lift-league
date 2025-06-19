@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
   <application
-      android:label="lift_league"
+      android:label="The Lift League"
       android:icon="@drawable/splash">
 
     <activity
