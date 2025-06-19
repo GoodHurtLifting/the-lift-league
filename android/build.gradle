@@ -36,14 +36,3 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
 
     }
 }
-
-subprojects { project ->
-    project.plugins.withId('com.android.library') {
-        if (project.name == 'flutter_web_auth' && project.extensions.findByName('android')) {
-            def androidExt = project.extensions.getByName('android')
-            if (!androidExt.hasProperty('namespace')) {
-                androidExt.namespace = 'com.linusu.flutter_web_auth'
-            }
-        }
-    }
-}
