@@ -32,17 +32,17 @@ tasks.register("clean", Delete) {
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
     kotlinOptions {
-        jvmTarget = "21"
+        jvmTarget = "1.8"
 
     }
 }
 gradle.beforeProject { proj ->
     if (proj.name == 'flutter_web_auth' || proj.name == 'flutter_web_auth_2') {
-        proj.ext.set('namespace', 'com.linusu.flutter_web_auth')
+        proj.ext.set('namespace', 'com.linusu.flutter_web_auth_2')
         proj.pluginManager.withPlugin('com.android.library') {
             def androidExt = proj.extensions.findByName('android')
             if (androidExt && !androidExt.hasProperty('namespace')) {
-                androidExt.namespace = 'com.linusu.flutter_web_auth'
+                androidExt.namespace = 'com.linusu.flutter_web_auth_2'
             }
         }
     }

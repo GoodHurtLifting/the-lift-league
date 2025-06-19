@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.lift_league"
+    namespace 'com.linusu.flutter_web_auth'
     compileSdk = 35
     buildToolsVersion = "34.0.0" // Safe current version
     ndkVersion = "28.0.13004108"
@@ -24,13 +24,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
         coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
-        jvmTarget = "21" // ✅ Kotlin requires string, not JavaVersion enum
+        jvmTarget = "1.8" // ✅ Kotlin requires string, not JavaVersion enum
     }
 
     signingConfigs {
