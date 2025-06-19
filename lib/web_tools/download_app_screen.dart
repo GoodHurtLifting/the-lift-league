@@ -27,7 +27,8 @@ class DownloadAppScreen extends StatelessWidget {
         body: Padding(
           padding: const EdgeInsets.all(32),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Text(
                 'Download the full Lift League mobile app for the best experience.',
