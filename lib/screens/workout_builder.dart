@@ -57,6 +57,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) {
         final liftNames = liftDataList
             .map((e) => e['liftName'] as String)
@@ -64,10 +65,16 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             .toList()
           ..sort();
         return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
+          padding: EdgeInsets.fromLTRB(
+            16,
+            16,
+            16,
+            MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
               Autocomplete<String>(
                 optionsBuilder: (TextEditingValue text) {
                   if (text.text.isEmpty) return const Iterable<String>.empty();

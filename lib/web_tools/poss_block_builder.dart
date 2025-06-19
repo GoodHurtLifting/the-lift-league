@@ -239,31 +239,36 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     return DefaultTextStyle(
       style: const TextStyle(color: _lightGrey),
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           foregroundColor: _lightGrey,
           title: const Text('Build Training Block'),
         ),
         drawer: const POSSDrawer(),
-        body: Stepper(
-          currentStep: _currentStep,
-          onStepContinue: () {
-            if (_currentStep == 0) {
-              if (blockName.trim().isNotEmpty) {
-                setState(() => _currentStep = 1);
+        body: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Stepper(
+            currentStep: _currentStep,
+            onStepContinue: () {
+              if (_currentStep == 0) {
+                if (blockName.trim().isNotEmpty) {
+                  setState(() => _currentStep = 1);
+                }
+              } else if (_currentStep == 1) {
+                setState(() => _currentStep = 2);
+              } else if (_currentStep == 2) {
+                if (numWeeks != null) {
+                  setState(() => _currentStep = 3);
+                }
+              } else if (_currentStep == 3) {
+                if (daysPerWeek != null) {
+                  _createDrafts();
+                  setState(() => _currentStep = 4);
+                }
               }
-            } else if (_currentStep == 1) {
-              setState(() => _currentStep = 2);
-            } else if (_currentStep == 2) {
-              if (numWeeks != null) {
-                setState(() => _currentStep = 3);
-              }
-            } else if (_currentStep == 3) {
-              if (daysPerWeek != null) {
-                _createDrafts();
-                setState(() => _currentStep = 4);
-              }
-            }
-          },
+            },
           onStepCancel: () {
             if (_currentStep > 0) {
               setState(() => _currentStep -= 1);
@@ -372,6 +377,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
               isActive: _currentStep >= 4,
             ),
           ],
+        ),
         ),
       ),
     );
