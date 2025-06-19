@@ -146,12 +146,14 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Scaffold(
+        backgroundColor: Colors.black,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (userData == null) {
       return const Scaffold(
+        backgroundColor: Colors.black,
         body: Center(child: Text('User not found.')),
       );
     }
@@ -162,6 +164,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     final showCheckInInfo = userData!['showCheckInInfo'] ?? true;
 
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: _actionLabel != null
