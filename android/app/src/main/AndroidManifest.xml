@@ -29,7 +29,7 @@
 
     <!-- Sign in with Apple callback -->
     <activity
-        android:name="com.linusu.flutter_web_auth.CallbackActivity"
+        android:name="com.example.lift_league"
         android:exported="true">
       <intent-filter android:label="flutter_web_auth">
         <action android:name="android.intent.action.VIEW" />
