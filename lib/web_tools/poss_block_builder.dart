@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import '../services/google_auth_service.dart';
 import 'poss_drawer.dart';
 
 import '../models/custom_block_models.dart';
@@ -149,15 +149,10 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    final googleUser = await GoogleSignIn().signIn();
-                    if (googleUser == null) return;
-                    final googleAuth = await googleUser.authentication;
-                    final cred = GoogleAuthProvider.credential(
-                      accessToken: googleAuth.accessToken,
-                      idToken: googleAuth.idToken,
-                    );
-                    await FirebaseAuth.instance.signInWithCredential(cred);
-                    if (context.mounted) Navigator.pop(context);
+                    final cred = await GoogleAuthService.signIn();
+                    if (cred != null && context.mounted) {
+                      Navigator.pop(context);
+                    }
                   } catch (_) {}
                 },
                 child: const Text('Sign in with Google'),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import '../services/google_auth_service.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:lift_league/data/titles_data.dart';
 import 'user_dashboard.dart';
@@ -88,19 +88,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithGoogle() async {
     setState(() => isLoading = true);
     try {
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-
+      final userCred = await GoogleAuthService.signIn();
+      if (userCred == null) {
         setState(() => isLoading = false);
         return;
       }
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      final userCred =
-      await FirebaseAuth.instance.signInWithCredential(credential);
       if (userCred.additionalUserInfo?.isNewUser ?? false) {
         await FirebaseFirestore.instance
             .collection('users')
