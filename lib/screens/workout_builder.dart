@@ -65,16 +65,16 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             .toList()
           ..sort();
         return Padding(
-          padding: EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
             16,
             16,
             16,
             MediaQuery.of(ctx).viewInsets.bottom + 16,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+        ),
+        child: SingleChildScrollView(
+        child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
               Autocomplete<String>(
                 optionsBuilder: (TextEditingValue text) {
                   if (text.text.isEmpty) return const Iterable<String>.empty();
@@ -147,8 +147,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
               ),
             ],
           ),
+        ),
         );
-      },
+        },
     );
   }
 
