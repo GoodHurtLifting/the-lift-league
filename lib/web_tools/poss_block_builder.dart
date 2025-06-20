@@ -115,10 +115,8 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       return;
     }
 
-    await FirebaseFirestore.instance
-        .collection('custom_blocks')
-        .doc(block.id.toString())
-        .set(blockData);
+    // In the web tool we only persist blocks under the current user's document
+    // so that each user sees only their own data.
   }
 
 
