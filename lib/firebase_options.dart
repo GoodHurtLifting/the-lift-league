@@ -41,7 +41,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyD_a9lzQZu0RPpEaTfJlQKSJMhHnuMtl68',
+    apiKey: 'AIzaSyBE-S9E0p0mqCN_Y8loEyUAud-ygO8tTQY',
     appId: '1:997251967762:web:221ca302032bd7e26261cb',
     messagingSenderId: '997251967762',
     projectId: 'the-lift-league',

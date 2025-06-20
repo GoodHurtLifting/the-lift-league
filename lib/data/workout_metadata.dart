@@ -288,7 +288,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}GM.png",
     mainImage: "${baseImagePath}GranMoreno.jpg",
     liftList: [
       "Front Squats",
@@ -334,7 +334,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}Bros_1.png",
     mainImage: "${baseImagePath}BodySplit.jpg",
     liftList: [
       "Push Ups",
@@ -388,7 +388,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}shat.png",
     mainImage: "${baseImagePath}Shatner.jpg",
     liftList: [
       "Reverse Grip Bent Over Row",
@@ -438,7 +438,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}Bros_1.png",
     mainImage: "${baseImagePath}SuperSplit.jpg",
     liftList: [
       "Cable Incline Trap Pull",
@@ -488,7 +488,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}PPLP_1.png",
     mainImage: "${baseImagePath}PushPullLegsPlus.jpg",
     liftList: [
       "Arnold Press",
