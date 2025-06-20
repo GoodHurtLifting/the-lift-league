@@ -38,3 +38,30 @@ final snap = await FirebaseFirestore.instance
 ```
 
 When the list is empty (for example after signing out), the grid is hidden and the default tool state is shown.
+
+## Storing a new custom block
+
+`POSSBlockBuilder` converts the builder form into a `CustomBlock` object and then
+saves it to Firestore under the signed-in user's document:
+
+```dart
+await FirebaseFirestore.instance
+    .collection('users')
+    .doc(user.uid)
+    .collection('custom_blocks')
+    .doc(block.id.toString())
+    .set(blockData);
+```
+
+Each block record includes an `ownerId` field containing the user's UID. Because
+blocks are stored inside the user's document they can only be read by that user
+when the appropriate security rules are in place.
+
+## Cross‑device access
+
+Any time the auth state changes the home page reloads the user's blocks with the
+service above. Once signed in on any device the same Firestore query runs and
+returns all blocks owned by that UID, ensuring a consistent list everywhere.
+
+Only the collection scoped to the current UID is queried so there is no chance of
+loading another user's blocks.
