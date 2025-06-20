@@ -29,6 +29,8 @@ class _POSSHomePageState extends State<POSSHomePage> {
   void initState() {
     super.initState();
     _checkBlocks();
+    // Reload blocks whenever the user signs in or out so the
+    // UI reflects the correct state immediately.
     _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
       _checkBlocks();
     });
@@ -36,6 +38,7 @@ class _POSSHomePageState extends State<POSSHomePage> {
 
   Future<void> _checkBlocks() async {
     try {
+      // Grab blocks belonging to the currently signed-in user.
       final blocks = await WebCustomBlockService().getCustomBlocks();
       setState(() {
         _showGrid = blocks.isNotEmpty;
