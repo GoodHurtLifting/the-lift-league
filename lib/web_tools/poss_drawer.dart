@@ -7,6 +7,7 @@ import 'terms_of_service_screen.dart';
 import 'download_app_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/login_screen.dart';
+import 'web_sign_in_dialog.dart';
 
 class POSSDrawer extends StatelessWidget {
   final VoidCallback? onHome;
@@ -23,10 +24,14 @@ class POSSDrawer extends StatelessWidget {
             child: Text('Menu'),
           ),
           ListTile(
-            leading: const Icon(Icons.home),
-            title: const Text('Home'),
-            onTap: () {
+            leading: const Icon(Icons.folder),
+            title: const Text('My Blocks'),
+            onTap: () async {
               Navigator.pop(context);
+              if (FirebaseAuth.instance.currentUser == null) {
+                final signedIn = await showWebSignInDialog(context);
+                if (!signedIn) return;
+              }
               if (onHome != null) {
                 onHome!();
               } else {
@@ -97,12 +102,9 @@ class POSSDrawer extends StatelessWidget {
                 return ListTile(
                   leading: const Icon(Icons.login),
                   title: const Text('Sign In'),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
+                    await showWebSignInDialog(context);
                   },
                 );
               } else {
