@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -157,7 +159,8 @@ class _POSSHomePageState extends State<POSSHomePage> {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyScreen()),
                   );
                 },
               ),
@@ -168,7 +171,8 @@ class _POSSHomePageState extends State<POSSHomePage> {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const TermsOfServiceScreen()),
                   );
                 },
               ),
@@ -179,7 +183,8 @@ class _POSSHomePageState extends State<POSSHomePage> {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const DownloadAppScreen()),
+                    MaterialPageRoute(
+                        builder: (_) => const DownloadAppScreen()),
                   );
                 },
               ),
