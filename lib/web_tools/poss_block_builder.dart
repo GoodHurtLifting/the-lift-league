@@ -240,7 +240,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           title: const Text('Build Training Block'),
         ),
         drawer: const POSSDrawer(),
-        body: Padding(
+        body: SingleChildScrollView(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
