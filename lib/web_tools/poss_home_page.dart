@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'about_screen.dart';
 import 'custom_blocks_screen.dart';
 import 'poss_block_builder.dart';
@@ -21,11 +22,15 @@ class POSSHomePage extends StatefulWidget {
 class _POSSHomePageState extends State<POSSHomePage> {
   bool _showGrid = false;
   bool _loading = true;
+  StreamSubscription<User?>? _authSub;
 
   @override
   void initState() {
     super.initState();
     _checkBlocks();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
+      _checkBlocks();
+    });
   }
 
   Future<void> _checkBlocks() async {
@@ -169,5 +174,11 @@ class _POSSHomePageState extends State<POSSHomePage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 }

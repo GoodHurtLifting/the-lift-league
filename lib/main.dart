@@ -85,6 +85,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  if (kIsWeb) {
+    await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+  }
+
   HealthService.registerBackgroundSync();
 
   analytics = FirebaseAnalytics.instance;
