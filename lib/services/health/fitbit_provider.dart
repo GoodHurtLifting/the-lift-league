@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'health_stub.dart' as health;
+import 'health_samples.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 
 import 'fitbit_credentials.dart';
 import 'health_data_provider.dart';
-import '../db_service.dart';
 
 class FitbitProvider implements HealthDataProvider {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
@@ -56,7 +55,7 @@ class FitbitProvider implements HealthDataProvider {
   }
 
   @override
-  Future<List<health.HealthDataPoint>> fetch(DateTimeRange range) async {
+  Future<List<HealthSample>> fetch(DateTimeRange range) async {
     if (!await isConnected()) return [];
     final token = accessToken ?? await _storage.read(key: tokenKey);
     if (token == null) return [];
@@ -64,7 +63,7 @@ class FitbitProvider implements HealthDataProvider {
     final dio = Dio();
     final headers = {'Authorization': 'Bearer $token'};
     final dateStr = range.end.toIso8601String().split('T').first;
-    final db = DBService();
+    final samples = <HealthSample>[];
 
     try {
       final weightRes = await dio.get(
@@ -74,11 +73,13 @@ class FitbitProvider implements HealthDataProvider {
       final List<dynamic> logs = weightRes.data['weight'] ?? [];
       for (final l in logs) {
         final date = DateTime.parse('${l['date']} ${l['time']}');
-        await db.insertWeightSample(
-          date: date,
-          value: (l['weight'] as num).toDouble(),
-          bmi: (l['bmi'] as num?)?.toDouble(),
-          source: 'fitbit',
+        samples.add(
+          WeightSample(
+            date: date,
+            source: 'fitbit',
+            value: (l['weight'] as num).toDouble(),
+            bmi: (l['bmi'] as num?)?.toDouble(),
+          ),
         );
       }
     } on DioException catch (_) {
@@ -93,19 +94,21 @@ class FitbitProvider implements HealthDataProvider {
       final List<dynamic> logs = fatRes.data['fat'] ?? [];
       for (final l in logs) {
         final date = DateTime.parse('${l['date']} ${l['time']}');
-        await db.insertWeightSample(
-          date: date,
-          bodyFat: (l['fat'] as num).toDouble(),
-          source: 'fitbit',
+        samples.add(
+          WeightSample(
+            date: date,
+            source: 'fitbit',
+            bodyFat: (l['fat'] as num).toDouble(),
+          ),
         );
       }
     } on DioException catch (_) {}
 
-    return [];
+    return samples;
   }
 
   @override
-  Stream<health.HealthDataPoint> watchChanges() {
+  Stream<HealthSample> watchChanges() {
     // Fitbit does not support realtime updates in this stub
     return const Stream.empty();
   }

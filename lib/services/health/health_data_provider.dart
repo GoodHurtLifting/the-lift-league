@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'health_stub.dart' as health;
+import 'health_samples.dart';
 
 abstract class HealthDataProvider {
-  Future<List<health.HealthDataPoint>> fetch(DateTimeRange range);
-  Stream<health.HealthDataPoint> watchChanges();
+  Future<List<HealthSample>> fetch(DateTimeRange range);
+  Stream<HealthSample> watchChanges();
 }
