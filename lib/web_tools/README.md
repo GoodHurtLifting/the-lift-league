@@ -65,3 +65,24 @@ returns all blocks owned by that UID, ensuring a consistent list everywhere.
 
 Only the collection scoped to the current UID is queried so there is no chance of
 loading another user's blocks.
+
+## Signing out
+
+The drawer displays a **Sign Out** tile whenever a user is authenticated. Pressing
+it calls `FirebaseAuth.instance.signOut()` and clears the custom block grid so the
+guest view is shown again:
+
+```dart
+ListTile(
+  leading: const Icon(Icons.logout),
+  title: const Text('Sign Out'),
+  onTap: () async {
+    Navigator.pop(context);
+    await FirebaseAuth.instance.signOut();
+    setState(() => _showGrid = false);
+  },
+)
+```
+
+The auth listener on `POSSHomePage` then reloads the (now empty) block list,
+displaying the default POSS interface for guests.

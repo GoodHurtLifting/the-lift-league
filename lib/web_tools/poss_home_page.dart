@@ -188,6 +188,33 @@ class _POSSHomePageState extends State<POSSHomePage> {
                   );
                 },
               ),
+              const Divider(),
+              Builder(
+                builder: (context) {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user == null) {
+                    return ListTile(
+                      leading: const Icon(Icons.login),
+                      title: const Text('Sign In'),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        final signedIn = await showWebSignInDialog(context);
+                        if (signedIn) await _checkBlocks();
+                      },
+                    );
+                  } else {
+                    return ListTile(
+                      leading: const Icon(Icons.logout),
+                      title: const Text('Sign Out'),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await FirebaseAuth.instance.signOut();
+                        if (mounted) setState(() => _showGrid = false);
+                      },
+                    );
+                  }
+                },
+              ),
             ],
           ),
         ),
