@@ -5,6 +5,8 @@ import 'privacy_policy_screen.dart';
 import 'poss_block_builder.dart';
 import 'terms_of_service_screen.dart';
 import 'download_app_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../screens/login_screen.dart';
 
 class POSSDrawer extends StatelessWidget {
   final VoidCallback? onHome;
@@ -85,6 +87,34 @@ class POSSDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (_) => const DownloadAppScreen()),
               );
+            },
+          ),
+          const Divider(),
+          Builder(
+            builder: (context) {
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null) {
+                return ListTile(
+                  leading: const Icon(Icons.login),
+                  title: const Text('Sign In'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  },
+                );
+              } else {
+                return ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: const Text('Sign Out'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await FirebaseAuth.instance.signOut();
+                  },
+                );
+              }
             },
           ),
         ],
