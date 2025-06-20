@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'about_screen.dart';
 import 'custom_blocks_screen.dart';
 import 'poss_block_builder.dart';
@@ -9,6 +10,7 @@ import 'download_app_screen.dart';
 import 'web_custom_block_service.dart';
 import '../services/promo_popup_service.dart';
 import 'web_sign_in_dialog.dart';
+import 'auth_utils.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 Color? _lightGrey = Colors.grey[400];
@@ -34,15 +36,19 @@ class _POSSHomePageState extends State<POSSHomePage> {
     });
   }
 
-  Future<void> _checkBlocks() async {
+  Future<void> _checkBlocks({bool allowThrow = false}) async {
     try {
       final blocks = await WebCustomBlockService().getCustomBlocks();
+      if (!mounted) return;
       setState(() {
         _showGrid = blocks.isNotEmpty;
         _loading = false;
       });
-    } catch (_) {
-      setState(() => _loading = false);
+    } on FirebaseException catch (e) {
+      if (allowThrow && isAuthError(e)) {
+        rethrow;
+      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -58,7 +64,16 @@ class _POSSHomePageState extends State<POSSHomePage> {
       final signedIn = await showWebSignInDialog(context);
       if (!signedIn) return;
     }
-    await _checkBlocks();
+    try {
+      await _checkBlocks(allowThrow: true);
+    } on FirebaseException catch (e) {
+      final reauthed = await promptReAuthIfNeeded(context, e);
+      if (reauthed) {
+        await _checkBlocks();
+      } else {
+        return;
+      }
+    }
     setState(() => _showGrid = true);
   }
 

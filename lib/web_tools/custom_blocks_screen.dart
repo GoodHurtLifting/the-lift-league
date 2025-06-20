@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'web_custom_block_service.dart';
+import 'auth_utils.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class CustomBlocksScreen extends StatefulWidget {
   final VoidCallback onCreateNew;
@@ -20,11 +22,21 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
   }
 
   Future<void> _loadBlocks() async {
-    final blocks = await WebCustomBlockService().getCustomBlocks();
-    setState(() {
-      _blocks = blocks;
-      _loading = false;
-    });
+    try {
+      final blocks = await WebCustomBlockService().getCustomBlocks();
+      if (!mounted) return;
+      setState(() {
+        _blocks = blocks;
+        _loading = false;
+      });
+    } on FirebaseException catch (e) {
+      final reauthed = await promptReAuthIfNeeded(context, e);
+      if (reauthed) {
+        await _loadBlocks();
+      } else if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
   @override
