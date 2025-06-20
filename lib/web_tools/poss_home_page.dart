@@ -8,6 +8,7 @@ import 'terms_of_service_screen.dart';
 import 'download_app_screen.dart';
 import 'web_custom_block_service.dart';
 import '../services/promo_popup_service.dart';
+import 'web_sign_in_dialog.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 Color? _lightGrey = Colors.grey[400];
@@ -52,6 +53,15 @@ class _POSSHomePageState extends State<POSSHomePage> {
     }
   }
 
+  Future<void> _openMyBlocks() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      final signedIn = await showWebSignInDialog(context);
+      if (!signedIn) return;
+    }
+    await _checkBlocks();
+    setState(() => _showGrid = true);
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget body;
@@ -92,11 +102,11 @@ class _POSSHomePageState extends State<POSSHomePage> {
                 child: Text('Menu'),
               ),
               ListTile(
-                leading: const Icon(Icons.home),
-                title: const Text('Home'),
-                onTap: () {
+                leading: const Icon(Icons.folder),
+                title: const Text('My Blocks'),
+                onTap: () async {
                   Navigator.pop(context);
-                  setState(() => _showGrid = true);
+                  await _openMyBlocks();
                 },
               ),
               ListTile(

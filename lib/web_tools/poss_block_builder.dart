@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../services/google_auth_service.dart';
 import 'poss_drawer.dart';
+import 'web_sign_in_dialog.dart';
 
 import '../models/custom_block_models.dart';
 import '../screens/workout_builder.dart';
@@ -30,7 +31,6 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   int _currentStep = 0;
   int _workoutIndex = 0;
   Uint8List? _coverImageBytes;
-  String? _emailCapture;
 
   @override
   void initState() {
@@ -109,13 +109,8 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           .collection('custom_blocks')
           .doc(block.id.toString())
           .set(blockData);
-    } else if (_emailCapture != null && _emailCapture!.isNotEmpty) {
-      await FirebaseFirestore.instance
-          .collection('web_custom_blocks')
-          .doc(_emailCapture)
-          .collection('blocks')
-          .doc(block.id.toString())
-          .set(blockData);
+    } else {
+      return;
     }
 
     await FirebaseFirestore.instance
@@ -124,58 +119,6 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         .set(blockData);
   }
 
-  Future<void> _promptForAuth() async {
-    if (FirebaseAuth.instance.currentUser != null) return;
-    final emailCtrl = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Save Block'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'To keep this block we need a way to attach it to you.\n'
-                'Sign in with Google or provide an email to link it to your account.',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: emailCtrl,
-                decoration: const InputDecoration(labelText: 'Email'),
-              ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    final cred = await GoogleAuthService.signIn();
-                    if (cred != null && context.mounted) {
-                      Navigator.pop(context);
-                    }
-                  } catch (_) {}
-                },
-                child: const Text('Sign in with Google'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _emailCapture = emailCtrl.text.trim();
-                Navigator.pop(context);
-              },
-              child: const Text('Continue'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Future<void> _finish() async {
     if (numWeeks == null ||
@@ -209,7 +152,10 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       }
     }
 
-    await _promptForAuth();
+    if (FirebaseAuth.instance.currentUser == null) {
+      final signedIn = await showWebSignInDialog(context);
+      if (!signedIn) return;
+    }
 
     final block = CustomBlock(
       id: DateTime.now().millisecondsSinceEpoch,
