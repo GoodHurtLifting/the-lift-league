@@ -5,9 +5,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_core/firebase_core.dart';
 import '../services/google_auth_service.dart';
 import 'poss_drawer.dart';
 import 'web_sign_in_dialog.dart';
+import 'auth_utils.dart';
 
 import '../models/custom_block_models.dart';
 import '../screens/workout_builder.dart';
@@ -167,7 +169,16 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       isDraft: false,
     );
 
-    await _saveBlockToFirestore(block);
+    try {
+      await _saveBlockToFirestore(block);
+    } on FirebaseException catch (e) {
+      final reauthed = await promptReAuthIfNeeded(context, e);
+      if (reauthed) {
+        await _saveBlockToFirestore(block);
+      } else {
+        return;
+      }
+    }
     if (mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Block saved!')));
