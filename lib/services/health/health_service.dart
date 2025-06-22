@@ -5,7 +5,9 @@ import 'package:workmanager/workmanager.dart';
 
 import 'fitbit_provider.dart';
 
+import '../db_service.dart';
 import 'health_data_provider.dart';
+import 'health_samples.dart';
 
 /// Top-level background sync task for Workmanager
 void healthSyncWorkmanagerDispatcher() {
@@ -62,11 +64,28 @@ class HealthService {
 
   /// Runs sync for the given time range for all providers.
   Future<void> sync(DateTimeRange range) async {
+    final db = DBService();
     for (final provider in _providers) {
       try {
         final samples = await provider.fetch(range);
-        // TODO: Persist [samples] into your database (SQLite, etc)
-        // Example: await DBService().saveHealthDataPoints(samples);
+        for (final sample in samples) {
+          if (sample is WeightSample) {
+            await db.insertWeightSample(
+              date: sample.date,
+              value: sample.value,
+              bmi: sample.bmi,
+              bodyFat: sample.bodyFat,
+              source: sample.source,
+            );
+          } else if (sample is EnergySample) {
+            await db.insertEnergySample(
+              date: sample.date,
+              kcalIn: sample.kcalIn,
+              kcalOut: sample.kcalOut,
+              source: sample.source,
+            );
+          }
+        }
       } catch (e, stack) {
         print('[HealthService] Error syncing ${provider.runtimeType}: $e\n$stack');
       }
