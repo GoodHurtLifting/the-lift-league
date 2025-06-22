@@ -17,9 +17,7 @@ import 'package:lift_league/screens/login_screen.dart';
 import 'package:lift_league/screens/add_check_in_screen.dart';
 import 'package:lift_league/screens/custom_block_wizard.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
-import 'package:lift_league/screens/settings/connected_apps_screen.dart';
 import 'package:lift_league/services/notifications_service.dart';
-import 'package:lift_league/services/health/health_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 late FirebaseAnalytics analytics;
@@ -89,7 +87,6 @@ void main() async {
     await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
   }
 
-  HealthService.registerBackgroundSync();
 
   analytics = FirebaseAnalytics.instance;
 
@@ -190,9 +187,6 @@ class LiftLeagueApp extends StatelessWidget {
           userId: (ModalRoute.of(context)?.settings.arguments as Map?)?['userId'] ?? '',
         ),
         '/poss': (context) => const POSSHomePage(),
-/*
-        '/connectedApps': (context) => const ConnectedAppsScreen(),
-*/
 
       },
       home: const AuthGate(),

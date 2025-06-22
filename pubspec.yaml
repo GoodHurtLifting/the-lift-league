@@ -58,13 +58,7 @@ dependencies:
   firebase_messaging: ^15.2.6
   flutter_local_notifications: ^19.2.1
   fl_chart: ^1.0.0
-#  fitbitter: ^2.0.4
-  flutter_appauth: ^6.0.2
-  flutter_secure_storage: ^9.0.0
-  dio: ^5.4.0
-  permission_handler: ^11.3.0
   flutter_web_auth_2: ^4.1.0
-  workmanager: ^0.6.0
 
 
 
