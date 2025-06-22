@@ -30,10 +30,12 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
   @override
   void initState() {
     super.initState();
+/*
     _prefillFromFitbit();
+*/
   }
 
-  Future<void> _prefillFromFitbit() async {
+  /*Future<void> _prefillFromFitbit() async {
     final sample = await DBService()
         .getLatestWeightSampleForDay(DateTime.now(), source: 'fitbit');
     if (sample == null) return;
@@ -45,7 +47,7 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
       if (bodyFat != null) _bodyFatController.text = bodyFat.toString();
       if (bmi != null) _bmiController.text = bmi.toString();
     });
-  }
+  }*/
 
 
   Future<List<File>> _pickAndCropImages() async {

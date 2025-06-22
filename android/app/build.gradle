@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace 'com.linusu.flutter_web_auth'
+    namespace 'com.linusu.flutter_web_auth_2'
     compileSdk = 35
     buildToolsVersion = "34.0.0" // Safe current version
     ndkVersion = "28.0.13004108"

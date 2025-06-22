@@ -190,7 +190,9 @@ class LiftLeagueApp extends StatelessWidget {
           userId: (ModalRoute.of(context)?.settings.arguments as Map?)?['userId'] ?? '',
         ),
         '/poss': (context) => const POSSHomePage(),
+/*
         '/connectedApps': (context) => const ConnectedAppsScreen(),
+*/
 
       },
       home: const AuthGate(),
