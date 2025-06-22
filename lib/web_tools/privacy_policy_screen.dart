@@ -62,8 +62,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                         style: TextStyle(fontSize: 16),
                       ),
                       Text(
-                        '• Fitness and health data (if you connect external '
-                        'services like Fitbit).',
+                        '• Fitness and health data (if you connect external services).',
                         style: TextStyle(fontSize: 16),
                       ),
                       Text(

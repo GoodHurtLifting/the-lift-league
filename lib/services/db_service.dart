@@ -2393,7 +2393,7 @@ class DBService {
 
   Future<Map<String, dynamic>?> getLatestWeightSampleForDay(
     DateTime day, {
-    String source = 'fitbit',
+    String source = 'manual',
   }) async {
     final db = await database;
     final start = DateTime(day.year, day.month, day.day);
