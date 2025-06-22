@@ -489,7 +489,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Rack"
     ],
     scheduleImage: "${baseSchedulePath}PPLP_1.png",
-    mainImage: "${baseImagePath}PushPullLegsPlus.jpg",
+    mainImage: "${baseImagePath}flutter runPushPullLegsPlus.jpg",
     liftList: [
       "Arnold Press",
       "Bench Press",
