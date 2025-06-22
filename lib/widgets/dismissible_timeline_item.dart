@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as img;
+import 'package:flutter/services.dart' show NetworkAssetBundle;
 
 class DismissibleTimelineItem extends StatelessWidget {
   final String userId;
@@ -23,14 +24,20 @@ class DismissibleTimelineItem extends StatelessWidget {
   });
 
   Future<void> _handleShare(BuildContext context) async {
-    final buffer = StringBuffer();
-    buffer.writeln('Check-In: ${entry.timestamp.toLocal().toString().split(' ').first}');
-    if (entry.block != null) buffer.writeln('Block: ${entry.block}');
-    if (entry.weight != null) buffer.writeln('Weight: ${entry.weight} lbs');
-    if (entry.bodyFat != null) buffer.writeln('Body Fat: ${entry.bodyFat}%');
-    if (entry.bmi != null) buffer.writeln('BMI: ${entry.bmi}');
-    buffer.writeln('\n#TheLiftLeague');
-    final shareText = buffer.toString();
+    String shareText;
+    if (entry.type == 'checkin') {
+      final buffer = StringBuffer();
+      buffer.writeln(
+          'Check-In: ${entry.timestamp.toLocal().toString().split(' ').first}');
+      if (entry.block != null) buffer.writeln('Block: ${entry.block}');
+      if (entry.weight != null) buffer.writeln('Weight: ${entry.weight} lbs');
+      if (entry.bodyFat != null) buffer.writeln('Body Fat: ${entry.bodyFat}%');
+      if (entry.bmi != null) buffer.writeln('BMI: ${entry.bmi}');
+      buffer.writeln('\n#TheLiftLeague');
+      shareText = buffer.toString();
+    } else {
+      shareText = '${entry.clink ?? ''}\n\n#TheLiftLeague';
+    }
 
     try {
       final tempDir = await getTemporaryDirectory();
@@ -52,7 +59,7 @@ class DismissibleTimelineItem extends StatelessWidget {
         img.compositeImage(originalImage, resizedLogo, dstX: 50, dstY: 50);
 
         final watermarkedBytes = img.encodeJpg(originalImage);
-        final file = await File('${tempDir.path}/shared_checkin_$i.jpg').create();
+        final file = await File('${tempDir.path}/shared_${entry.type}_$i.jpg').create();
         await file.writeAsBytes(watermarkedBytes);
 
         imageFiles.add(XFile(file.path));
@@ -106,7 +113,7 @@ class DismissibleTimelineItem extends StatelessWidget {
               ],
             ),
           );
-        } else if (direction == DismissDirection.startToEnd && entry.type == 'checkin') {
+        } else if (direction == DismissDirection.startToEnd) {
           await _handleShare(context);
           return false;
         }

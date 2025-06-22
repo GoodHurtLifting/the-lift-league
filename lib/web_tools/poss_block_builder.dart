@@ -13,6 +13,8 @@ import 'auth_utils.dart';
 
 import '../models/custom_block_models.dart';
 import '../screens/workout_builder.dart';
+import '../services/db_service.dart';
+import '../screens/block_dashboard.dart';
 
 const Color _lightGrey = Color(0xFFD0D0D0);
 
@@ -162,10 +164,17 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       name: blockName,
       numWeeks: numWeeks!,
       daysPerWeek: daysPerWeek!,
-      coverImagePath: null,
+      coverImagePath: 'assets/logo25.jpg',
       workouts: allWorkouts,
       isDraft: false,
     );
+
+    // Save locally and build block dashboard just like the mobile app
+    final db = DBService();
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    await db.insertCustomBlock(block);
+    final int blockInstanceId =
+    await db.createBlockFromCustomBlockId(block.id, userId);
 
     try {
       await _saveBlockToFirestore(block);
@@ -180,6 +189,12 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     if (mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Block saved!')));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BlockDashboard(blockInstanceId: blockInstanceId),
+        ),
+      );
     }
     widget.onSaved?.call();
   }

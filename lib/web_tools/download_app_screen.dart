@@ -31,7 +31,7 @@ class DownloadAppScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               const Text(
-                'Download the full Lift League mobile app for the best experience.',
+                'The Lift League app is coming soon to Apple App Store and Google Play Store.',
                 textAlign: TextAlign.center,
                 softWrap: true,
               ),

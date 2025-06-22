@@ -63,7 +63,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   dio: ^5.4.0
   permission_handler: ^11.3.0
-  flutter_web_auth_2: 4.1.0
+  flutter_web_auth_2: ^4.1.0
   workmanager: ^0.6.0
 
 
