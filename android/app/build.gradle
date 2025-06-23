@@ -8,13 +8,14 @@ android {
 
     defaultConfig {
         applicationId "com.example.lift_league"
-        minSdkVersion 21
-        targetSdkVersion 34
+        minSdkVersion 23
+        targetSdkVersion 35
         versionCode 1
         versionName "1.0"
     }
 
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
@@ -26,5 +27,7 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.21"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     // Add your other dependencies (Firebase, etc) here
 }
+
