@@ -1,15 +1,21 @@
-apply plugin: 'com.android.application'
-apply plugin: 'org.jetbrains.kotlin.android'
-apply plugin: 'dev.flutter.flutter-gradle-plugin'
+plugins {
+    id "com.android.application"
+    id "org.jetbrains.kotlin.android"
+    id "dev.flutter.flutter-gradle-plugin"
+
+    // Firebase / Google-services
+    id "com.google.gms.google-services"
+    id "com.google.firebase.crashlytics"
+}
 
 android {
-    namespace 'com.example.lift_league'
-    compileSdkVersion 35
+    namespace "com.example.lift_league"
+    compileSdk 35          // ← new DSL: no “Version” suffix
 
     defaultConfig {
         applicationId "com.example.lift_league"
-        minSdkVersion 23
-        targetSdkVersion 35
+        minSdk 23
+        targetSdk 35
         versionCode 1
         versionName "1.0"
     }
@@ -19,15 +25,19 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.21"
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
-    // Add your other dependencies (Firebase, etc) here
-}
+    // Keep all Firebase libs in sync via the BOM
+    implementation platform("com.google.firebase:firebase-bom:34.5.1")
+    implementation "com.google.firebase:firebase-auth-ktx"
+    implementation "com.google.firebase:firebase-crashlytics-ktx"
 
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.21"
+
+    // Java-8+ desugaring
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.5"
+
+    // …add any other libraries you use here
+}
