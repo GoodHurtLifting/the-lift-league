@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/google_auth_service.dart';
 import 'poss_drawer.dart';
 import 'web_sign_in_dialog.dart';
@@ -169,12 +170,32 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       isDraft: false,
     );
 
+    if (kIsWeb) {
+      try {
+        await _saveBlockToFirestore(block);
+      } on FirebaseException catch (e) {
+        final reauthed = await promptReAuthIfNeeded(context, e);
+        if (reauthed) {
+          await _saveBlockToFirestore(block);
+        } else {
+          return;
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Block saved!')));
+        Navigator.pop(context);
+      }
+      widget.onSaved?.call();
+      return;
+    }
+
     // Save locally and build block dashboard just like the mobile app
     final db = DBService();
     final userId = FirebaseAuth.instance.currentUser!.uid;
     await db.insertCustomBlock(block);
     final int blockInstanceId =
-    await db.createBlockFromCustomBlockId(block.id, userId);
+        await db.createBlockFromCustomBlockId(block.id, userId);
 
     try {
       await _saveBlockToFirestore(block);
