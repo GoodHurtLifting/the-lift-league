@@ -27,7 +27,18 @@
         android:screenOrientation="portrait"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
-
+    <!-- Sign in with Apple callback -->
+    <activity
+        android:name="com.aboutyou.dart_packages.sign_in_with_apple.SignInWithAppleCallback"
+        android:exported="true">
+      <intent-filter android:label="flutter-auth">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <!-- Update android:scheme below if you use OAuth/app_auth -->
+        <data android:scheme="${appAuthRedirectScheme}" android:host="signinwithapple" />
+      </intent-filter>
+    </activity>
 
     <service
         android:name="io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingService"

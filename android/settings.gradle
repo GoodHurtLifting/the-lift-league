@@ -1,39 +1,40 @@
 pluginManagement {
+    resolutionStrategy {
+        eachPlugin { details ->
+            if (details.requested.id.id == "com.android.application"
+                    || details.requested.id.id == "com.android.library") {
+                useModule("com.android.tools.build:gradle:8.6.1")
+            }
+            if (details.requested.id.id == "org.jetbrains.kotlin.android") {
+                useModule("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.21")
+            }
+        }
+    }
+
+    def flutterSdkPath = {
+        def properties = new Properties()
+        file("local.properties").withInputStream { properties.load(it) }
+        def flutterSdkPath = properties.getProperty("flutter.sdk")
+        assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+        return flutterSdkPath
+    }()
+
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
     }
-
-    plugins {
-        id("com.android.application")      version "8.10.1"
-        id("com.android.library")          version "8.10.1"
-        id("org.jetbrains.kotlin.android") version "2.1.21"
-
-        id("com.google.gms.google-services")   version "4.4.2"
-        id("com.google.firebase.crashlytics")  version "3.0.4"
-    }
-
-    // ---- Flutter ----
-    def flutterSdkPath = {
-        def props = new Properties()
-        def localProps = file("local.properties")
-        if (localProps.exists()) {
-            localProps.withInputStream { props.load(it) }
-        } else {
-            def envPath = System.getenv("FLUTTER_ROOT")
-            if (envPath != null) props.setProperty("flutter.sdk", envPath)
-        }
-        def path = props.getProperty("flutter.sdk")
-        assert path != null : "flutter.sdk not set in local.properties or FLUTTER_ROOT"
-        return path
-    }()
-    includeBuild("${flutterSdkPath}/packages/flutter_tools/gradle")
 }
 
-// Flutter loader (no version conflicts here)
 plugins {
-    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+    id "com.android.application" version "8.6.1" apply false
+    // START: FlutterFire Configuration
+    id "com.google.gms.google-services" version "4.4.2" apply false
+    // END: FlutterFire Configuration
+    id "org.jetbrains.kotlin.android" version "2.1.21" apply false
 }
 
-include(":app")
+include ":app"

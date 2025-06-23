@@ -1,43 +1,62 @@
 plugins {
     id "com.android.application"
-    id "org.jetbrains.kotlin.android"
-    id "dev.flutter.flutter-gradle-plugin"
-
-    // Firebase / Google-services
     id "com.google.gms.google-services"
     id "com.google.firebase.crashlytics"
+    id "org.jetbrains.kotlin.android"
+    id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
-    namespace "com.example.lift_league"
-    compileSdk 35          // ← new DSL: no “Version” suffix
+    namespace = "com.example.lift_league"
+    compileSdk = 35
+    buildToolsVersion = "34.0.0" // Safe current version
+    ndkVersion = "28.0.13004108"
 
     defaultConfig {
-        applicationId "com.example.lift_league"
-        minSdk 23
-        targetSdk 35
-        versionCode 1
-        versionName "1.0"
+        applicationId = "com.example.lift_league"
+        minSdk = 23
+        targetSdk = 35
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+        manifestPlaceholders = [
+                appAuthRedirectScheme: "com.example.lift_league"
+        ]
     }
 
     compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
         coreLibraryDesugaringEnabled true
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
+
+    kotlinOptions {
+        jvmTarget = "21" // ✅ Kotlin requires string, not JavaVersion enum
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("C:/Users/ryanl/keystores/liftleague-release.jks")
+            storePassword RELEASE_STORE_PASSWORD
+            keyAlias "liftleague"
+            keyPassword RELEASE_KEY_PASSWORD
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}
+
+flutter {
+    source = "../.."
 }
 
 dependencies {
-    // Keep all Firebase libs in sync via the BOM
-    implementation platform("com.google.firebase:firebase-bom:34.5.1")
-    implementation "com.google.firebase:firebase-auth-ktx"
-    implementation "com.google.firebase:firebase-crashlytics-ktx"
-
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:2.1.21"
-
-    // Java-8+ desugaring
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.5"
-
-    // …add any other libraries you use here
+    implementation 'com.google.firebase:firebase-analytics:22.4.0'
+    implementation 'com.google.firebase:firebase-crashlytics:19.4.4'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }
