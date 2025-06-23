@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lift_league/services/consistency_service.dart';
 
-class ConsistencyMeter extends StatelessWidget {
+class ConsistencyMeter extends StatefulWidget {
   final String userId;
   final int blockId;
 
@@ -11,16 +11,28 @@ class ConsistencyMeter extends StatelessWidget {
     required this.blockId,
   });
 
-  Stream<Map<String, dynamic>> _consistencyStream() {
-    return Stream.periodic(const Duration(seconds: 1)).asyncMap((_) =>
-        ConsistencyService()
-            .getWeeklyConsistency(userId: userId, blockInstanceId: blockId));
+  @override
+  State<ConsistencyMeter> createState() => _ConsistencyMeterState();
+}
+
+class _ConsistencyMeterState extends State<ConsistencyMeter> {
+  late final Stream<Map<String, dynamic>> _consistencyStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _consistencyStream = Stream.periodic(const Duration(seconds: 1)).asyncMap(
+      (_) => ConsistencyService().getWeeklyConsistency(
+        userId: widget.userId,
+        blockInstanceId: widget.blockId,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Map<String, dynamic>>(
-      stream: _consistencyStream(),
+      stream: _consistencyStream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(
