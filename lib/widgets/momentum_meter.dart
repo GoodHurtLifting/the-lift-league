@@ -86,6 +86,9 @@ class _MomentumMeterState extends State<MomentumMeter> {
     return StreamBuilder<Map<String, dynamic>>(
       stream: _momentumStream,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
