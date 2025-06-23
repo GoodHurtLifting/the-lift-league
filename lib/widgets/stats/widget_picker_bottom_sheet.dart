@@ -41,10 +41,17 @@ class _WidgetPickerBottomSheetState extends State<WidgetPickerBottomSheet> {
 
   Future<void> _save() async {
     final layout = _items.where((e) => e.enabled).map((e) => e.id).toList();
-    await FirebaseFirestore.instance
-        .doc('users/${widget.userId}/preferences')
-        .set({'statsLayout': layout}, SetOptions(merge: true));
-    if (mounted) Navigator.pop(context, layout);
+    try {
+      await FirebaseFirestore.instance
+          .doc('users/${widget.userId}/preferences')
+          .set({'statsLayout': layout}, SetOptions(merge: true));
+      if (mounted) Navigator.pop(context, layout);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error saving: $e')));
+      }
+    }
   }
 
   @override

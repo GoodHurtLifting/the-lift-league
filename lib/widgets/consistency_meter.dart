@@ -34,6 +34,11 @@ class _ConsistencyMeterState extends State<ConsistencyMeter> {
     return StreamBuilder<Map<String, dynamic>>(
       stream: _consistencyStream,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return SizedBox(
+              height: 60,
+              child: Center(child: Text('Error: ${snapshot.error}')));
+        }
         if (!snapshot.hasData) {
           return const SizedBox(
               height: 60, child: Center(child: CircularProgressIndicator()));

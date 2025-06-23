@@ -168,6 +168,9 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
     return StreamBuilder<Map<String, dynamic>>(
       stream: _statsStream,
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }

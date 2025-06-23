@@ -176,6 +176,12 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
           FutureBuilder<List<String>>(
             future: _layoutFuture,
             builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return IconButton(
+                  onPressed: null,
+                  icon: const Icon(Icons.error),
+                );
+              }
               if (!snapshot.hasData) return const SizedBox.shrink();
               return IconButton(
                 icon: const Icon(Icons.tune),
@@ -203,6 +209,9 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _userFuture,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -214,6 +223,9 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
           return FutureBuilder<List<String>>(
             future: _layoutFuture,
             builder: (context, layoutSnap) {
+              if (layoutSnap.hasError) {
+                return Center(child: Text('Error: ${layoutSnap.error}'));
+              }
               if (!layoutSnap.hasData) {
                 return const Center(child: CircularProgressIndicator());
               }

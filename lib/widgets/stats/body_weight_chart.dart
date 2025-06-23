@@ -163,9 +163,12 @@ class _BodyWeightChartState extends State<BodyWeightChart> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Map<String, dynamic>>( 
+    return FutureBuilder<Map<String, dynamic>>(
       future: _fetchData(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }

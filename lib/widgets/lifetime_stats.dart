@@ -22,6 +22,9 @@ class LifetimeStats extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>>(
       future: _fetchStats(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
