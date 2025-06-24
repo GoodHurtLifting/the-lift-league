@@ -16,6 +16,7 @@ import '../models/custom_block_models.dart';
 import '../screens/workout_builder.dart';
 import '../services/db_service.dart';
 import '../screens/block_dashboard.dart';
+import 'web_block_dashboard.dart';
 
 const Color _lightGrey = Color(0xFFD0D0D0);
 
@@ -184,7 +185,12 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Block saved!')));
-        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WebBlockDashboard(block: block),
+          ),
+        );
       }
       widget.onSaved?.call();
       return;
