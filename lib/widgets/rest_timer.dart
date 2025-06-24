@@ -47,6 +47,7 @@ class _RestTimerState extends State<RestTimer> {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        enableFeedback: false,
       ),
       child: Text(
         label,
@@ -84,6 +85,7 @@ class _RestTimerState extends State<RestTimer> {
               constraints: const BoxConstraints(), // remove built-in size
               visualDensity: VisualDensity.compact, // remove vertical space
               tooltip: 'Restart Last Timer',
+              enableFeedback: false,
             ),
             const SizedBox(width: 6),
             Text(
