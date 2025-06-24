@@ -37,7 +37,7 @@ class _ConsistencyMeterState extends State<ConsistencyMeter> {
         if (snapshot.hasError) {
           return SizedBox(
               height: 60,
-              child: Center(child: Text('Error: ${snapshot.error}')));
+              child: Center(child: Text('Error: ${snapshot.error.toString()}')));
         }
         if (!snapshot.hasData) {
           return const SizedBox(

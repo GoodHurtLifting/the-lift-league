@@ -180,6 +180,7 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
                 return IconButton(
                   onPressed: null,
                   icon: const Icon(Icons.error),
+                  tooltip: snapshot.error.toString(),
                 );
               }
               if (!snapshot.hasData) return const SizedBox.shrink();
@@ -210,7 +211,7 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
         future: _userFuture,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error.toString()}'));
           }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -224,7 +225,7 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
             future: _layoutFuture,
             builder: (context, layoutSnap) {
               if (layoutSnap.hasError) {
-                return Center(child: Text('Error: ${layoutSnap.error}'));
+                return Center(child: Text('Error: ${layoutSnap.error.toString()}'));
               }
               if (!layoutSnap.hasData) {
                 return const Center(child: CircularProgressIndicator());

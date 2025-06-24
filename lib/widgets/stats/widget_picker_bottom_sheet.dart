@@ -49,7 +49,7 @@ class _WidgetPickerBottomSheetState extends State<WidgetPickerBottomSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error saving: $e')));
+            .showSnackBar(SnackBar(content: Text('Error saving: ${e.toString()}')));
       }
     }
   }

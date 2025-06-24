@@ -108,7 +108,7 @@ class LeaderboardScreen extends StatelessWidget {
 
         if (snapshot.hasError) {
           return Center(
-            child: Text('Error loading leaderboard: ${snapshot.error}'),
+            child: Text('Error loading leaderboard: ${snapshot.error.toString()}'),
           );
         }
 

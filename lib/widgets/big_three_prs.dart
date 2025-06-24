@@ -30,7 +30,7 @@ class BigThreePRs extends StatelessWidget {
       future: _fetchPRs(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+          return Center(child: Text('Error: ${snapshot.error.toString()}'));
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
