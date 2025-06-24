@@ -29,15 +29,15 @@ class RestTimerService {
     if (!_playSound) return;
     try {
       await _audioPlayer.setAudioContext(
-        const AudioContext(
+        AudioContext(
           android: AudioContextAndroid(
             contentType: AndroidContentType.sonification,
-            usage: AndroidUsage.alarm,
+            usageType: AndroidUsageType.alarm,
             audioFocus: AndroidAudioFocus.gainTransientExclusive,
           ),
           iOS: AudioContextIOS(
             category: AVAudioSessionCategory.playback,
-            options: [AVAudioSessionOptions.duckOthers],
+            options: {AVAudioSessionOptions.duckOthers},
           ),
         ),
       );
