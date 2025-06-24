@@ -90,7 +90,7 @@ class DBService {
           await db.execute(
               "ALTER TABLE custom_blocks ADD COLUMN coverImagePath TEXT;");
         }
-   /*     if (oldVersion < 14) {
+        if (oldVersion < 14) {
           await db.execute('''
             CREATE TABLE IF NOT EXISTS health_weight_samples (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,7 +114,7 @@ class DBService {
         if (oldVersion < 15) {
           await db.execute("ALTER TABLE health_weight_samples ADD COLUMN bmi REAL;");
           await db.execute("ALTER TABLE health_weight_samples ADD COLUMN bodyFat REAL;");
-        }*/
+        }
       },
     );
   }

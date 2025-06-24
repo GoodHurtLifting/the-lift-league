@@ -123,10 +123,10 @@ flutter:
     - assets/images/badges/hypeMan.png
     - assets/images/badges/dailyDriver.png
     - assets/images/rebrand_LL_pink_S.png
-    - assets/schedules/MWF_cal_BG.png
+    - assets/schedules/3perweek.png
     - assets/schedules/GM.png
-    - assets/schedules/PPLP_1.png
-    - assets/schedules/Bros_1.png
+    - assets/schedules/PPLP.png
+    - assets/schedules/splits.png
     - assets/schedules/shat.png
     - assets/sounds/chime.wav
     - assets/images/pinkAlpha.png

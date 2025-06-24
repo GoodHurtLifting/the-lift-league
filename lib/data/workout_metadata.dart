@@ -48,8 +48,8 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
-    mainImage: "${baseImagePath}PushPullLegsPlus.jpg",
+    scheduleImage: "${baseSchedulePath}3perweek.png",
+    mainImage: "${baseImagePath}PushPullLegs.jpg",
     liftList: [
       "Incline Bench Press",
       "Seated DB Shoulder Press",
@@ -76,7 +76,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     name: "Upper Lower",
     category: "Powerbuilding",
     description:
-    "A classic upper/lower split that alternates heavy compound movements with accessory work.",
+    "A classic upper/lower split that combines heavy compound movements with accessory work.",
     difficulty: "Beginner",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
@@ -88,7 +88,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}3perweek.png",
     mainImage: "${baseImagePath}UpperLower.jpg",
     liftList: [
       "Overhead Press",
@@ -122,7 +122,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}3perweek.png",
     mainImage: "${baseImagePath}FullBody.jpg",
     liftList: [
       "Bench Press",
@@ -158,7 +158,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}3perweek.png",
     mainImage: "${baseImagePath}FullBodyPlus.jpg",
     liftList: [
       "Deadlift",
@@ -187,7 +187,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     id: 5,
     name: "5 X 5",
     category: "Strength Training",
-    description: "A classic strength program utilizing five sets of five reps.",
+    description: "A classic strength program utilizing five sets of five reps for big compounds.",
     difficulty: "Beginner",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
@@ -199,7 +199,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}3perweek.png",
     mainImage: "${baseImagePath}5x5.jpg",
     liftList: [
       "Squats",
@@ -227,7 +227,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}3perweek.png",
     mainImage: "${baseImagePath}TexasMethod.jpg",
     liftList: [
       "Squats",
@@ -244,8 +244,8 @@ const List<WorkoutMetadata> workoutMetadataList = [
     name: "Wuehr Hammer",
     category: "Strength Training",
     description:
-    "Alternating A/B sessions focused on compound movements and assistance work.",
-    difficulty: "Intermediate",
+    "Alternating A/B sessions focused on compound movements.",
+    difficulty: "Advanced",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -256,7 +256,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}MWF_cal_BG.png",
+    scheduleImage: "${baseSchedulePath}3perweek.png",
     mainImage: "${baseImagePath}WuehrHammer.jpg",
     liftList: [
       "Squats",
@@ -276,7 +276,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     name: "Gran Moreno",
     category: "Powerbuilding",
     description:
-    "Four day routine that blends heavy lifts with accessory movements.",
+    "Four day per week lower/upper routine with short rest times between sets.",
     difficulty: "Intermediate",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
@@ -334,7 +334,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}Bros_1.png",
+    scheduleImage: "${baseSchedulePath}splits.png",
     mainImage: "${baseImagePath}BodySplit.jpg",
     liftList: [
       "Push Ups",
@@ -377,7 +377,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     category: "Powerbuilding",
     description:
     "Five day routine blending heavy compound lifts with hypertrophy work.",
-    difficulty: "Intermediate",
+    difficulty: "Advanced",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -426,7 +426,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     id: 11,
     name: "Super Split",
     category: "Bodybuilding",
-    description: "High volume split with focused muscle group sessions.",
+    description: "High volume body split with two leg days and multiple supersets.",
     difficulty: "Advanced",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
@@ -438,7 +438,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}Bros_1.png",
+    scheduleImage: "${baseSchedulePath}splits.png",
     mainImage: "${baseImagePath}SuperSplit.jpg",
     liftList: [
       "Cable Incline Trap Pull",
@@ -476,8 +476,8 @@ const List<WorkoutMetadata> workoutMetadataList = [
     name: "PPL Plus",
     category: "Powerbuilding",
     description:
-    "An advanced variation of the Push/Pull/Legs program with added volume.",
-    difficulty: "Intermediate",
+    "An advanced variation of the Push/Pull/Legs program with added volume and condensed training schedule.",
+    difficulty: "Advanced",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -488,8 +488,8 @@ const List<WorkoutMetadata> workoutMetadataList = [
       "Adjustable bench",
       "Rack"
     ],
-    scheduleImage: "${baseSchedulePath}PPLP_1.png",
-    mainImage: "${baseImagePath}flutter runPushPullLegsPlus.jpg",
+    scheduleImage: "${baseSchedulePath}PPLP.png",
+    mainImage: "${baseImagePath}PushPullLegsPlus.jpg",
     liftList: [
       "Arnold Press",
       "Bench Press",
