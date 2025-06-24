@@ -4,6 +4,7 @@ class WorkoutMetadata {
   final String category; // Powerbuilding, Strength Training, Bodybuilding
   final String description; // Overview of the block
   final String difficulty; // Beginner, Intermediate, Advanced
+  final String woDuration; // Typical workout duration
   final int totalWeeks; // Duration of the program in weeks
   final String recommendedExperience; // Who it's best suited for
   final List<String> equipmentNeeded; // Equipment requirements
@@ -17,6 +18,7 @@ class WorkoutMetadata {
     required this.category,
     required this.description,
     required this.difficulty,
+    required this.woDuration,
     required this.totalWeeks,
     required this.recommendedExperience,
     required this.equipmentNeeded,
@@ -38,6 +40,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     category: "Powerbuilding",
     description: "The Lift League Push Pull Legs is an excellent program for beginners. Combining compound lifts and muscle-isolating exercises, the Push Pull Legs hits each muscle group while providing extended recovery time before retraining. If you are new to weightlifting, grab the PPL and a league coaching session. We'll have you kicking ass in the gym in no time. For anyone new to weightlifting, start with weight amounts that allow you to comfortably perform each recommended rep scheme. Study the reference video linked to the name of each exercise. Follow the notes included with each exercise and gradually add weight every week while focusing on maintaining good form. If you want more practice, repeat the program. There is no pressure to advance.",
     difficulty: "Beginner",
+    woDuration: "40-50 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -78,6 +81,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     description:
     "A classic upper/lower split that combines heavy compound movements with accessory work.",
     difficulty: "Beginner",
+    woDuration: "40-50 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -112,6 +116,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     description:
     "A straightforward full body routine performed three days per week.",
     difficulty: "Beginner",
+    woDuration: "40-50 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -148,6 +153,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     category: "Powerbuilding",
     description: "An expanded full body program with additional accessory work.",
     difficulty: "Beginner",
+    woDuration: "60 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -189,6 +195,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     category: "Strength Training",
     description: "A classic strength program utilizing five sets of five reps for big compounds.",
     difficulty: "Beginner",
+    woDuration: "60 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -217,6 +224,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     description:
     "Intermediate program utilizing volume, recovery and intensity days.",
     difficulty: "Intermediate",
+    woDuration: "60 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -246,6 +254,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     description:
     "Alternating A/B sessions focused on compound movements.",
     difficulty: "Advanced",
+    woDuration: "60 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -278,6 +287,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     description:
     "Four day per week lower/upper routine with short rest times between sets.",
     difficulty: "Intermediate",
+    woDuration: "40-50 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -324,6 +334,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     description:
     "Traditional body part split hitting one or two muscle groups per day.",
     difficulty: "Intermediate",
+    woDuration: "70 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -378,6 +389,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     description:
     "Five day routine blending heavy compound lifts with hypertrophy work.",
     difficulty: "Advanced",
+    woDuration: "60 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -428,6 +440,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     category: "Bodybuilding",
     description: "High volume body split with two leg days and multiple supersets.",
     difficulty: "Advanced",
+    woDuration: "70 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
@@ -478,6 +491,7 @@ const List<WorkoutMetadata> workoutMetadataList = [
     description:
     "An advanced variation of the Push/Pull/Legs program with added volume and condensed training schedule.",
     difficulty: "Advanced",
+    woDuration: "60 min",
     totalWeeks: 4,
     recommendedExperience: "This block is for everyone.",
     equipmentNeeded: [
