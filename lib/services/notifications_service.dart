@@ -101,13 +101,14 @@ class NotificationService {
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'rest_timer',
       'Rest Timer',
-      importance: Importance.max,
-      priority: Priority.high,
+      importance: Importance.low,
+      priority: Priority.low,
       icon: 'ic_stat_liftleague',
       ongoing: true,
       showWhen: false,
       onlyAlertOnce: true,
       enableVibration: false,
+      playSound: false,
     );
 
     const NotificationDetails details = NotificationDetails(android: androidDetails);
