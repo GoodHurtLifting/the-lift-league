@@ -52,13 +52,13 @@ class RestTimerService {
     _remainingSeconds = seconds;
     _streamController.add(_remainingSeconds);
     _loadPrefs();
-    NotificationService().showOngoingTimerNotification(_remainingSeconds);
+    //NotificationService().showOngoingTimerNotification(_remainingSeconds);
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (_remainingSeconds > 1) {
         _remainingSeconds--;
         _streamController.add(_remainingSeconds);
-        NotificationService().showOngoingTimerNotification(_remainingSeconds);
+        //NotificationService().showOngoingTimerNotification(_remainingSeconds);
       } else {
         timer.cancel();
         _remainingSeconds = 0;
