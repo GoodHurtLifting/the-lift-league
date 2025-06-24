@@ -81,7 +81,10 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
       SELECT AVG(lt.liftScore) as s
       FROM lift_totals lt
       JOIN workout_instances wi ON lt.workoutInstanceId = wi.workoutInstanceId
-      WHERE wi.blockInstanceId = ? AND wi.week = ? AND lt.userId = ?
+      WHERE wi.blockInstanceId = ?
+        AND wi.week = ?
+        AND lt.userId = ?
+        AND lt.liftReps > 0
     ''', [blockInstanceId, week, widget.userId]);
 
     final avgWorkoutRes = await db.rawQuery('''
