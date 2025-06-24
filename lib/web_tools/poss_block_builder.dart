@@ -115,12 +115,18 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           .collection('custom_blocks')
           .doc(block.id.toString())
           .set(blockData);
+
+      // Also store under the global collection so blocks created on the web
+      // are available and shareable in the mobile app just like those built
+      // on mobile.
+      await FirebaseFirestore.instance
+          .collection('custom_blocks')
+          .doc(block.id.toString())
+          .set(blockData);
     } else {
       return;
     }
-
-    // In the web tool we only persist blocks under the current user's document
-    // so that each user sees only their own data.
+    // Blocks are saved for the signed-in user and globally for sharing.
   }
 
 
