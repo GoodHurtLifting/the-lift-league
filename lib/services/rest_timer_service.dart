@@ -28,6 +28,19 @@ class RestTimerService {
   Future<void> _playChime() async {
     if (!_playSound) return;
     try {
+      await _audioPlayer.setAudioContext(
+        const AudioContext(
+          android: AudioContextAndroid(
+            contentType: AndroidContentType.sonification,
+            usage: AndroidUsage.alarm,
+            audioFocus: AndroidAudioFocus.gainTransientExclusive,
+          ),
+          iOS: AudioContextIOS(
+            category: AVAudioSessionCategory.playback,
+            options: [AVAudioSessionOptions.duckOthers],
+          ),
+        ),
+      );
       await _audioPlayer.play(AssetSource('sounds/chime.wav'));
       await _audioPlayer.onPlayerComplete.first;
       await _audioPlayer.release();
