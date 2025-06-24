@@ -235,8 +235,12 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Stepper(
-            currentStep: _currentStep,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Stepper(
+                currentStep: _currentStep,
             onStepContinue: () {
               if (_currentStep == 0) {
                 if (blockName.trim().isNotEmpty) {
@@ -366,7 +370,9 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         ),
         ),
       ),
-    );
+    ),
+  ),
+);
   }
 
   @override
