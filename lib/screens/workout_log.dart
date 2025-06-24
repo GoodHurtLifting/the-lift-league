@@ -248,7 +248,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
     }
   }
 
-  void _handleNumpadPress(String value) {
+  Future<void> _handleNumpadPress(String value) async {
     final controller = _controllerMap[_activeFieldKey];
     if (controller == null) return;
 
@@ -265,7 +265,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
             final key = _liftEntryKeys[liftId];
             if (key?.currentState != null) {
               final dynamic state = key!.currentState;
-              state.finalizeLift();
+              await state.finalizeLift();
             }
           }
         }
