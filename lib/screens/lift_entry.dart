@@ -229,15 +229,16 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
     }
   }
 
-  void updateStoredData() async {
+  Future<void> updateStoredData() async {
     final db = DBService();
 
     final reps = _repsControllers.map((c) => c.text).toList();
     final weights = _weightControllers.map((c) => c.text).toList();
 
     bool hasValidEntry = false;
+    final int setCount = _repsControllers.length;
 
-    for (int i = 0; i < numSets; i++) {
+    for (int i = 0; i < setCount; i++) {
       final int parsedReps = int.tryParse(reps[i]) ?? 0;
       final double parsedWeight = double.tryParse(weights[i]) ?? 0.0;
 
@@ -256,22 +257,24 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
 
     if (!mounted || !hasValidEntry) return;
 
-    // 🧠 Update totals in the DB
     await db.updateLiftTotals(widget.workoutInstanceId, widget.lift.liftId);
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
     await db.activateBlockInstanceIfNeeded(
       widget.blockInstanceId,
-      FirebaseAuth.instance.currentUser!.uid,
+      user.uid,
       widget.blockName,
     );
 
-    // Defer the callbacks to after the build phase
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onUpdateStoredDataDirect?.call(widget.lift, reps, weights);
     });
 
     await _checkLunchLadyBadge();
   }
+
 
   void updateTotals() {
     setState(() {}); // ✅ Forces UI to refresh with updated totals
