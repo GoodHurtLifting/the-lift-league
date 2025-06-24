@@ -110,10 +110,7 @@ class DBService {
               source TEXT
             )
           ''');
-        }
-        if (oldVersion < 15) {
-          await db.execute("ALTER TABLE health_weight_samples ADD COLUMN bmi REAL;");
-          await db.execute("ALTER TABLE health_weight_samples ADD COLUMN bodyFat REAL;");
+
         }
       },
     );

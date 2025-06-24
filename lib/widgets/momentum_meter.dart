@@ -11,7 +11,7 @@ class MomentumMeter extends StatefulWidget {
   const MomentumMeter({
     super.key,
     required this.userId,
-    this.dropPerMissedDay = 0.02,
+    this.dropPerMissedDay = 0.2,
   });
 
   @override

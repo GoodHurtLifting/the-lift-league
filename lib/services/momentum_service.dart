@@ -30,7 +30,7 @@ class MomentumService {
 
   Future<Map<String, dynamic>> calculateMomentum({
     required String userId,
-    double dropPerMissedDay = 0.02,
+    double dropPerMissedDay = 0.2,
     int lookbackDays = 14,
   }) async {
     await _loadLastRiseDate(userId);
