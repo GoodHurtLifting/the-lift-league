@@ -279,9 +279,9 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
 
   // 🔒 Public method called when the numpad "Done" button is pressed
   // to force calculation and persistence of lift data.
-  void finalizeLift() {
+  Future<void> finalizeLift() async {
     _recalculateLiftTotals();
-    updateStoredData();
+    await updateStoredData();
 
     widget.onLiftDataChanged?.call(
       _liftScore,

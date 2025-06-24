@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NumpadModal extends StatelessWidget {
-  final Function(String) onKeyPressed;
+  final Future<void> Function(String) onKeyPressed;
 
   const NumpadModal({super.key, required this.onKeyPressed});
 
