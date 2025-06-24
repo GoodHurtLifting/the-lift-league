@@ -46,6 +46,7 @@ class Workout411Screen extends StatelessWidget {
             const SizedBox(height: 16),
             Text('Category: ${meta.category}'),
             Text('Difficulty: ${meta.difficulty}'),
+            Text('WO Duration: ${meta.woDuration}'),
             Text('Total Weeks: ${meta.totalWeeks}'),
             Text('Recommended For: ${meta.recommendedExperience}'),
             const SizedBox(height: 16),
