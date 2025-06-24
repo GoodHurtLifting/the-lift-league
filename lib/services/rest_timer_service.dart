@@ -33,7 +33,7 @@ class RestTimerService {
           android: AudioContextAndroid(
             contentType: AndroidContentType.sonification,
             usageType: AndroidUsageType.alarm,
-            audioFocus: AndroidAudioFocus.gainTransientExclusive,
+            audioFocus: AndroidAudioFocus.gainTransientMayDuck,
           ),
           iOS: AudioContextIOS(
             category: AVAudioSessionCategory.playback,
