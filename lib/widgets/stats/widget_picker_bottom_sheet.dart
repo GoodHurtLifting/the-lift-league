@@ -43,7 +43,10 @@ class _WidgetPickerBottomSheetState extends State<WidgetPickerBottomSheet> {
     final layout = _items.where((e) => e.enabled).map((e) => e.id).toList();
     try {
       await FirebaseFirestore.instance
-          .doc('users/${widget.userId}/preferences')
+          .collection('users')
+          .doc(widget.userId)
+          .collection('preferences')
+          .doc('stats')
           .set({'statsLayout': layout}, SetOptions(merge: true));
       if (mounted) Navigator.pop(context, layout);
     } catch (e) {

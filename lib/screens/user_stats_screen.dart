@@ -80,7 +80,10 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
 
   Future<List<String>> _fetchLayout() async {
     final doc = await FirebaseFirestore.instance
-        .doc('users/${widget.userId}/preferences')
+        .collection('users')
+        .doc(widget.userId)
+        .collection('preferences')
+        .doc('stats')
         .get();
     final data = doc.data();
     if (data != null && data['statsLayout'] is List) {
