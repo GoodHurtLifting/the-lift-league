@@ -17,6 +17,7 @@ import '../screens/workout_builder.dart';
 import '../services/db_service.dart';
 import '../screens/block_dashboard.dart';
 import 'web_block_dashboard.dart';
+import 'web_custom_block_service.dart';
 
 const Color _lightGrey = Color(0xFFD0D0D0);
 
@@ -180,23 +181,36 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     if (kIsWeb) {
       try {
         await _saveBlockToFirestore(block);
+        final runId = await WebCustomBlockService().startBlockRun(block);
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Block saved!')));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  WebBlockDashboard(block: block, runId: runId),
+            ),
+          );
+        }
       } on FirebaseException catch (e) {
         final reauthed = await promptReAuthIfNeeded(context, e);
         if (reauthed) {
-          await _saveBlockToFirestore(block);
+          final runId = await WebCustomBlockService().startBlockRun(block);
+          if (mounted) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(const SnackBar(content: Text('Block saved!')));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    WebBlockDashboard(block: block, runId: runId),
+              ),
+            );
+          }
         } else {
           return;
         }
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Block saved!')));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => WebBlockDashboard(block: block),
-          ),
-        );
       }
       widget.onSaved?.call();
       return;
