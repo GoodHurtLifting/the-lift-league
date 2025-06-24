@@ -65,31 +65,45 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
             itemCount: _blocks.length,
             itemBuilder: (context, index) {
               final b = _blocks[index];
-              final path = b['coverImagePath']?.toString() ?? 'assets/logo25.jpg';
+              // Blocks saved from the web builder store the cover image under
+              // `coverImageUrl` while legacy blocks might use `coverImagePath`.
+              final path = b['coverImagePath']?.toString() ??
+                  b['coverImageUrl']?.toString() ?? 'assets/logo25.jpg';
               final Widget imageWidget;
               if (path.startsWith('assets/')) {
                 imageWidget = Image.asset(path, fit: BoxFit.cover);
               } else {
                 imageWidget = Image.network(path, fit: BoxFit.cover);
               }
-              return Card(
-                clipBehavior: Clip.antiAlias,
-                child: Stack(
-                  children: [
-                    Positioned.fill(child: imageWidget),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        color: Colors.black54,
-                        padding: const EdgeInsets.all(4),
-                        width: double.infinity,
-                        child: Text(
-                          b['name'] as String? ?? '',
-                          textAlign: TextAlign.center,
+              return InkWell(
+                onTap: () {
+                  final block = CustomBlock.fromMap(b);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => WebBlockDashboard(block: block),
+                    ),
+                  );
+                },
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: imageWidget),
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          color: Colors.black54,
+                          padding: const EdgeInsets.all(4),
+                          width: double.infinity,
+                          child: Text(
+                            b['name'] as String? ?? '',
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
