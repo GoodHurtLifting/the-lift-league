@@ -78,14 +78,34 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
                 imageWidget = Image.network(path, fit: BoxFit.cover);
               }
               return InkWell(
-                onTap: () {
+                onTap: () async {
                   final block = CustomBlock.fromMap(b);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => WebBlockDashboard(block: block),
-                    ),
-                  );
+                  try {
+                    final runId =
+                        await WebCustomBlockService().startBlockRun(block);
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            WebBlockDashboard(block: block, runId: runId),
+                      ),
+                    );
+                  } on FirebaseException catch (e) {
+                    final reauthed = await promptReAuthIfNeeded(context, e);
+                    if (reauthed) {
+                      final runId =
+                          await WebCustomBlockService().startBlockRun(block);
+                      if (!mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              WebBlockDashboard(block: block, runId: runId),
+                        ),
+                      );
+                    }
+                  }
                 },
                 child: Card(
                   clipBehavior: Clip.antiAlias,
