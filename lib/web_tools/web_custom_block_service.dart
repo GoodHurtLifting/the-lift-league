@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/custom_block_models.dart';
+import '../services/calculations.dart';
 
 class WebCustomBlockService {
   Future<List<Map<String, dynamic>>> getCustomBlocks() async {
@@ -128,6 +129,7 @@ class WebCustomBlockService {
 
     await runRef.set({
       'blockName': block.name,
+      'blockId': block.id,
       'createdAt': FieldValue.serverTimestamp(),
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
@@ -167,5 +169,84 @@ class WebCustomBlockService {
     }
 
     return runRef.id;
+  }
+
+  Future<void> updateLiftTotals(
+      String runId, int workoutIndex, int liftIndex) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final liftRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('block_runs')
+        .doc(runId)
+        .collection('workouts')
+        .doc(workoutIndex.toString())
+        .collection('lifts')
+        .doc(liftIndex.toString());
+
+    final liftDoc = await liftRef.get();
+    final data = liftDoc.data();
+    if (data == null) return;
+
+    final entries =
+        (data['entries'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
+    final multiplier = (data['multiplier'] as num?)?.toDouble() ?? 1.0;
+    final isDumbbell = data['isDumbbellLift'] == true;
+    final isBodyweight = data['isBodyweight'] == true;
+    final scoreType = isBodyweight ? 'bodyweight' : 'multiplier';
+
+    final liftWorkload =
+        getLiftWorkloadFromDb(entries, isDumbbellLift: isDumbbell);
+    final liftScore = calculateLiftScoreFromEntries(entries, multiplier,
+        isDumbbellLift: isDumbbell, scoreType: scoreType);
+    final liftReps =
+        getLiftRepsFromDb(entries, isDumbbellLift: isDumbbell);
+
+    await liftRef.update({
+      'liftWorkload': liftWorkload,
+      'liftScore': liftScore,
+      'liftReps': liftReps,
+    });
+  }
+
+  Future<void> updateWorkoutTotals(String runId, int workoutIndex) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final workoutRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('block_runs')
+        .doc(runId)
+        .collection('workouts')
+        .doc(workoutIndex.toString());
+
+    final liftsSnap = await workoutRef.collection('lifts').get();
+
+    double totalWorkload = 0.0;
+    double totalScore = 0.0;
+
+    for (final doc in liftsSnap.docs) {
+      totalWorkload += (doc.data()['liftWorkload'] as num?)?.toDouble() ?? 0.0;
+      totalScore += (doc.data()['liftScore'] as num?)?.toDouble() ?? 0.0;
+    }
+
+    final avgScore =
+        liftsSnap.docs.isNotEmpty ? totalScore / liftsSnap.docs.length : 0.0;
+
+    final totalsRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('block_runs')
+        .doc(runId)
+        .collection('workout_totals')
+        .doc(workoutIndex.toString());
+
+    await totalsRef.update({
+      'workoutWorkload': totalWorkload,
+      'workoutScore': avgScore,
+    });
   }
 }

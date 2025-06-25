@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/custom_block_models.dart';
+import 'web_custom_block_service.dart';
 
 class WebWorkoutLog extends StatefulWidget {
   final String runId;
@@ -138,67 +139,15 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
 
     await liftRef.update({'entries': entries});
 
-    final liftDoc = await liftRef.get();
-    final data = liftDoc.data() ?? {};
-    final multiplier = (data['multiplier'] as num?)?.toDouble() ?? 1.0;
-    final isDumbbell = data['isDumbbellLift'] == true;
-    final isBodyweight = data['isBodyweight'] == true;
-    final scoreType = isBodyweight ? 'bodyweight' : 'multiplier';
-
-    final liftWorkload = getLiftWorkloadFromDb(entries,
-        isDumbbellLift: isDumbbell);
-    final liftScore = calculateLiftScoreFromEntries(entries, multiplier,
-        isDumbbellLift: isDumbbell, scoreType: scoreType);
-    final liftReps = getLiftRepsFromDb(entries, isDumbbellLift: isDumbbell);
-
-    await liftRef.update({
-      'liftWorkload': liftWorkload,
-      'liftScore': liftScore,
-      'liftReps': liftReps,
-    });
+    await WebCustomBlockService()
+        .updateLiftTotals(widget.runId, widget.workoutIndex, liftIndex);
 
     await _updateWorkoutTotals();
   }
 
   Future<void> _updateWorkoutTotals() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final workoutRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('block_runs')
-        .doc(widget.runId)
-        .collection('workouts')
-        .doc(widget.workoutIndex.toString());
-
-    final liftsSnap = await workoutRef.collection('lifts').get();
-
-    double totalWorkload = 0.0;
-    double totalScore = 0.0;
-
-    for (final doc in liftsSnap.docs) {
-      totalWorkload +=
-          (doc.data()['liftWorkload'] as num?)?.toDouble() ?? 0.0;
-      totalScore += (doc.data()['liftScore'] as num?)?.toDouble() ?? 0.0;
-    }
-
-    final avgScore = liftsSnap.docs.isNotEmpty
-        ? totalScore / liftsSnap.docs.length
-        : 0.0;
-
-    final totalsRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('block_runs')
-        .doc(widget.runId)
-        .collection('workout_totals')
-        .doc(widget.workoutIndex.toString());
-
-    await totalsRef.update({
-      'workoutWorkload': totalWorkload,
-      'workoutScore': avgScore,
-    });
+    await WebCustomBlockService()
+        .updateWorkoutTotals(widget.runId, widget.workoutIndex);
   }
 
   @override
