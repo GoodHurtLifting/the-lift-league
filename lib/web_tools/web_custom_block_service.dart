@@ -259,4 +259,21 @@ class WebCustomBlockService {
       'workoutScore': avgScore,
     });
   }
+
+  Future<void> deleteCustomBlock(String id) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userDoc =
+        FirebaseFirestore.instance.collection('users').doc(user.uid);
+    await userDoc.collection('custom_blocks').doc(id).delete();
+    await userDoc.collection('customBlockRefs').doc(id).delete();
+
+    final globalDoc =
+        FirebaseFirestore.instance.collection('custom_blocks').doc(id);
+    final snap = await globalDoc.get();
+    if (snap.exists && snap.data()?['ownerId'] == user.uid) {
+      await globalDoc.delete();
+    }
+  }
 }
