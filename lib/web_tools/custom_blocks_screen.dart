@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:lift_league/web_tools/web_block_dashboard.dart';
 import '../models/custom_block_models.dart';
@@ -78,34 +79,9 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
                 imageWidget = Image.network(path, fit: BoxFit.cover);
               }
               return InkWell(
-                onTap: () async {
-                  final block = CustomBlock.fromMap(b);
-                  try {
-                    final runId =
-                        await WebCustomBlockService().startBlockRun(block);
-                    if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            WebBlockDashboard(block: block, runId: runId),
-                      ),
-                    );
-                  } on FirebaseException catch (e) {
-                    final reauthed = await promptReAuthIfNeeded(context, e);
-                    if (reauthed) {
-                      final runId =
-                          await WebCustomBlockService().startBlockRun(block);
-                      if (!mounted) return;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              WebBlockDashboard(block: block, runId: runId),
-                        ),
-                      );
-                    }
-                  }
+                onTap: () {
+                  final id = b["id"].toString();
+                  context.go('/custom-blocks/$id');
                 },
                 child: Card(
                   clipBehavior: Clip.antiAlias,

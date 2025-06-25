@@ -18,6 +18,21 @@ class WebCustomBlockService {
     }).toList();
   }
 
+  Future<CustomBlock?> getCustomBlockById(String id) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('custom_blocks')
+        .doc(id)
+        .get();
+    final data = doc.data();
+    if (data == null) return null;
+    data['id'] = int.tryParse(doc.id) ?? 0;
+    return CustomBlock.fromMap(data);
+  }
+
   /// Creates a new block run for [block] and returns the run document ID.
   Future<String> startBlockRun(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
