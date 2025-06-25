@@ -11,6 +11,8 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:go_router/go_router.dart';
+import 'web_tools/web_block_page.dart';
 
 import 'package:lift_league/screens/user_dashboard.dart';
 import 'package:lift_league/screens/login_screen.dart';
@@ -19,6 +21,28 @@ import 'package:lift_league/screens/custom_block_wizard.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
 import 'package:lift_league/services/notifications_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
+GoRouter createRouter() {
+  return GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const POSSHomePage(),
+      ),
+      GoRoute(
+        path: '/poss',
+        builder: (context, state) => const POSSHomePage(),
+      ),
+      GoRoute(
+        path: '/custom-blocks/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return WebBlockPage(blockId: id);
+        },
+      ),
+    ],
+  );
+}
 
 late FirebaseAnalytics analytics;
 
@@ -133,7 +157,7 @@ class POSSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'POSS Tool',
       theme: ThemeData.dark().copyWith(
@@ -145,10 +169,7 @@ class POSSApp extends StatelessWidget {
           foregroundColor: Colors.grey[400],
         ),
       ),
-      home: const POSSHomePage(),
-      routes: {
-        '/poss': (context) => const POSSHomePage(),
-      },
+      routerConfig: createRouter(),
     );
   }
 }
