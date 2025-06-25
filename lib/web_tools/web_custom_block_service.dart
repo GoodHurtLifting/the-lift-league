@@ -157,7 +157,11 @@ class WebCustomBlockService {
           'multiplier': lift.multiplier,
           'isBodyweight': lift.isBodyweight,
           'isDumbbellLift': lift.isDumbbellLift,
-          'completedSets': <int>[],
+          'entries': List.generate(
+              lift.sets, (s) => {'reps': 0, 'weight': 0.0}),
+          'liftWorkload': 0.0,
+          'liftScore': 0.0,
+          'liftReps': 0,
         });
       }
     }
