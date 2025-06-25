@@ -3,7 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/custom_block_models.dart';
 
 class WebCustomBlockService {
-  Future<List<Map<String, dynamic>>> getCustomBlocks() async {
+  /// Returns all custom blocks for the signed-in user using the
+  /// [CustomBlock] model to mirror the mobile app structure.
+  Future<List<CustomBlock>> getCustomBlocks() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
     final snap = await FirebaseFirestore.instance
@@ -14,7 +16,7 @@ class WebCustomBlockService {
     return snap.docs.map((d) {
       final data = d.data();
       data['id'] = int.tryParse(d.id) ?? 0;
-      return data;
+      return CustomBlock.fromMap(data);
     }).toList();
   }
 
