@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/custom_block_models.dart';
-import '../services/calculations.dart';
 import 'web_custom_block_service.dart';
 
 class WebWorkoutLog extends StatefulWidget {
@@ -22,12 +21,6 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
   final Map<int, List<TextEditingController>> _weightCtrls = {};
 
   final Map<int, List<Map<String, dynamic>>> _prevEntries = {};
-
-  final Map<int, double?> _recommendedWeights = {};
-  final Map<int, double> _liftScores = {};
-  final Map<int, double> _liftWorkloads = {};
-  double _workoutScore = 0.0;
-  double _workoutWorkload = 0.0;
 
   @override
   void initState() {
@@ -73,9 +66,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
       });
 
       _prevEntries[i] = await _getPreviousEntries(i);
-      _recommendedWeights[i] = _calculateRecommendedWeight(i);
     }
-    _recalculateTotals();
     if (mounted) setState(() {});
   }
 
@@ -120,59 +111,6 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     return prevData.cast<Map<String, dynamic>>();
   }
 
-  double? _calculateRecommendedWeight(int liftIndex) {
-    final prev = _prevEntries[liftIndex] ?? [];
-    if (prev.isEmpty) return null;
-    double total = 0.0;
-    int count = 0;
-    for (final e in prev) {
-      final w = (e['weight'] as num?)?.toDouble() ?? 0.0;
-      if (w > 0) {
-        total += w;
-        count++;
-      }
-    }
-    if (count == 0) return null;
-    final avg = total / count;
-    return getRecommendedWeight(
-      liftId: liftIndex,
-      referenceWeight: avg,
-      percentOfReference: 1.0,
-    );
-  }
-
-  void _recalculateTotals() {
-    _workoutScore = 0.0;
-    _workoutWorkload = 0.0;
-    _liftScores.clear();
-    _liftWorkloads.clear();
-    for (int i = 0; i < workout.lifts.length; i++) {
-      final repCtrls = _repCtrls[i] ?? [];
-      final weightCtrls = _weightCtrls[i] ?? [];
-      final lift = workout.lifts[i];
-      final workload = getLiftWorkload(
-        repCtrls,
-        weightCtrls,
-        isDumbbellLift: lift.isDumbbellLift,
-      );
-      final score = getLiftScore(
-        repCtrls,
-        weightCtrls,
-        lift.multiplier,
-        isDumbbellLift: lift.isDumbbellLift,
-        scoreType: lift.isBodyweight ? 'bodyweight' : 'multiplier',
-      );
-      _liftWorkloads[i] = workload;
-      _liftScores[i] = score;
-    }
-    if (_liftScores.isNotEmpty) {
-      _workoutWorkload =
-          _liftWorkloads.values.fold(0.0, (a, b) => a + b);
-      _workoutScore =
-          _liftScores.values.reduce((a, b) => a + b) / _liftScores.length;
-    }
-  }
-
   Future<void> _saveLift(int liftIndex) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -204,11 +142,6 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     await WebCustomBlockService()
         .updateLiftTotals(widget.runId, widget.workoutIndex, liftIndex);
 
-    _prevEntries[liftIndex] = List.from(entries);
-    _recommendedWeights[liftIndex] = _calculateRecommendedWeight(liftIndex);
-    _recalculateTotals();
-    if (mounted) setState(() {});
-
     await _updateWorkoutTotals();
   }
 
@@ -222,23 +155,8 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     return Scaffold(
       appBar: AppBar(title: Text(workout.name)),
       body: ListView.builder(
-        itemCount: workout.lifts.length + 1,
+        itemCount: workout.lifts.length,
         itemBuilder: (context, index) {
-          if (index == workout.lifts.length) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Workout Score: ' +
-                      _workoutScore.toStringAsFixed(1)),
-                  Text('Total Workload: ' +
-                      _workoutWorkload.toStringAsFixed(1) + ' lbs'),
-                ],
-              ),
-            );
-          }
-
           final lift = workout.lifts[index];
           final repCtrls = _repCtrls[index] ?? [];
           final weightCtrls = _weightCtrls[index] ?? [];
@@ -281,9 +199,6 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
                         if (prevEntry != null)
                           Text(
                               'Prev ${prevEntry['reps']} x ${prevEntry['weight'] ?? 0}'),
-                        const SizedBox(width: 8),
-                        if (_recommendedWeights[index] != null)
-                          Text('Rec ${_recommendedWeights[index]!.toStringAsFixed(0)}'),
                       ],
                     ),
                   );
