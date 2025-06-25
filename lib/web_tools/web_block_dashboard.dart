@@ -1,3 +1,5 @@
+import 'dart:core';
+
 import 'package:flutter/material.dart';
 import '../models/custom_block_models.dart';
 import 'web_workout_log.dart';
@@ -105,14 +107,16 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
     _runIdMap.clear();
     for (final doc in snap.docs) {
       final data = doc.data();
-      final num = (data['runNumber'] as num?)?.toInt() ?? 1;
-      _runNumbers.add(num);
-      _runIdMap[num] = doc.id;
+      final runNumber = (data['runNumber'] is int)
+          ? data['runNumber'] as int
+          : int.tryParse(data['runNumber'].toString()) ?? 1;
+      _runNumbers.add(runNumber);
+      _runIdMap[runNumber] = doc.id;
       if (_runId == null) {
         _runId = doc.id;
-        _currentRunNumber = num;
+        _currentRunNumber = runNumber;
       } else if (doc.id == _runId) {
-        _currentRunNumber = num;
+        _currentRunNumber = runNumber;
       }
     }
 
