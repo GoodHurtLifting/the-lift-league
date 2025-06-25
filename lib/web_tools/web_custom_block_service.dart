@@ -148,6 +148,9 @@ class WebCustomBlockService {
       await runRef.collection('workout_totals').doc(wIndex.toString()).set({
         'workoutWorkload': 0.0,
         'workoutScore': 0.0,
+        // Store metadata so totals can be updated later
+        'runNumber': runNumber,
+        'blockId': block.id,
       });
 
       for (int lIndex = 0; lIndex < workout.lifts.length; lIndex++) {
@@ -159,8 +162,15 @@ class WebCustomBlockService {
           'multiplier': lift.multiplier,
           'isBodyweight': lift.isBodyweight,
           'isDumbbellLift': lift.isDumbbellLift,
-          'entries': List.generate(
-              lift.sets, (s) => {'reps': 0, 'weight': 0.0}),
+          'entries': List.generate(lift.sets, (_) {
+            return {
+              'reps': 0,
+              'weight': 0.0,
+              'liftWorkload': 0.0,
+              'liftScore': 0.0,
+              'liftReps': 0,
+            };
+          }),
           'liftWorkload': 0.0,
           'liftScore': 0.0,
           'liftReps': 0,
