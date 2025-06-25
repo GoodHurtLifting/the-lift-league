@@ -65,6 +65,18 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
     }
   }
 
+  Future<void> _deleteBlock(String id) async {
+    try {
+      await WebCustomBlockService().deleteCustomBlock(id);
+      await _loadBlocks();
+    } on FirebaseException catch (e) {
+      final reauthed = await promptReAuthIfNeeded(context, e);
+      if (reauthed) {
+        await _deleteBlock(id);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
@@ -110,9 +122,53 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
                     context.go('/custom-blocks/$id');
                   }
                 },
-                onLongPress: () {
+                onLongPress: () async {
                   final id = b["id"].toString();
-                  _editBlock(id);
+                  final action = await showModalBottomSheet<String>(
+                    context: context,
+                    builder: (ctx) => SafeArea(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: const Icon(Icons.edit),
+                            title: const Text('Edit'),
+                            onTap: () => Navigator.pop(ctx, 'edit'),
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.delete),
+                            title: const Text('Delete'),
+                            onTap: () => Navigator.pop(ctx, 'delete'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                  if (action == 'edit') {
+                    _editBlock(id);
+                  } else if (action == 'delete') {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete block?'),
+                        content: const Text(
+                            'Are you sure you want to delete this block?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await _deleteBlock(id);
+                    }
+                  }
                 },
                 child: Card(
                   clipBehavior: Clip.antiAlias,
