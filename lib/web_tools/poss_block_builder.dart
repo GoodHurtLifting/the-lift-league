@@ -89,7 +89,6 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       'isDraft': block.isDraft,
       'coverImageUrl': imageUrl,
       'ownerId': user?.uid ?? '',
-      'source': 'web_custom_builder',
       'workouts': block.workouts
           .map((w) => {
                 'id': w.id,

@@ -15,7 +15,8 @@ class CustomBlocksScreen extends StatefulWidget {
 }
 
 class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
-  List<Map<String, dynamic>> _blocks = [];
+  /// Stored list of blocks typed as [CustomBlock] to mirror mobile logic.
+  List<CustomBlock> _blocks = [];
   bool _loading = true;
 
   @override
@@ -68,10 +69,7 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
             itemCount: _blocks.length,
             itemBuilder: (context, index) {
               final b = _blocks[index];
-              // Blocks saved from the web builder store the cover image under
-              // `coverImageUrl` while legacy blocks might use `coverImagePath`.
-              final path = b['coverImagePath']?.toString() ??
-                  b['coverImageUrl']?.toString() ?? 'assets/logo25.jpg';
+              final path = b.coverImagePath ?? 'assets/logo25.jpg';
               final Widget imageWidget;
               if (path.startsWith('assets/')) {
                 imageWidget = Image.asset(path, fit: BoxFit.cover);
@@ -80,7 +78,7 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
               }
               return InkWell(
                 onTap: () {
-                  final id = b["id"].toString();
+                  final id = b.id.toString();
                   context.go('/custom-blocks/$id');
                 },
                 child: Card(
@@ -95,7 +93,7 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
                           padding: const EdgeInsets.all(4),
                           width: double.infinity,
                           child: Text(
-                            b['name'] as String? ?? '',
+                            b.name,
                             textAlign: TextAlign.center,
                           ),
                         ),
