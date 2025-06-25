@@ -100,12 +100,25 @@ class WebCustomBlockService {
   }
 
   /// Creates a new block run for [block] and returns the run document ID.
+  ///
+  /// The run document stores a sequential [runNumber] and an empty
+  /// `workout_totals` subcollection so that scores can be populated as the
+  /// user logs workouts.
   Future<String> startBlockRun(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       throw FirebaseAuthException(
           code: 'unauthenticated', message: 'User not signed in');
     }
+
+    final runsSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('block_runs')
+        .where('blockName', isEqualTo: block.name)
+        .get();
+
+    final runNumber = runsSnap.docs.length + 1;
 
     final runRef = FirebaseFirestore.instance
         .collection('users')
@@ -118,6 +131,7 @@ class WebCustomBlockService {
       'createdAt': FieldValue.serverTimestamp(),
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
+      'runNumber': runNumber,
     });
 
     for (int wIndex = 0; wIndex < block.workouts.length; wIndex++) {
@@ -127,6 +141,11 @@ class WebCustomBlockService {
       await workoutRef.set({
         'name': workout.name,
         'dayIndex': workout.dayIndex,
+      });
+
+      await runRef.collection('workout_totals').doc(wIndex.toString()).set({
+        'workoutWorkload': 0.0,
+        'workoutScore': 0.0,
       });
 
       for (int lIndex = 0; lIndex < workout.lifts.length; lIndex++) {
