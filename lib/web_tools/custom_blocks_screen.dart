@@ -2,6 +2,8 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'web_custom_block_service.dart';
 import 'auth_utils.dart';
+import 'poss_block_builder.dart';
+import '../models/custom_block_models.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class CustomBlocksScreen extends StatefulWidget {
@@ -36,6 +38,29 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
         await _loadBlocks();
       } else if (mounted) {
         setState(() => _loading = false);
+      }
+    }
+  }
+
+  Future<void> _editBlock(String id) async {
+    try {
+      final CustomBlock? block =
+          await WebCustomBlockService().getCustomBlockById(id);
+      if (block == null) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => POSSBlockBuilder(
+            initialBlock: block,
+            onSaved: _loadBlocks,
+          ),
+        ),
+      );
+      await _loadBlocks();
+    } on FirebaseException catch (e) {
+      final reauthed = await promptReAuthIfNeeded(context, e);
+      if (reauthed) {
+        await _editBlock(id);
       }
     }
   }
@@ -79,13 +104,25 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
               return InkWell(
                 onTap: () {
                   final id = b["id"].toString();
-                  context.go('/custom-blocks/$id');
+                  if (b['isDraft'] == true) {
+                    _editBlock(id);
+                  } else {
+                    context.go('/custom-blocks/$id');
+                  }
+                },
+                onLongPress: () {
+                  final id = b["id"].toString();
+                  _editBlock(id);
                 },
                 child: Card(
                   clipBehavior: Clip.antiAlias,
                   child: Stack(
                     children: [
                       Positioned.fill(child: imageWidget),
+                      if (b['isDraft'] == true)
+                        Positioned.fill(
+                          child: Container(color: Colors.black38),
+                        ),
                       if (b['isDraft'] == true)
                         Positioned(
                           top: 4,
@@ -103,6 +140,28 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
                             ),
                           ),
                         ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: InkWell(
+                          onTap: () {
+                            final id = b["id"].toString();
+                            _editBlock(id);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
                       Align(
                         alignment: Alignment.bottomCenter,
                         child: Container(
