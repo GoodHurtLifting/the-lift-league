@@ -23,7 +23,8 @@ const Color _lightGrey = Color(0xFFD0D0D0);
 
 class POSSBlockBuilder extends StatefulWidget {
   final VoidCallback? onSaved;
-  const POSSBlockBuilder({super.key, this.onSaved});
+  final CustomBlock? initialBlock;
+  const POSSBlockBuilder({super.key, this.onSaved, this.initialBlock});
 
   @override
   State<POSSBlockBuilder> createState() => _POSSBlockBuilderState();
@@ -38,11 +39,45 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   int _currentStep = 0;
   int _workoutIndex = 0;
   Uint8List? _coverImageBytes;
+  String? _coverImageUrl;
 
   @override
   void initState() {
     super.initState();
-    workouts = [];
+    if (widget.initialBlock != null) {
+      final block = widget.initialBlock!;
+      blockName = block.name;
+      _nameCtrl.text = blockName;
+      numWeeks = block.numWeeks;
+      daysPerWeek = block.daysPerWeek;
+      final firstWeekWorkouts =
+          block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
+      workouts = firstWeekWorkouts
+          .map(
+            (w) => WorkoutDraft(
+              id: w.id,
+              dayIndex: w.dayIndex,
+              name: w.name,
+              lifts: w.lifts
+                  .map(
+                    (l) => LiftDraft(
+                      name: l.name,
+                      sets: l.sets,
+                      repsPerSet: l.repsPerSet,
+                      multiplier: l.multiplier,
+                      isBodyweight: l.isBodyweight,
+                      isDumbbellLift: l.isDumbbellLift,
+                    ),
+                  )
+                  .toList(),
+            ),
+          )
+          .toList();
+      _coverImageUrl = block.coverImagePath;
+      _currentStep = 4;
+    } else {
+      workouts = [];
+    }
   }
 
   Future<void> _pickCoverImage() async {
@@ -51,6 +86,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     final bytes = await picked.readAsBytes();
     setState(() {
       _coverImageBytes = bytes;
+      _coverImageUrl = null;
     });
   }
 
@@ -64,6 +100,47 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       newList[i] = workouts[i];
     }
     workouts = newList;
+  }
+
+  Future<void> _saveDraft() async {
+    if (blockName.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a block name')),
+      );
+      return;
+    }
+    if (workouts.isEmpty && (daysPerWeek ?? 0) > 0) {
+      _createDrafts();
+    }
+    final int id =
+        widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
+    final block = CustomBlock(
+      id: id,
+      name: blockName,
+      numWeeks: numWeeks ?? 1,
+      daysPerWeek: daysPerWeek ?? 1,
+      coverImagePath: _coverImageUrl,
+      workouts: workouts,
+      isDraft: true,
+    );
+    try {
+      await WebCustomBlockService()
+          .saveCustomBlock(block, coverImageBytes: _coverImageBytes);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Draft saved')));
+        Navigator.pop(context);
+      }
+      widget.onSaved?.call();
+    } on FirebaseException catch (e) {
+      final reauthed = await promptReAuthIfNeeded(context, e);
+      if (reauthed) {
+        await WebCustomBlockService()
+            .saveCustomBlock(block, coverImageBytes: _coverImageBytes);
+      } else {
+        return;
+      }
+    }
   }
 
   Future<void> _saveBlockToFirestore(CustomBlock block) async {
@@ -80,6 +157,8 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         SettableMetadata(contentType: 'image/jpeg'),
       );
       imageUrl = await task.ref.getDownloadURL();
+    } else if (_coverImageUrl != null) {
+      imageUrl = _coverImageUrl;
     }
 
     final blockData = {
@@ -169,11 +248,11 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     }
 
     final block = CustomBlock(
-      id: DateTime.now().millisecondsSinceEpoch,
+      id: widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch,
       name: blockName,
       numWeeks: numWeeks!,
       daysPerWeek: daysPerWeek!,
-      coverImagePath: 'assets/logo25.jpg',
+      coverImagePath: _coverImageUrl,
       workouts: allWorkouts,
       isDraft: false,
     );
@@ -255,6 +334,13 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         appBar: AppBar(
           foregroundColor: _lightGrey,
           title: const Text('Build Training Block'),
+          actions: [
+            if (_currentStep > 0)
+              IconButton(
+                icon: const Icon(Icons.save),
+                onPressed: _saveDraft,
+              ),
+          ],
         ),
         drawer: const POSSDrawer(),
         body: SingleChildScrollView(
@@ -326,6 +412,12 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                   if (_coverImageBytes != null)
                     Image.memory(
                       _coverImageBytes!,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    )
+                  else if (_coverImageUrl != null)
+                    Image.network(
+                      _coverImageUrl!,
                       height: 120,
                       fit: BoxFit.cover,
                     )

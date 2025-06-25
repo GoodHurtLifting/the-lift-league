@@ -86,6 +86,23 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
                   child: Stack(
                     children: [
                       Positioned.fill(child: imageWidget),
+                      if (b['isDraft'] == true)
+                        Positioned(
+                          top: 4,
+                          left: 4,
+                          child: Container(
+                            color: Colors.black54,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 2),
+                            child: const Text(
+                              'DRAFT',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
                       Align(
                         alignment: Alignment.bottomCenter,
                         child: Container(
@@ -93,7 +110,9 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
                           padding: const EdgeInsets.all(4),
                           width: double.infinity,
                           child: Text(
-                            b['name'] as String? ?? '',
+                            b['isDraft'] == true
+                                ? '${b['name']} (draft)'
+                                : b['name'] as String? ?? '',
                             textAlign: TextAlign.center,
                           ),
                         ),
