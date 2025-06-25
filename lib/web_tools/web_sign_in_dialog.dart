@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../data/titles_data.dart';
 import '../services/google_auth_service.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -10,6 +12,21 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
   bool isLogin = true;
   bool success = false;
 
+  Future<void> _createUserProfileIfNeeded(User user) async {
+    final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final doc = await docRef.get();
+    if (!doc.exists) {
+      await docRef.set({
+        'displayName': user.displayName ?? 'New Lifter',
+        'title': getUserTitle(0),
+        'blocksCompleted': 0,
+        'totalLbsLifted': 0,
+        'profileImageUrl': user.photoURL ?? '',
+        'isAdmin': false,
+      });
+    }
+  }
+
   await showDialog(
     context: context,
     barrierDismissible: false,
@@ -19,17 +36,19 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
           Future<void> handleEmail() async {
             setState(() => loading = true);
             try {
+              UserCredential cred;
               if (isLogin) {
-                await FirebaseAuth.instance.signInWithEmailAndPassword(
+                cred = await FirebaseAuth.instance.signInWithEmailAndPassword(
                   email: emailController.text.trim(),
                   password: passController.text.trim(),
                 );
               } else {
-                await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
                   email: emailController.text.trim(),
                   password: passController.text.trim(),
                 );
               }
+              await _createUserProfileIfNeeded(cred.user!);
               success = true;
               if (context.mounted) Navigator.pop(context);
             } catch (e) {
@@ -46,6 +65,7 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
             try {
               final cred = await GoogleAuthService.signIn();
               if (cred != null) {
+                await _createUserProfileIfNeeded(cred.user!);
                 success = true;
                 if (context.mounted) Navigator.pop(context);
               }
@@ -71,7 +91,9 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
                 idToken: appleCred.identityToken,
                 accessToken: appleCred.authorizationCode,
               );
-              await FirebaseAuth.instance.signInWithCredential(oauth);
+              final userCred =
+                  await FirebaseAuth.instance.signInWithCredential(oauth);
+              await _createUserProfileIfNeeded(userCred.user!);
               success = true;
               if (context.mounted) Navigator.pop(context);
             } catch (e) {
