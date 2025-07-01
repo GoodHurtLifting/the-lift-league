@@ -16,8 +16,6 @@ class RestTimerService {
   final StreamController<int> _streamController = StreamController<int>.broadcast();
   Stream<int> get stream => _streamController.stream;
 
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
   bool _playSound = true;
 
   Future<void> _loadPrefs() async {
@@ -28,7 +26,8 @@ class RestTimerService {
   Future<void> _playChime() async {
     if (!_playSound) return;
     try {
-      await _audioPlayer.setAudioContext(
+      final player = AudioPlayer();
+      await player.setAudioContext(
         AudioContext(
           android: AudioContextAndroid(
             contentType: AndroidContentType.sonification,
@@ -41,11 +40,12 @@ class RestTimerService {
           ),
         ),
       );
-      await _audioPlayer.play(AssetSource('sounds/chime.wav'));
-      await _audioPlayer.onPlayerComplete.first;
-      await _audioPlayer.release();
+      await player.play(AssetSource('sounds/chime.wav'));
+      await player.onPlayerComplete.first;
+      await player.release();
     } catch (_) {}
   }
+
 
   void start(int seconds) {
     _timer?.cancel();

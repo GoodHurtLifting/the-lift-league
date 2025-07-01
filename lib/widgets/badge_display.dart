@@ -84,20 +84,29 @@ class BadgeDisplay extends StatelessWidget {
         .where('completed', isEqualTo: true)
         .where('timestamp', isGreaterThan: Timestamp.fromDate(eightWeeksAgo))
         .get();
+
     final Map<String, int> weeklyCounts = {};
     for (var doc in workoutsSnap.docs) {
       final ts = (doc['timestamp'] as Timestamp).toDate();
       final isoWeek = _isoWeekKey(ts);
       weeklyCounts[isoWeek] = (weeklyCounts[isoWeek] ?? 0) + 1;
     }
-    final sortedWeeks = weeklyCounts.keys.toList()..sort();
+
+// Build list of the last 8 ISO weeks (ending with this week), newest to oldest
+    List<String> last8Weeks = [];
+    DateTime cursor = now;
+    for (int i = 0; i < 8; i++) {
+      last8Weeks.add(_isoWeekKey(cursor));
+      cursor = cursor.subtract(const Duration(days: 7));
+    }
+
+// Streak: count consecutive weeks with >=3 workouts, starting from this week, max 8
     int streak = 0;
-    for (final week in sortedWeeks.reversed) {
-      if (weeklyCounts[week]! >= 3) {
+    for (final weekKey in last8Weeks) {
+      if ((weeklyCounts[weekKey] ?? 0) >= 3) {
         streak++;
-        if (streak == 8) break;
       } else {
-        break;
+        break; // streak broken
       }
     }
 
