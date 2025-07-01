@@ -107,7 +107,7 @@ class BadgeService {
     final Map<String, int> weeklyCounts = {};
     for (var doc in workoutsSnap.docs) {
       final ts = (doc['timestamp'] as Timestamp).toDate();
-      final isoWeek = getIsoWeekKey(ts);
+      final isoWeek = isoWeekAndYear(ts);
       weeklyCounts[isoWeek] = (weeklyCounts[isoWeek] ?? 0) + 1;
     }
 
@@ -290,13 +290,14 @@ class BadgeService {
   // ─────────────────────────────────────────────────────────────────────
   // 🔢 Helper – Get ISO Week Key
   // ─────────────────────────────────────────────────────────────────────
-  String getIsoWeekKey(DateTime date) {
-    final weekYear = DateFormat('yyyy').format(date);
-    final weekOfYear = ((date.difference(DateTime(date.year, 1, 1)).inDays +
-        DateTime(date.year, 1, 1).weekday - 1) ~/
-        7) +
-        1;
-    return '$weekYear-W$weekOfYear';
+  String isoWeekAndYear(DateTime date) {
+    final thursday = date.add(Duration(days: 4 - date.weekday));
+    final isoYear = thursday.year;
+    final firstThursday = DateTime(isoYear, 1, 4);
+    final week1 = firstThursday.subtract(Duration(days: firstThursday.weekday - 1));
+    final isoWeek = ((thursday.difference(week1).inDays) ~/ 7) + 1;
+    return '$isoYear-${isoWeek.toString().padLeft(2, '0')}';
   }
+
 
 }
