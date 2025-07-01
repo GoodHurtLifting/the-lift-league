@@ -170,6 +170,65 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
     await _loadRuns();
   }
 
+  Widget _buildWeekSection(int week) {
+    final List<Widget> dayTiles = [];
+    for (int day = 0; day < widget.block.daysPerWeek; day++) {
+      final index = week * widget.block.daysPerWeek + day;
+      if (index >= widget.block.workouts.length) break;
+      final workout = widget.block.workouts[index];
+      dayTiles.add(
+        Card(
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: ExpansionTile(
+            title: Text('Day ${day + 1}: ${workout.name}'),
+            children: [
+              ...workout.lifts.map(
+                (l) => ListTile(
+                  title: Text(l.name),
+                  subtitle: Text('${l.sets} x ${l.repsPerSet}'),
+                ),
+              ),
+              if (_runId != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => WebWorkoutLog(
+                            runId: _runId!,
+                            workoutIndex: index,
+                            block: widget.block,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Log Workout'),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            'Week ${week + 1}',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        ...dayTiles,
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,95 +244,95 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
       ),
       body: _loadingRuns
           ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-        itemCount: widget.block.workouts.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Column(
+          : Column(
               children: [
-                if (_runNumbers.length > 1)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: _runNumbers.map((n) {
-                        final isCurrent = n == _currentRunNumber;
-                        return GestureDetector(
-                          onTap: () {
-                            if (n != _currentRunNumber) {
-                              _runId = _runIdMap[n];
-                              _currentRunNumber = n;
-                              _loadTotals();
-                              setState(() {});
-                            }
-                          },
-                          onLongPress: () => _confirmDeleteRun(n),
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isCurrent ? Colors.red : Colors.grey[800],
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              '$n',
-                              style: const TextStyle(color: Colors.white),
-                            ),
+                Container(
+                  width: double.infinity,
+                  color: Colors.grey.shade200,
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.block.name,
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      if (_runNumbers.length > 1)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: _runNumbers.map((n) {
+                              final isCurrent = n == _currentRunNumber;
+                              return GestureDetector(
+                                onTap: () {
+                                  if (n != _currentRunNumber) {
+                                    _runId = _runIdMap[n];
+                                    _currentRunNumber = n;
+                                    _loadTotals();
+                                    setState(() {});
+                                  }
+                                },
+                                onLongPress: () => _confirmDeleteRun(n),
+                                child: Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isCurrent ? Colors.red : Colors.grey[800],
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    '$n',
+                                    style:
+                                        const TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ..._bestScoresByType.entries.map(
-                  (e) => Text('Best ${e.key}: ${e.value.toStringAsFixed(1)}'),
-                ),
-                Text(
-                  'Block Total: ${_blockScore.toStringAsFixed(1)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
-            );
-          }
-          final workout = widget.block.workouts[index];
-          final week = index ~/ widget.block.daysPerWeek + 1;
-          final day = index % widget.block.daysPerWeek + 1;
-          return Card(
-            margin: const EdgeInsets.all(8),
-            child: ExpansionTile(
-              title: Text('Week $week - Day $day: ${workout.name}'),
-              children: [
-                ...workout.lifts.map(
-                  (l) => ListTile(
-                    title: Text(l.name),
-                    subtitle: Text('${l.sets} x ${l.repsPerSet}'),
-                  ),
-                ),
-                if (_runId != null)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => WebWorkoutLog(
-                              runId: _runId!,
-                              workoutIndex: index,
-                              block: widget.block,
-                            ),
+                        ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'BEST SCORES',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      if (_bestScoresByType.isEmpty)
+                        const Text('No scores yet'),
+                      ..._bestScoresByType.entries.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(e.key),
+                              Text(e.value.toStringAsFixed(1)),
+                            ],
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.play_arrow),
-                      label: const Text('Log Workout'),
-                    ),
+                        ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Block Total: ${_blockScore.toStringAsFixed(1)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
+                ),
+                Expanded(
+                  child: ListView(
+                    children: [
+                      for (int week = 0; week < widget.block.numWeeks; week++)
+                        _buildWeekSection(week),
+                    ],
+                  ),
+                ),
               ],
             ),
-          );
-        },
-      ),
       floatingActionButton: _runId == null
           ? FloatingActionButton.extended(
               onPressed: _startRun,
