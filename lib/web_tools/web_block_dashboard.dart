@@ -234,6 +234,96 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
     );
   }
 
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      color: Colors.grey.shade200,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.block.name,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          if (_runNumbers.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _runNumbers.map((n) {
+                  final isCurrent = n == _currentRunNumber;
+                  return GestureDetector(
+                    onTap: () {
+                      if (n != _currentRunNumber) {
+                        _runId = _runIdMap[n];
+                        _currentRunNumber = n;
+                        _loadTotals();
+                        setState(() {});
+                      }
+                    },
+                    onLongPress: () => _confirmDeleteRun(n),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isCurrent ? Colors.red : Colors.grey[800],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '$n',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          const SizedBox(height: 8),
+          const Text(
+            'BEST SCORES',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          if (_bestScoresByType.isEmpty) const Text('No scores yet'),
+          ..._bestScoresByType.entries.map(
+            (e) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(e.key),
+                  Text(e.value.toStringAsFixed(1)),
+                ],
+              ),
+            ),
+          const SizedBox(height: 4),
+          Text(
+            'Block Total: ${_blockScore.toStringAsFixed(1)}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDashboard() {
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: ListView(
+            children: [
+              for (int week = 0; week < widget.block.numWeeks; week++)
+                _buildWeekSection(week),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -249,95 +339,11 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
       ),
       body: _loadingRuns
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  color: Colors.grey.shade200,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.block.name,
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold),
-                      ),
-                      if (_runNumbers.length > 1)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: _runNumbers.map((n) {
-                              final isCurrent = n == _currentRunNumber;
-                              return GestureDetector(
-                                onTap: () {
-                                  if (n != _currentRunNumber) {
-                                    _runId = _runIdMap[n];
-                                    _currentRunNumber = n;
-                                    _loadTotals();
-                                    setState(() {});
-                                  }
-                                },
-                                onLongPress: () => _confirmDeleteRun(n),
-                                child: Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 4),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        isCurrent ? Colors.red : Colors.grey[800],
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    '$n',
-                                    style:
-                                        const TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'BEST SCORES',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      if (_bestScoresByType.isEmpty)
-                        const Text('No scores yet'),
-                      ..._bestScoresByType.entries.map(
-                        (e) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(e.key),
-                              Text(e.value.toStringAsFixed(1)),
-                            ],
-                          ),
-                        ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Block Total: ${_blockScore.toStringAsFixed(1)}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    children: [
-                      for (int week = 0; week < widget.block.numWeeks; week++)
-                        _buildWeekSection(week),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          : (_runId == null
+              ? const Center(
+                  child: Text('Sign in or press “Start Block” to begin.'),
+                )
+              : _buildDashboard()),
       floatingActionButton: _runId == null
           ? FloatingActionButton.extended(
               onPressed: _startRun,
