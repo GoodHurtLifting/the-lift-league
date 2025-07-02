@@ -287,17 +287,18 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
           ),
           const SizedBox(height: 4),
           if (_bestScoresByType.isEmpty) const Text('No scores yet'),
-          ..._bestScoresByType.entries.map(
-            (e) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(e.key),
-                  Text(e.value.toStringAsFixed(1)),
-                ],
-              ),
-            ),
+          ..._bestScoresByType.entries
+              .map((e) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(e.key),
+                        Text(e.value.toStringAsFixed(1)),
+                      ],
+                    ),
+                  ))
+              .toList(),
           const SizedBox(height: 4),
           Text(
             'Block Total: ${_blockScore.toStringAsFixed(1)}',
