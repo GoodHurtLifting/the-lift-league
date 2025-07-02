@@ -32,6 +32,7 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[DEBUG] BlockDashboard opened with blockId = ${widget.block.id}');
     _runId = widget.runId;
     _loadRuns();
   }
