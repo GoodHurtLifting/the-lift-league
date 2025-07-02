@@ -17,14 +17,41 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 Color? _lightGrey = Colors.grey[400];
 
-class POSSHomePage extends StatefulWidget {
+/// Entry widget that reacts to Firebase auth changes.
+/// When a user signs in or out the `StreamBuilder` rebuilds and shows the
+/// appropriate UI without requiring a manual page refresh.
+class POSSHomePage extends StatelessWidget {
   const POSSHomePage({super.key});
 
   @override
-  State<POSSHomePage> createState() => _POSSHomePageState();
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        } else if (snapshot.hasData) {
+          // Logged in: show the main POSS interface.
+          return const _POSSHomeView();
+        } else {
+          // Not logged in: present the sign in dialog. The empty Scaffold acts
+          // as a placeholder while the dialog is displayed.
+          Future.microtask(() => showWebSignInDialog(context));
+          return const Scaffold();
+        }
+      },
+    );
+  }
 }
 
-class _POSSHomePageState extends State<POSSHomePage> {
+class _POSSHomeView extends StatefulWidget {
+  const _POSSHomeView({super.key});
+
+  @override
+  State<_POSSHomeView> createState() => _POSSHomeViewState();
+}
+
+class _POSSHomeViewState extends State<_POSSHomeView> {
   bool _showGrid = false;
   bool _loading = true;
   StreamSubscription<User?>? _authSub;
