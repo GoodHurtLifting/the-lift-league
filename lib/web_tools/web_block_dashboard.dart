@@ -94,7 +94,11 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
 
   Future<void> _loadRuns() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    debugPrint('[DEBUG] _loadRuns → user = ${user?.uid}');
+    if (user == null) {
+      if (mounted) setState(() => _loadingRuns = false); // stop spinner
+      return; // skip Firestore query
+    }
 
     final snap = await FirebaseFirestore.instance
         .collection('users')
