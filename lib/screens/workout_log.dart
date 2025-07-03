@@ -4,6 +4,7 @@ import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/services/calculations.dart';
 import 'package:lift_league/screens/block_dashboard.dart';
 import 'package:lift_league/screens/user_dashboard.dart';
+import 'package:lift_league/services/notifications_service.dart';
 import 'package:lift_league/screens/lift_entry.dart';
 import 'package:lift_league/data/block_data.dart';
 import 'package:lift_league/data/workout_data.dart';
@@ -15,7 +16,7 @@ import 'package:lift_league/screens/block_summary.dart';
 import 'package:lift_league/services/leaderboard_service.dart';
 import 'package:lift_league/modals/numpad_modal.dart';
 import 'package:lift_league/services/pr_service.dart';
-import 'package:lift_league/services/consistency_service.dart';
+import 'package:lift_league/services/performance_service.dart';
 import 'package:lift_league/services/promo_popup_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
@@ -368,15 +369,17 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
       userId: userId,
     );
 
-    // 3️⃣ Leaderboard
-    final blockId = await db.getBlockIdFromInstance(widget.blockInstanceId);
-    await syncBestLeaderboardEntryForBlock(userId: userId, blockId: blockId);
-
     // 🎯 Consistency check
-    await ConsistencyService().checkWeekCompletionAndNotify(
+    final summary = await PerformanceService().consistency(
       userId: userId,
       blockInstanceId: widget.blockInstanceId,
     );
+    if (summary.percent == 100) {
+      NotificationService().showSimpleNotification(
+        "Great job!",
+        "You completed all workouts for week ${summary.currentWeek}!",
+      );
+    }
 
     // 4️⃣ Badges
     final earnedBadges = await db.checkForEarnedBadges(userId: userId);

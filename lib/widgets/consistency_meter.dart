@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lift_league/services/consistency_service.dart';
+import 'package:lift_league/services/performance_service.dart';
 
 class ConsistencyMeter extends StatefulWidget {
   final String userId;
@@ -16,13 +16,13 @@ class ConsistencyMeter extends StatefulWidget {
 }
 
 class _ConsistencyMeterState extends State<ConsistencyMeter> {
-  late final Stream<Map<String, dynamic>> _consistencyStream;
+  late final Stream<ConsistencySummary> _consistencyStream;
 
   @override
   void initState() {
     super.initState();
     _consistencyStream = Stream.periodic(const Duration(seconds: 1)).asyncMap(
-      (_) => ConsistencyService().getWeeklyConsistency(
+      (_) => PerformanceService().consistency(
         userId: widget.userId,
         blockInstanceId: widget.blockId,
       ),
@@ -31,7 +31,7 @@ class _ConsistencyMeterState extends State<ConsistencyMeter> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Map<String, dynamic>>(
+    return StreamBuilder<ConsistencySummary>(
       stream: _consistencyStream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -43,13 +43,8 @@ class _ConsistencyMeterState extends State<ConsistencyMeter> {
           return const SizedBox(
               height: 60, child: Center(child: CircularProgressIndicator()));
         }
-        final data = snapshot.data!;
-        final completed = data['completed'] as int;
-        final scheduled = data['scheduled'] as int;
-        final percentage = data['percentage'] as double;
-        final streak = data['streak'] as int;
-
-        final progress = scheduled == 0 ? 0.0 : completed / scheduled;
+        final summary = snapshot.data!;
+        final progress = summary.percent / 100.0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,21 +57,9 @@ class _ConsistencyMeterState extends State<ConsistencyMeter> {
             ),
             const SizedBox(height: 6),
             Text(
-              '$completed of $scheduled workouts completed this week',
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-            ),
-            Text(
-              '${percentage.toStringAsFixed(0)}% consistency this week',
+              "${summary.percent.toStringAsFixed(0)}% consistency",
               style: const TextStyle(color: Colors.white70, fontSize: 12),
             ),
-            if (streak > 1)
-              Text(
-                '$streak weeks in a row!',
-                style: const TextStyle(
-                    color: Colors.greenAccent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12),
-              ),
           ],
         );
       },
