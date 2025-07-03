@@ -27,90 +27,39 @@ class DBService {
     return _database!;
   }
 
+  // ──────────────────────────────────────────────────────────
+  // 🔄 DATABASE INIT (v16, cleaned up)
+  // ──────────────────────────────────────────────────────────
+  static const _dbVersion = 16;   // bump any time the schema changes
+
   Future<Database> _initDatabase() async {
-    String dbPath = await getDatabasesPath();
-    String path = join(dbPath, 'lift_league.db');
+    final dbPath = await getDatabasesPath();
+    final path   = join(dbPath, 'lift_league.db');
 
-    return await openDatabase(
+    return openDatabase(
       path,
-      version: 15,
-      onCreate: (db, version) async {
-        await db.execute("PRAGMA foreign_keys = ON;");
-
+      version: _dbVersion,
+      onCreate: (db, v) async {
+        await db.execute('PRAGMA foreign_keys = ON;');
         await _createTables(db);
         await _insertDefaultData(db);
       },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 9) {
+      // One-shot upgrade: run only when pre-v16 DB is opened
+      onUpgrade: (db, oldV, newV) async {
+        if (oldV < 16) {
+          // add scheduledDate so we can credit make-up workouts
           await db.execute(
-              "ALTER TABLE workout_instances ADD COLUMN blockName TEXT;");
+            "ALTER TABLE workout_instances ADD COLUMN scheduledDate TEXT;"
+          );
+          // helpful indexes
           await db.execute(
-              "ALTER TABLE workout_instances ADD COLUMN week INTEGER;");
-        }
-        if (oldVersion < 10) {
-          await db.execute('''
-            CREATE TABLE IF NOT EXISTS custom_blocks (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              name TEXT,
-              numWeeks INTEGER,
-              daysPerWeek INTEGER
-            )
-          ''');
-          await db.execute('''
-            CREATE TABLE IF NOT EXISTS workout_drafts (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              blockId INTEGER,
-              dayIndex INTEGER,
-              FOREIGN KEY (blockId) REFERENCES custom_blocks(id) ON DELETE CASCADE
-            )
-          ''');
-          await db.execute('''
-            CREATE TABLE IF NOT EXISTS lift_drafts (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              workoutId INTEGER,
-              name TEXT,
-              sets INTEGER,
-              repsPerSet INTEGER,
-              multiplier REAL,
-              isBodyweight INTEGER,
-              FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
-            )
-          ''');
-        }
-        if (oldVersion < 11) {
-          await db.execute("ALTER TABLE workout_drafts ADD COLUMN name TEXT;");
-        }
-
-        if (oldVersion < 12) {
+            "CREATE INDEX IF NOT EXISTS idx_wi_user_block "
+            "ON workout_instances (userId, blockInstanceId);"
+          );
           await db.execute(
-              "ALTER TABLE custom_blocks ADD COLUMN isDraft INTEGER DEFAULT 0;");
-        }
-
-        if (oldVersion < 13) {
-          await db.execute(
-              "ALTER TABLE custom_blocks ADD COLUMN coverImagePath TEXT;");
-        }
-        if (oldVersion < 14) {
-          await db.execute('''
-            CREATE TABLE IF NOT EXISTS health_weight_samples (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              date TEXT,
-              value REAL,
-              bmi REAL,
-              bodyFat REAL,
-              source TEXT
-            )
-          ''');
-          await db.execute('''
-            CREATE TABLE IF NOT EXISTS health_energy_samples (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              date TEXT,
-              kcalIn REAL,
-              kcalOut REAL,
-              source TEXT
-            )
-          ''');
-
+            "CREATE INDEX IF NOT EXISTS idx_wi_sched "
+            "ON workout_instances (scheduledDate);"
+          );
         }
       },
     );
@@ -177,20 +126,20 @@ class DBService {
 
     await db.execute('''
       CREATE TABLE workout_instances (
-      workoutInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
-      blockInstanceId INTEGER,
-      userId TEXT,
-      workoutId INTEGER,
-      workoutName TEXT,
-      blockName TEXT,
-      week INTEGER,
-      startTime TEXT,
-      endTime TEXT,
-      completed INTEGER DEFAULT 0,
-      FOREIGN KEY (blockInstanceId) REFERENCES block_instances(blockInstanceId) ON DELETE CASCADE,
-      FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
-    );
-
+        workoutInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
+        blockInstanceId   INTEGER,
+        userId            TEXT,
+        workoutId         INTEGER,
+        workoutName       TEXT,
+        blockName         TEXT,
+        week              INTEGER,
+        scheduledDate     TEXT,    -- NEW v16
+        startTime         TEXT,
+        endTime           TEXT,
+        completed         INTEGER DEFAULT 0,
+        FOREIGN KEY (blockInstanceId) REFERENCES block_instances(blockInstanceId) ON DELETE CASCADE,
+        FOREIGN KEY (workoutId)      REFERENCES workouts(workoutId)      ON DELETE CASCADE
+      )
     ''');
 
     await db.execute('''
