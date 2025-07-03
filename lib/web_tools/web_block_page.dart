@@ -20,6 +20,7 @@ class _WebBlockPageState extends State<WebBlockPage> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[DEBUG] WebBlockPage → blockId = ${widget.blockId}');
     _load();
   }
 
