@@ -369,6 +369,10 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
       userId: userId,
     );
 
+    // 3️⃣ Leaderboard
+    final blockId = await db.getBlockIdFromInstance(widget.blockInstanceId);
+    await syncBestLeaderboardEntryForBlock(userId: userId, blockId: blockId);
+
     // 🎯 Consistency check
     final summary = await PerformanceService().consistency(
       userId: userId,
