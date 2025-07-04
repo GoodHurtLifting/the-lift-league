@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/services/notifications_service.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:lift_league/services/performance_service.dart';
 
 class EfficiencyMeter extends StatefulWidget {
   final String userId;
@@ -16,120 +15,39 @@ class EfficiencyMeter extends StatefulWidget {
 class _EfficiencyMeterState extends State<EfficiencyMeter> {
   bool _notified = false;
 
-  late final StreamController<Map<String, dynamic>> _statsController;
+  late final StreamController<EfficiencyStats> _statsController;
   Timer? _timer;
 
-  Stream<Map<String, dynamic>> get _statsStream => _statsController.stream;
+  Stream<EfficiencyStats> get _statsStream => _statsController.stream;
 
   @override
   void initState() {
     super.initState();
-    _statsController = StreamController<Map<String, dynamic>>();
+    _statsController = StreamController<EfficiencyStats>();
     _timer = Timer.periodic(const Duration(seconds: 2), (_) async {
-      final data = await _calculateEfficiency();
+      final stats = await PerformanceService().efficiencyMeter(
+        userId: widget.userId,
+        blockInstanceId: int.tryParse(widget.blockId) ?? 0,
+      );
+      _handleNotification(stats.efficient);
       if (!_statsController.isClosed) {
-        _statsController.add(data);
+        _statsController.add(stats);
       }
     });
-    _calculateEfficiency().then((data) {
+    PerformanceService()
+        .efficiencyMeter(
+          userId: widget.userId,
+          blockInstanceId: int.tryParse(widget.blockId) ?? 0,
+        )
+        .then((stats) {
+      _handleNotification(stats.efficient);
       if (!_statsController.isClosed) {
-        _statsController.add(data);
+        _statsController.add(stats);
       }
     });
   }
 
-  Future<int> _currentWeek(Database db, int blockInstanceId) async {
-    final startRes = await db.query(
-      'block_instances',
-      columns: ['startDate'],
-      where: 'blockInstanceId = ?',
-      whereArgs: [blockInstanceId],
-      limit: 1,
-    );
-    if (startRes.isEmpty || startRes.first['startDate'] == null) {
-      return 1;
-    }
-    final start = DateTime.parse(startRes.first['startDate'] as String);
-    final now = DateTime.now();
-    final diff = now.difference(start).inDays;
-    final week = (diff ~/ 7) + 1;
-    final maxRes = await db.rawQuery(
-      'SELECT MAX(week) as w FROM workout_instances WHERE blockInstanceId = ?',
-      [blockInstanceId],
-    );
-    final maxWeek = (maxRes.first['w'] as int?) ?? 1;
-    return week.clamp(1, maxWeek);
-  }
-
-  Future<Map<String, dynamic>> _fetchWeekStats(
-      Database db, int blockInstanceId, int week) async {
-    final totalRes = await db.rawQuery('''
-      SELECT COUNT(*) as c
-      FROM lift_totals lt
-      JOIN workout_instances wi ON lt.workoutInstanceId = wi.workoutInstanceId
-      WHERE wi.blockInstanceId = ? AND wi.week = ? AND lt.userId = ?
-    ''', [blockInstanceId, week, widget.userId]);
-
-    final completedRes = await db.rawQuery('''
-      SELECT COUNT(*) as c
-      FROM lift_totals lt
-      JOIN workout_instances wi ON lt.workoutInstanceId = wi.workoutInstanceId
-      WHERE wi.blockInstanceId = ? AND wi.week = ? AND lt.userId = ? AND lt.liftReps > 0
-    ''', [blockInstanceId, week, widget.userId]);
-
-    final avgLiftRes = await db.rawQuery('''
-      SELECT AVG(lt.liftScore) as s
-      FROM lift_totals lt
-      JOIN workout_instances wi ON lt.workoutInstanceId = wi.workoutInstanceId
-      WHERE wi.blockInstanceId = ?
-        AND wi.week = ?
-        AND lt.userId = ?
-        AND lt.liftReps > 0
-    ''', [blockInstanceId, week, widget.userId]);
-
-    final avgWorkoutRes = await db.rawQuery('''
-      SELECT AVG(wt.workoutScore) as s
-      FROM workout_totals wt
-      JOIN workout_instances wi ON wt.workoutInstanceId = wi.workoutInstanceId
-      WHERE wi.blockInstanceId = ? AND wi.week = ? AND wt.userId = ?
-    ''', [blockInstanceId, week, widget.userId]);
-
-    final total = (totalRes.first['c'] as int?) ?? 0;
-    final completed = (completedRes.first['c'] as int?) ?? 0;
-    final avgLift = (avgLiftRes.first['s'] as num?)?.toDouble() ?? 0.0;
-    final avgWorkout = (avgWorkoutRes.first['s'] as num?)?.toDouble() ?? 0.0;
-
-    return {
-      'progress': total == 0 ? 0.0 : completed / total,
-      'avgLift': avgLift,
-      'avgWorkout': avgWorkout,
-    };
-  }
-
-  Future<Map<String, dynamic>> _calculateEfficiency() async {
-    final db = await DBService().database;
-    final blockInstanceId = int.tryParse(widget.blockId) ?? 0;
-    final currentWeek = await _currentWeek(db, blockInstanceId);
-    final currentStats =
-    await _fetchWeekStats(db, blockInstanceId, currentWeek);
-    final prevStats = await _fetchWeekStats(db, blockInstanceId, currentWeek - 1);
-
-    final progress = currentStats['progress'] as double;
-    final avgLift = currentStats['avgLift'] as double;
-    final avgWorkout = currentStats['avgWorkout'] as double;
-    final prevLift = prevStats['avgLift'] as double;
-    final prevWorkout = prevStats['avgWorkout'] as double;
-
-    int trend = 0; // 1 up, -1 down, 0 flat
-    if (avgLift > prevLift || avgWorkout > prevWorkout) {
-      trend = 1;
-    } else if (avgLift < prevLift && avgWorkout < prevWorkout) {
-      trend = -1;
-    }
-
-    final efficient =
-        progress >= 1.0 && (avgLift > prevLift || avgWorkout > prevWorkout);
-
+  void _handleNotification(bool efficient) {
     if (efficient && !_notified) {
       NotificationService().showSimpleNotification(
         'Great work!',
@@ -139,13 +57,6 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
     } else if (!efficient) {
       _notified = false;
     }
-
-    return {
-      'progress': progress,
-      'avgLift': avgLift,
-      'avgWorkout': avgWorkout,
-      'trend': trend,
-    };
   }
 
   Icon _trendIcon(int trend) {
@@ -168,7 +79,7 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Map<String, dynamic>>(
+    return StreamBuilder<EfficiencyStats>(
       stream: _statsStream,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
@@ -178,10 +89,10 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
           return const Center(child: CircularProgressIndicator());
         }
         final data = snapshot.data!;
-        final progress = data['progress'] as double;
-        final avgLift = data['avgLift'] as double;
-        final avgWorkout = data['avgWorkout'] as double;
-        final trend = data['trend'] as int;
+        final progress = data.progress;
+        final avgLift = data.avgLift;
+        final avgWorkout = data.avgWorkout;
+        final trend = data.trend;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

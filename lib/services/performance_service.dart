@@ -24,6 +24,31 @@ class EfficiencySummary {
   const EfficiencySummary(this.avgLift, this.avgWorkout);
 }
 
+/// Details for the efficiency meter UI.
+class EfficiencyStats {
+  final double progress;   // 0–1 progress for current week
+  final double avgLift;    // mean lift score this week
+  final double avgWorkout; // mean workout score this week
+  final int trend;         // 1 up, -1 down, 0 flat
+  final bool efficient;    // improvement achieved this week
+
+  const EfficiencyStats(
+    this.progress,
+    this.avgLift,
+    this.avgWorkout,
+    this.trend,
+    this.efficient,
+  );
+}
+
+class _WeekStats {
+  final double progress;
+  final double avgLift;
+  final double avgWorkout;
+
+  const _WeekStats(this.progress, this.avgLift, this.avgWorkout);
+}
+
 /// ─────────────────────────────────────────────────────────
 /// 🔥  PERFORMANCE SERVICE  (one stop for all three meters)
 /// ─────────────────────────────────────────────────────────
@@ -113,5 +138,104 @@ class PerformanceService {
       (liftRes.first['avgLift'] as num?)?.toDouble() ?? 0,
       (wktRes.first['avgWorkout'] as num?)?.toDouble() ?? 0,
     );
+  }
+
+  // ──────────────────  EFFICIENCY METER DATA  ──────────────────
+  Future<EfficiencyStats> efficiencyMeter({
+    required String userId,
+    required int blockInstanceId,
+  }) async {
+    final db = await _db.database;
+
+    final currentWeek = await _currentWeek(db, blockInstanceId);
+    final current = await _fetchWeekStats(db, blockInstanceId, currentWeek, userId);
+    final previous =
+        await _fetchWeekStats(db, blockInstanceId, currentWeek - 1, userId);
+
+    int trend = 0; // 1 up, -1 down, 0 flat
+    if (current.avgLift > previous.avgLift ||
+        current.avgWorkout > previous.avgWorkout) {
+      trend = 1;
+    } else if (current.avgLift < previous.avgLift &&
+        current.avgWorkout < previous.avgWorkout) {
+      trend = -1;
+    }
+
+    final efficient =
+        current.progress >= 1.0 && trend == 1;
+
+    return EfficiencyStats(
+      current.progress,
+      current.avgLift,
+      current.avgWorkout,
+      trend,
+      efficient,
+    );
+  }
+
+  Future<int> _currentWeek(Database db, int blockInstanceId) async {
+    final startRes = await db.query(
+      'block_instances',
+      columns: ['startDate'],
+      where: 'blockInstanceId = ?',
+      whereArgs: [blockInstanceId],
+      limit: 1,
+    );
+    if (startRes.isEmpty || startRes.first['startDate'] == null) {
+      return 1;
+    }
+    final start = DateTime.parse(startRes.first['startDate'] as String);
+    final now = DateTime.now();
+    final diff = now.difference(start).inDays;
+    final week = (diff ~/ 7) + 1;
+    final maxRes = await db.rawQuery(
+      'SELECT MAX(week) as w FROM workout_instances WHERE blockInstanceId = ?',
+      [blockInstanceId],
+    );
+    final maxWeek = (maxRes.first['w'] as int?) ?? 1;
+    return week.clamp(1, maxWeek);
+  }
+
+  Future<_WeekStats> _fetchWeekStats(
+      Database db, int blockInstanceId, int week, String userId) async {
+    final totalRes = await db.rawQuery('''
+      SELECT COUNT(*) as c
+      FROM lift_totals lt
+      JOIN workout_instances wi ON lt.workoutInstanceId = wi.workoutInstanceId
+      WHERE wi.blockInstanceId = ? AND wi.week = ? AND lt.userId = ?
+    ''', [blockInstanceId, week, userId]);
+
+    final completedRes = await db.rawQuery('''
+      SELECT COUNT(*) as c
+      FROM lift_totals lt
+      JOIN workout_instances wi ON lt.workoutInstanceId = wi.workoutInstanceId
+      WHERE wi.blockInstanceId = ? AND wi.week = ? AND lt.userId = ? AND lt.liftReps > 0
+    ''', [blockInstanceId, week, userId]);
+
+    final avgLiftRes = await db.rawQuery('''
+      SELECT AVG(lt.liftScore) as s
+      FROM lift_totals lt
+      JOIN workout_instances wi ON lt.workoutInstanceId = wi.workoutInstanceId
+      WHERE wi.blockInstanceId = ?
+        AND wi.week = ?
+        AND lt.userId = ?
+        AND lt.liftReps > 0
+    ''', [blockInstanceId, week, userId]);
+
+    final avgWorkoutRes = await db.rawQuery('''
+      SELECT AVG(wt.workoutScore) as s
+      FROM workout_totals wt
+      JOIN workout_instances wi ON wt.workoutInstanceId = wi.workoutInstanceId
+      WHERE wi.blockInstanceId = ? AND wi.week = ? AND wt.userId = ?
+    ''', [blockInstanceId, week, userId]);
+
+    final total = (totalRes.first['c'] as int?) ?? 0;
+    final completed = (completedRes.first['c'] as int?) ?? 0;
+    final avgLift = (avgLiftRes.first['s'] as num?)?.toDouble() ?? 0.0;
+    final avgWorkout = (avgWorkoutRes.first['s'] as num?)?.toDouble() ?? 0.0;
+
+    final progress = total == 0 ? 0.0 : completed / total;
+
+    return _WeekStats(progress, avgLift, avgWorkout);
   }
 }
