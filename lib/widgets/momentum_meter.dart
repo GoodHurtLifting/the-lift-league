@@ -47,7 +47,6 @@ class _MomentumMeterState extends State<MomentumMeter> {
     });
   }
 
-
   @override
   void dispose() {
     _timer?.cancel();
@@ -72,16 +71,16 @@ class _MomentumMeterState extends State<MomentumMeter> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Momentum: ${pct.toStringAsFixed(1)}%',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
             LinearProgressIndicator(
               value: pct / 100,
               minHeight: 10,
               color: color,
               backgroundColor: Colors.grey.shade300,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Momentum: ${pct.toStringAsFixed(1)}%',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
         );

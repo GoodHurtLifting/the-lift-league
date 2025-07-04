@@ -186,10 +186,6 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Efficiency This Week',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
             const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
