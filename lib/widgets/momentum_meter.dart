@@ -80,7 +80,7 @@ class _MomentumMeterState extends State<MomentumMeter> {
             const SizedBox(height: 4),
             Text(
               'Momentum: ${pct.toStringAsFixed(1)}%',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16),
             ),
           ],
         );

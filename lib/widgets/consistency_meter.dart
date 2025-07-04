@@ -58,7 +58,7 @@ class _ConsistencyMeterState extends State<ConsistencyMeter> {
             const SizedBox(height: 6),
             Text(
               "${summary.percent.toStringAsFixed(0)}% consistency",
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
+              style: const TextStyle(fontSize: 16),
             ),
           ],
         );

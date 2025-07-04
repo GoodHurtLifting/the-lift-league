@@ -97,7 +97,6 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
             LinearProgressIndicator(
               value: progress.clamp(0.0, 1.0),
               minHeight: 10,
@@ -108,7 +107,8 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
             Row(
               children: [
                 Text(
-                  'Avg lift: ${avgLift.toStringAsFixed(1)}, ' 'workout: ${avgWorkout.toStringAsFixed(1)}',
+                  'Avg lift: ${avgLift.toStringAsFixed(1)}',
+                  style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(width: 6),
                 _trendIcon(trend),

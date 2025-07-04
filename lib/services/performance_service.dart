@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:lift_league/services/db_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 /// ─────────────────────────────────────────────────────────
 /// 📊  Value Objects
