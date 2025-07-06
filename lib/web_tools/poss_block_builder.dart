@@ -33,10 +33,11 @@ class POSSBlockBuilder extends StatefulWidget {
 class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   final TextEditingController _nameCtrl = TextEditingController();
   String blockName = '';
-  int? _selectedWeeks;
-  int? _selectedDaysPerWeek;
+  int? _uniqueCount;
+  int? _daysPerWeek;
+  int? _numWeeks;
   String _scheduleType = 'standard';
-  late List<WorkoutDraft> workouts;
+  late List<CustomWorkout> _workouts;
   int _currentStep = 0;
   int _workoutIndex = 0;
   Uint8List? _coverImageBytes;
@@ -49,12 +50,12 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       final block = widget.initialBlock!;
       blockName = block.name;
       _nameCtrl.text = blockName;
-      _selectedWeeks = block.numWeeks;
-      _selectedDaysPerWeek = block.daysPerWeek;
+      _numWeeks = block.numWeeks;
+      _daysPerWeek = block.daysPerWeek;
       _scheduleType = block.scheduleType;
       final firstWeekWorkouts =
           block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
-      workouts = firstWeekWorkouts
+      _workouts = firstWeekWorkouts
           .map(
             (w) => WorkoutDraft(
               id: w.id,
@@ -75,10 +76,12 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
             ),
           )
           .toList();
+      _uniqueCount = _workouts.length;
       _coverImageUrl = block.coverImagePath;
-      _currentStep = 5;
+      _currentStep =
+          (_uniqueCount == 2 && _daysPerWeek == 3) ? 6 : 5;
     } else {
-      workouts = [];
+      _workouts = [];
     }
   }
 
@@ -92,16 +95,17 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     });
   }
 
-  void _createDrafts() {
-    final count = _selectedDaysPerWeek ?? 0;
-    final List<WorkoutDraft> newList = List.generate(
+  void _initializeWorkouts() {
+    final count = _uniqueCount ?? 0;
+    _workouts = List.generate(
       count,
-      (i) => WorkoutDraft(id: i, dayIndex: i, name: '', lifts: []),
+      (i) => CustomWorkout(
+        id: i,
+        name: 'Workout ${i + 1}',
+        dayIndex: i,
+        lifts: [],
+      ),
     );
-    for (var i = 0; i < newList.length && i < workouts.length; i++) {
-      newList[i] = workouts[i];
-    }
-    workouts = newList;
   }
 
   Future<void> _saveDraft() async {
@@ -111,19 +115,19 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       );
       return;
     }
-    if (workouts.isEmpty && (_selectedDaysPerWeek ?? 0) > 0) {
-      _createDrafts();
+    if (_workouts.isEmpty && (_daysPerWeek ?? 0) > 0) {
+      _initializeWorkouts();
     }
     final int id =
         widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
     final block = CustomBlock(
       id: id,
       name: blockName,
-      numWeeks: _selectedWeeks ?? 1,
-      daysPerWeek: _selectedDaysPerWeek ?? 1,
+      numWeeks: _numWeeks ?? 1,
+      daysPerWeek: _daysPerWeek ?? 1,
       scheduleType: _scheduleType,
       coverImagePath: _coverImageUrl,
-      workouts: workouts,
+      workouts: _workouts,
       isDraft: true,
     );
     try {
@@ -214,15 +218,15 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   }
 
   Future<void> _previewSchedule() async {
-    if (_selectedWeeks == null ||
-        _selectedDaysPerWeek == null ||
-        workouts.isEmpty) {
+    if (_numWeeks == null ||
+        _daysPerWeek == null ||
+        _workouts.isEmpty) {
       return;
     }
     final dist = WebCustomBlockService().previewDistribution(
-      workouts,
-      _selectedWeeks!,
-      _selectedDaysPerWeek!,
+      _workouts,
+      _numWeeks!,
+      _daysPerWeek!,
       _scheduleType,
     );
     await showDialog(
@@ -256,18 +260,37 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     );
   }
 
+  bool _isCurrentStepValid() {
+    switch (_currentStep) {
+      case 0:
+        return blockName.trim().isNotEmpty;
+      case 1:
+        return true;
+      case 2:
+        return _uniqueCount != null;
+      case 3:
+        return _daysPerWeek != null;
+      case 4:
+        return _numWeeks != null;
+      case 5:
+        return true;
+      default:
+        return true;
+    }
+  }
+
   Future<void> _finish() async {
-    if (_selectedWeeks == null ||
-        _selectedDaysPerWeek == null ||
+    if (_numWeeks == null ||
+        _daysPerWeek == null ||
         blockName.trim().isEmpty ||
-        workouts.isEmpty) {
+        _workouts.isEmpty) {
       return;
     }
 
     // Workouts are stored only once. Day indexes correspond to the
     // template order rather than the final schedule.
     final List<WorkoutDraft> allWorkouts = [
-      for (final w in workouts)
+      for (final w in _workouts)
         WorkoutDraft(
           id: w.id,
           dayIndex: w.dayIndex,
@@ -294,8 +317,8 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     final block = CustomBlock(
       id: widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch,
       name: blockName,
-      numWeeks: _selectedWeeks!,
-      daysPerWeek: _selectedDaysPerWeek!,
+      numWeeks: _numWeeks!,
+      daysPerWeek: _daysPerWeek!,
       scheduleType: _scheduleType,
       coverImagePath: _coverImageUrl,
       workouts: allWorkouts,
@@ -398,50 +421,66 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
               constraints: const BoxConstraints(maxWidth: 600),
               child: Stepper(
                 currentStep: _currentStep,
-            onStepContinue: () {
-              if (_currentStep == 0) {
-                if (blockName.trim().isNotEmpty) {
-                  setState(() => _currentStep = 1);
-                }
-              } else if (_currentStep == 1) {
-                setState(() => _currentStep = 2);
-              } else if (_currentStep == 2) {
-                if (_selectedWeeks != null) {
-                  setState(() => _currentStep = 3);
-                }
-              } else if (_currentStep == 3) {
-                if (_selectedDaysPerWeek != null) {
-                  _createDrafts();
-                  setState(() => _currentStep = 4);
-                }
-              } else if (_currentStep == 4) {
-                setState(() => _currentStep = 5);
-              }
-            },
-          onStepCancel: () {
-            if (_currentStep > 0) {
-              setState(() => _currentStep -= 1);
-            }
-          },
-          controlsBuilder: (context, details) {
-            if (_currentStep < 5) {
-              return Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: details.onStepContinue,
-                    child: const Text('Next'),
-                  ),
-                  if (_currentStep > 0)
-                    TextButton(
-                      onPressed: details.onStepCancel,
-                      child: const Text('Back'),
-                    ),
-                ],
-              );
-            }
-            return const SizedBox.shrink();
-          },
-          steps: [
+                onStepContinue: () {
+                  final scheduleVisible =
+                      _uniqueCount == 2 && _daysPerWeek == 3;
+                  if (_currentStep == 0) {
+                    if (blockName.trim().isNotEmpty) {
+                      setState(() => _currentStep = 1);
+                    }
+                  } else if (_currentStep == 1) {
+                    setState(() => _currentStep = 2);
+                  } else if (_currentStep == 2) {
+                    if (_uniqueCount != null) {
+                      _initializeWorkouts();
+                      setState(() => _currentStep = 3);
+                    }
+                  } else if (_currentStep == 3) {
+                    if (_daysPerWeek != null) {
+                      setState(() => _currentStep = 4);
+                    }
+                  } else if (_currentStep == 4) {
+                    if (_numWeeks != null) {
+                      setState(() => _currentStep = scheduleVisible ? 5 : 5);
+                    }
+                  } else if (_currentStep == 5 && scheduleVisible) {
+                    setState(() => _currentStep = 6);
+                  }
+                },
+                onStepCancel: () {
+                  final scheduleVisible =
+                      _uniqueCount == 2 && _daysPerWeek == 3;
+                  if (_currentStep > 0) {
+                    if (!scheduleVisible && _currentStep == 5) {
+                      setState(() => _currentStep = 4);
+                    } else {
+                      setState(() => _currentStep -= 1);
+                    }
+                  }
+                },
+                controlsBuilder: (context, details) {
+                  final valid = _isCurrentStepValid();
+                  final scheduleVisible =
+                      _uniqueCount == 2 && _daysPerWeek == 3;
+                  final lastIndex = scheduleVisible ? 6 : 5;
+                  if (_currentStep < lastIndex) {
+                    return Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: valid ? details.onStepContinue : null,
+                          child: const Text('Next'),
+                        ),
+                        if (_currentStep > 0)
+                          TextButton(
+                            onPressed: details.onStepCancel,
+                            child: const Text('Back'),
+                          ),
+                      ],
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+                steps: [
             Step(
               title: const Text('Block name'),
               content: TextField(
@@ -483,62 +522,71 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
               isActive: _currentStep >= 1,
             ),
             Step(
-              title: const Text('How many weeks?'),
+              title: const Text('# Unique Workouts'),
               content: DropdownButton<int>(
-                value: _selectedWeeks,
-                hint: const Text('Select Weeks'),
-                items: List.generate(4, (i) => i + 3)
+                value: _uniqueCount,
+                hint: const Text('Select Count'),
+                items: List.generate(5, (i) => i + 2)
                     .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                     .toList(),
-                onChanged: (v) => setState(() => _selectedWeeks = v),
+                onChanged: (v) => setState(() => _uniqueCount = v),
               ),
               isActive: _currentStep >= 2,
             ),
             Step(
-              title: const Text('Workouts per week?'),
+              title: const Text('Days per Week'),
               content: DropdownButton<int>(
-                value: _selectedDaysPerWeek,
+                value: _daysPerWeek,
                 hint: const Text('Select Days'),
                 items: List.generate(5, (i) => i + 2)
                     .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                     .toList(),
-                onChanged: (v) => setState(() => _selectedDaysPerWeek = v),
+                onChanged: (v) => setState(() => _daysPerWeek = v),
               ),
               isActive: _currentStep >= 3,
             ),
             Step(
-              title: const Text('Schedule type'),
-              content: DropdownButton<String>(
-                value: _scheduleType,
-                items: [
-                  const DropdownMenuItem(value: 'standard', child: Text('Standard')),
-                  DropdownMenuItem(
-                    value: 'ab_alternate',
-                    enabled: _selectedDaysPerWeek == 3 && workouts.length == 2,
-                    child: const Text('A/B Alternate'),
-                  ),
-                ],
-                onChanged: (v) => setState(() => _scheduleType = v ?? 'standard'),
+              title: const Text('Block length (weeks)'),
+              content: DropdownButton<int>(
+                value: _numWeeks,
+                hint: const Text('Select Weeks'),
+                items: List.generate(4, (i) => i + 3)
+                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
+                    .toList(),
+                onChanged: (v) => setState(() => _numWeeks = v),
               ),
               isActive: _currentStep >= 4,
             ),
+            if (_uniqueCount == 2 && _daysPerWeek == 3)
+              Step(
+                title: const Text('Schedule type'),
+                content: DropdownButton<String>(
+                  value: _scheduleType,
+                  items: const [
+                    DropdownMenuItem(value: 'standard', child: Text('Standard')),
+                    DropdownMenuItem(value: 'ab_alternate', child: Text('A/B Alternate')),
+                  ],
+                  onChanged: (v) => setState(() => _scheduleType = v ?? 'standard'),
+                ),
+                isActive: _currentStep >= 5,
+              ),
             Step(
               title: Text('Workout ${_workoutIndex + 1}'),
               content: Column(
                 children: [
-                  if (workouts.isNotEmpty)
+                  if (_workouts.isNotEmpty)
                     SizedBox(
                       height: 400,
                       child: WorkoutBuilder(
-                        workout: workouts[_workoutIndex],
-                        allWorkouts: workouts,
+                        workout: _workouts[_workoutIndex],
+                        allWorkouts: _workouts,
                         currentIndex: _workoutIndex,
                         onSelectWorkout: (i) =>
                             setState(() => _workoutIndex = i),
-                        isLast: _workoutIndex == workouts.length - 1,
+                        isLast: _workoutIndex == _workouts.length - 1,
                         showDumbbellOption: true,
                         onComplete: () async {
-                          if (_workoutIndex < workouts.length - 1) {
+                          if (_workoutIndex < _workouts.length - 1) {
                             setState(() => _workoutIndex++);
                           } else {
                             await _finish();
@@ -555,7 +603,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                   ),
                 ],
               ),
-              isActive: _currentStep >= 5,
+              isActive: _currentStep >= (_uniqueCount == 2 && _daysPerWeek == 3 ? 6 : 5),
             ),
           ],
         ),
