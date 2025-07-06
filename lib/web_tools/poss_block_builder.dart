@@ -36,6 +36,8 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   int? _uniqueCount;
   int? _daysPerWeek;
   int? _numWeeks;
+  // Schedule type defaults to standard. The deprecated schedule selection step
+  // was removed so the value is fixed unless editing an existing block.
   String _scheduleType = 'standard';
   late List<CustomWorkout> _workouts;
   int _currentStep = 0;
@@ -79,7 +81,8 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           .toList();
       _uniqueCount = _workouts.length;
       _coverImageUrl = block.coverImagePath;
-      _currentStep = (_uniqueCount == 2 && _daysPerWeek == 3) ? 6 : 5;
+      // Editing an existing block jumps directly to the workout builder step.
+      _currentStep = 5;
     } else {
       _workouts = [];
     }
@@ -424,7 +427,6 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
               child: Stepper(
                 currentStep: _currentStep,
                 onStepContinue: () {
-                  final scheduleVisible = _uniqueCount == 2 && _daysPerWeek == 3;
                   if (_currentStep == 0) {
                     if (_nameCtrl.text.trim().isNotEmpty) {
                       setState(() => _currentStep = 1);
@@ -442,28 +444,18 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                     }
                   } else if (_currentStep == 4) {
                     if (_numWeeks != null) {
-                      setState(() => _currentStep = scheduleVisible ? 5 : 5);
+                      setState(() => _currentStep = 5);
                     }
-                  } else if (_currentStep == 5 && scheduleVisible) {
-                    setState(() => _currentStep = 6);
                   }
                 },
                 onStepCancel: () {
-                  final scheduleVisible =
-                      _uniqueCount == 2 && _daysPerWeek == 3;
                   if (_currentStep > 0) {
-                    if (!scheduleVisible && _currentStep == 5) {
-                      setState(() => _currentStep = 4);
-                    } else {
-                      setState(() => _currentStep -= 1);
-                    }
+                    setState(() => _currentStep -= 1);
                   }
                 },
                 controlsBuilder: (context, details) {
                   final valid = _isCurrentStepValid();
-                  final scheduleVisible =
-                      _uniqueCount == 2 && _daysPerWeek == 3;
-                  final lastIndex = scheduleVisible ? 6 : 5;
+                  const lastIndex = 5;
                   if (_currentStep < lastIndex) {
                     return Row(
                       children: [
@@ -557,19 +549,6 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
               ),
               isActive: _currentStep >= 4,
             ),
-            if (_uniqueCount == 2 && _daysPerWeek == 3)
-              Step(
-                title: const Text('Schedule type'),
-                content: DropdownButton<String>(
-                  value: _scheduleType,
-                  items: const [
-                    DropdownMenuItem(value: 'standard', child: Text('Standard')),
-                    DropdownMenuItem(value: 'ab_alternate', child: Text('A/B Alternate')),
-                  ],
-                  onChanged: (v) => setState(() => _scheduleType = v ?? 'standard'),
-                ),
-                isActive: _currentStep >= 5,
-              ),
             Step(
               title: Text('Workout ${_workoutIndex + 1}'),
               content: Column(
@@ -603,7 +582,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                   ),
                 ],
               ),
-              isActive: _currentStep >= (_uniqueCount == 2 && _daysPerWeek == 3 ? 6 : 5),
+              isActive: _currentStep >= 5,
             ),
           ],
         ),
