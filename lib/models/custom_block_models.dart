@@ -4,6 +4,7 @@ class CustomBlock {
   final int numWeeks;
   final int daysPerWeek;
   final bool isDraft;
+  final String scheduleType;
   final String? coverImagePath;
   final List<WorkoutDraft> workouts;
 
@@ -13,6 +14,7 @@ class CustomBlock {
     required this.numWeeks,
     required this.daysPerWeek,
     required this.workouts,
+    this.scheduleType = 'standard',
     this.coverImagePath,
     this.isDraft = false,
   });
@@ -26,6 +28,7 @@ class CustomBlock {
       daysPerWeek: data['daysPerWeek'] ?? 1,
       coverImagePath: data['coverImageUrl'] ?? data['coverImagePath'],
       isDraft: data['isDraft'] ?? false,
+      scheduleType: data['scheduleType'] ?? 'standard',
       workouts: workoutList.map<WorkoutDraft>((w) {
         List<dynamic> liftList = w['lifts'] ?? [];
         return WorkoutDraft(
