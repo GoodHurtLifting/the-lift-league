@@ -223,7 +223,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         _workouts.isEmpty) {
       return;
     }
-    final dist = WebCustomBlockService().previewDistribution(
+    final dist = WebCustomBlockService()._generateWebWorkoutDistribution(
       _workouts,
       _numWeeks!,
       _daysPerWeek!,
@@ -238,14 +238,13 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           child: ListView.builder(
             shrinkWrap: true,
             itemCount: dist.length,
-            itemBuilder: (context, index) {
-              final item = dist[index];
-              final w = item['workout'] as WorkoutDraft;
-              final week = item['week'] as int;
-              final day = (item['dayIndex'] as int) + 1;
+            itemBuilder: (_, i) {
+              final item = dist[i];
               return ListTile(
-                dense: true,
-                title: Text('Week $week, Day $day: ${w.name}'),
+                title: Text(
+                  'Week ${item['week']} – Day ${item['dayIndex'] + 1}: '
+                  '${(item['workout'] as WorkoutDraft).name}',
+                ),
               );
             },
           ),
