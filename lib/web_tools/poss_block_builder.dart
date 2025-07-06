@@ -33,8 +33,9 @@ class POSSBlockBuilder extends StatefulWidget {
 class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   final TextEditingController _nameCtrl = TextEditingController();
   String blockName = '';
-  int? numWeeks;
-  int? daysPerWeek;
+  int? _selectedWeeks;
+  int? _selectedDaysPerWeek;
+  String _scheduleType = 'standard';
   late List<WorkoutDraft> workouts;
   int _currentStep = 0;
   int _workoutIndex = 0;
@@ -48,8 +49,9 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       final block = widget.initialBlock!;
       blockName = block.name;
       _nameCtrl.text = blockName;
-      numWeeks = block.numWeeks;
-      daysPerWeek = block.daysPerWeek;
+      _selectedWeeks = block.numWeeks;
+      _selectedDaysPerWeek = block.daysPerWeek;
+      _scheduleType = block.scheduleType;
       final firstWeekWorkouts =
           block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
       workouts = firstWeekWorkouts
@@ -74,7 +76,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           )
           .toList();
       _coverImageUrl = block.coverImagePath;
-      _currentStep = 4;
+      _currentStep = 5;
     } else {
       workouts = [];
     }
@@ -91,7 +93,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   }
 
   void _createDrafts() {
-    final count = daysPerWeek ?? 0;
+    final count = _selectedDaysPerWeek ?? 0;
     final List<WorkoutDraft> newList = List.generate(
       count,
       (i) => WorkoutDraft(id: i, dayIndex: i, name: '', lifts: []),
@@ -109,7 +111,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       );
       return;
     }
-    if (workouts.isEmpty && (daysPerWeek ?? 0) > 0) {
+    if (workouts.isEmpty && (_selectedDaysPerWeek ?? 0) > 0) {
       _createDrafts();
     }
     final int id =
@@ -117,8 +119,9 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     final block = CustomBlock(
       id: id,
       name: blockName,
-      numWeeks: numWeeks ?? 1,
-      daysPerWeek: daysPerWeek ?? 1,
+      numWeeks: _selectedWeeks ?? 1,
+      daysPerWeek: _selectedDaysPerWeek ?? 1,
+      scheduleType: _scheduleType,
       coverImagePath: _coverImageUrl,
       workouts: workouts,
       isDraft: true,
@@ -165,6 +168,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       'name': block.name,
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
+      'scheduleType': block.scheduleType,
       'isDraft': block.isDraft,
       'coverImageUrl': imageUrl,
       'ownerId': user?.uid ?? '',
@@ -209,38 +213,78 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     // Blocks are saved for the signed-in user and globally for sharing.
   }
 
+  Future<void> _previewSchedule() async {
+    if (_selectedWeeks == null ||
+        _selectedDaysPerWeek == null ||
+        workouts.isEmpty) {
+      return;
+    }
+    final dist = WebCustomBlockService().previewDistribution(
+      workouts,
+      _selectedWeeks!,
+      _selectedDaysPerWeek!,
+      _scheduleType,
+    );
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Schedule Preview'),
+        content: SizedBox(
+          width: 300,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: dist.length,
+            itemBuilder: (context, index) {
+              final item = dist[index];
+              final w = item['workout'] as WorkoutDraft;
+              final week = item['week'] as int;
+              final day = (item['dayIndex'] as int) + 1;
+              return ListTile(
+                dense: true,
+                title: Text('Week $week, Day $day: ${w.name}'),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _finish() async {
-    if (numWeeks == null ||
-        daysPerWeek == null ||
+    if (_selectedWeeks == null ||
+        _selectedDaysPerWeek == null ||
         blockName.trim().isEmpty ||
         workouts.isEmpty) {
       return;
     }
 
-    final List<WorkoutDraft> allWorkouts = [];
-    int idCounter = 0;
-    for (var week = 0; week < (numWeeks ?? 0); week++) {
-      for (var day = 0; day < workouts.length; day++) {
-        final base = workouts[day];
-        final copiedLifts = base.lifts
-            .map((l) => LiftDraft(
-                  name: l.name,
-                  sets: l.sets,
-                  repsPerSet: l.repsPerSet,
-                  multiplier: l.multiplier,
-                  isBodyweight: l.isBodyweight,
-                  isDumbbellLift: l.isDumbbellLift,
-                ))
-            .toList();
-        allWorkouts.add(WorkoutDraft(
-          id: idCounter++,
-          dayIndex: week * workouts.length + day,
-          name: base.name,
-          lifts: copiedLifts,
-        ));
-      }
-    }
+    // Workouts are stored only once. Day indexes correspond to the
+    // template order rather than the final schedule.
+    final List<WorkoutDraft> allWorkouts = [
+      for (final w in workouts)
+        WorkoutDraft(
+          id: w.id,
+          dayIndex: w.dayIndex,
+          name: w.name,
+          lifts: [
+            for (final l in w.lifts)
+              LiftDraft(
+                name: l.name,
+                sets: l.sets,
+                repsPerSet: l.repsPerSet,
+                multiplier: l.multiplier,
+                isBodyweight: l.isBodyweight,
+                isDumbbellLift: l.isDumbbellLift,
+              ),
+          ],
+        )
+    ];
 
     if (FirebaseAuth.instance.currentUser == null) {
       final signedIn = await showWebSignInDialog(context);
@@ -250,8 +294,9 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     final block = CustomBlock(
       id: widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch,
       name: blockName,
-      numWeeks: numWeeks!,
-      daysPerWeek: daysPerWeek!,
+      numWeeks: _selectedWeeks!,
+      daysPerWeek: _selectedDaysPerWeek!,
+      scheduleType: _scheduleType,
       coverImagePath: _coverImageUrl,
       workouts: allWorkouts,
       isDraft: false,
@@ -361,14 +406,16 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
               } else if (_currentStep == 1) {
                 setState(() => _currentStep = 2);
               } else if (_currentStep == 2) {
-                if (numWeeks != null) {
+                if (_selectedWeeks != null) {
                   setState(() => _currentStep = 3);
                 }
               } else if (_currentStep == 3) {
-                if (daysPerWeek != null) {
+                if (_selectedDaysPerWeek != null) {
                   _createDrafts();
                   setState(() => _currentStep = 4);
                 }
+              } else if (_currentStep == 4) {
+                setState(() => _currentStep = 5);
               }
             },
           onStepCancel: () {
@@ -377,7 +424,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
             }
           },
           controlsBuilder: (context, details) {
-            if (_currentStep < 4) {
+            if (_currentStep < 5) {
               return Row(
                 children: [
                   ElevatedButton(
@@ -438,32 +485,49 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
             Step(
               title: const Text('How many weeks?'),
               content: DropdownButton<int>(
-                value: numWeeks,
+                value: _selectedWeeks,
                 hint: const Text('Select Weeks'),
                 items: List.generate(4, (i) => i + 3)
                     .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                     .toList(),
-                onChanged: (v) => setState(() => numWeeks = v),
+                onChanged: (v) => setState(() => _selectedWeeks = v),
               ),
               isActive: _currentStep >= 2,
             ),
             Step(
-              title: const Text('Days per week?'),
+              title: const Text('Workouts per week?'),
               content: DropdownButton<int>(
-                value: daysPerWeek,
+                value: _selectedDaysPerWeek,
                 hint: const Text('Select Days'),
                 items: List.generate(5, (i) => i + 2)
                     .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                     .toList(),
-                onChanged: (v) => setState(() => daysPerWeek = v),
+                onChanged: (v) => setState(() => _selectedDaysPerWeek = v),
               ),
               isActive: _currentStep >= 3,
             ),
             Step(
+              title: const Text('Schedule type'),
+              content: DropdownButton<String>(
+                value: _scheduleType,
+                items: [
+                  const DropdownMenuItem(value: 'standard', child: Text('Standard')),
+                  DropdownMenuItem(
+                    value: 'ab_alternate',
+                    enabled: _selectedDaysPerWeek == 3 && workouts.length == 2,
+                    child: const Text('A/B Alternate'),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _scheduleType = v ?? 'standard'),
+              ),
+              isActive: _currentStep >= 4,
+            ),
+            Step(
               title: Text('Workout ${_workoutIndex + 1}'),
-              content: workouts.isEmpty
-                  ? const SizedBox.shrink()
-                  : SizedBox(
+              content: Column(
+                children: [
+                  if (workouts.isNotEmpty)
+                    SizedBox(
                       height: 400,
                       child: WorkoutBuilder(
                         workout: workouts[_workoutIndex],
@@ -481,8 +545,17 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                           }
                         },
                       ),
-                    ),
-              isActive: _currentStep >= 4,
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _previewSchedule,
+                    child: const Text('Preview Schedule'),
+                  ),
+                ],
+              ),
+              isActive: _currentStep >= 5,
             ),
           ],
         ),
