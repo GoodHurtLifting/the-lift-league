@@ -86,3 +86,17 @@ ListTile(
 
 The auth listener on `POSSHomePage` then reloads the (now empty) block list,
 displaying the default POSS interface for guests.
+
+### Custom-Block Builder Flow (Web)
+1. Name
+2. Cover Image
+3. # Unique Workouts (2-6)
+4. Days per Week (2-6)
+5. Block Length (Weeks 3-6)
+6. Schedule Type (Standard / AB-Alternate)
+7. Build Workouts & Save
+
+The builder passes these values to
+`WebCustomBlockService.startBlockRun`, which calls
+`_generateWebWorkoutDistribution()` to create
+`weeks × daysPerWeek` workout instances.
