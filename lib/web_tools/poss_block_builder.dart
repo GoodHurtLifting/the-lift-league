@@ -32,6 +32,7 @@ class POSSBlockBuilder extends StatefulWidget {
 
 class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   final TextEditingController _nameCtrl = TextEditingController();
+  void _onNameChanged() => setState(() {});
   int? _uniqueCount;
   int? _daysPerWeek;
   int? _numWeeks;
@@ -46,6 +47,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   @override
   void initState() {
     super.initState();
+    _nameCtrl.addListener(_onNameChanged);
     if (widget.initialBlock != null) {
       final block = widget.initialBlock!;
       _nameCtrl.text = block.name;  // Only use the controller now
@@ -614,6 +616,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
 
   @override
   void dispose() {
+    _nameCtrl.removeListener(_onNameChanged);
     _nameCtrl.dispose();
     super.dispose();
   }
