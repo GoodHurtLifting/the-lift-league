@@ -93,8 +93,7 @@ displaying the default POSS interface for guests.
 3. # Unique Workouts (2-6)
 4. Days per Week (2-6)
 5. Block Length (Weeks 3-6)
-6. Schedule Type (Standard / AB-Alternate)
-7. Build Workouts & Save
+6. Build Workouts & Save
 
 The builder passes these values to
 `WebCustomBlockService.startBlockRun`, which calls
