@@ -91,7 +91,6 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
         final data = snapshot.data!;
         final progress = data.progress;
         final avgLift = data.avgLift;
-        final avgWorkout = data.avgWorkout;
         final trend = data.trend;
 
         return Column(
