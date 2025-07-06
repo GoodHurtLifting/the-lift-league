@@ -289,6 +289,18 @@ class WebCustomBlockService {
     }
   }
 
+  /// Public wrapper for [_generateWebWorkoutDistribution] so UI components
+  /// can preview schedules without duplicating the logic.
+  List<Map<String, dynamic>> previewDistribution(
+    List<CustomWorkout> workouts,
+    int weeks,
+    int daysPerWeek,
+    String scheduleType,
+  ) {
+    return _generateWebWorkoutDistribution(
+        workouts, weeks, daysPerWeek, scheduleType);
+  }
+
   /// Generates an ordered distribution of [workouts] for web-based blocks.
   ///
   /// The resulting list contains a map for each scheduled workout with the
