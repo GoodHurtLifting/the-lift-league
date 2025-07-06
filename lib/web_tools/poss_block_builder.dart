@@ -32,7 +32,6 @@ class POSSBlockBuilder extends StatefulWidget {
 
 class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   final TextEditingController _nameCtrl = TextEditingController();
-  String blockName = '';
   int? _uniqueCount;
   int? _daysPerWeek;
   int? _numWeeks;
@@ -44,46 +43,46 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   String? _coverImageUrl;
 
   @override
+  @override
   void initState() {
     super.initState();
     if (widget.initialBlock != null) {
       final block = widget.initialBlock!;
-      blockName = block.name;
-      _nameCtrl.text = blockName;
+      _nameCtrl.text = block.name;  // Only use the controller now
       _numWeeks = block.numWeeks;
       _daysPerWeek = block.daysPerWeek;
       _scheduleType = block.scheduleType;
       final firstWeekWorkouts =
-          block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
+      block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
       _workouts = firstWeekWorkouts
           .map(
             (w) => WorkoutDraft(
-              id: w.id,
-              dayIndex: w.dayIndex,
-              name: w.name,
-              lifts: w.lifts
-                  .map(
-                    (l) => LiftDraft(
-                      name: l.name,
-                      sets: l.sets,
-                      repsPerSet: l.repsPerSet,
-                      multiplier: l.multiplier,
-                      isBodyweight: l.isBodyweight,
-                      isDumbbellLift: l.isDumbbellLift,
-                    ),
-                  )
-                  .toList(),
+          id: w.id,
+          dayIndex: w.dayIndex,
+          name: w.name,
+          lifts: w.lifts
+              .map(
+                (l) => LiftDraft(
+              name: l.name,
+              sets: l.sets,
+              repsPerSet: l.repsPerSet,
+              multiplier: l.multiplier,
+              isBodyweight: l.isBodyweight,
+              isDumbbellLift: l.isDumbbellLift,
             ),
           )
+              .toList(),
+        ),
+      )
           .toList();
       _uniqueCount = _workouts.length;
       _coverImageUrl = block.coverImagePath;
-      _currentStep =
-          (_uniqueCount == 2 && _daysPerWeek == 3) ? 6 : 5;
+      _currentStep = (_uniqueCount == 2 && _daysPerWeek == 3) ? 6 : 5;
     } else {
       _workouts = [];
     }
   }
+
 
   Future<void> _pickCoverImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -109,7 +108,8 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   }
 
   Future<void> _saveDraft() async {
-    if (blockName.trim().isEmpty) {
+    final blockName = _nameCtrl.text.trim();
+    if (blockName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a block name')),
       );
@@ -223,7 +223,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         _workouts.isEmpty) {
       return;
     }
-    final dist = WebCustomBlockService()._generateWebWorkoutDistribution(
+    final dist = WebCustomBlockService().previewDistribution(
       _workouts,
       _numWeeks!,
       _daysPerWeek!,
@@ -262,7 +262,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   bool _isCurrentStepValid() {
     switch (_currentStep) {
       case 0:
-        return blockName.trim().isNotEmpty;
+        return _nameCtrl.text.trim().isNotEmpty;
       case 1:
         return true;
       case 2:
@@ -279,9 +279,10 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   }
 
   Future<void> _finish() async {
+    final blockName = _nameCtrl.text.trim();
     if (_numWeeks == null ||
         _daysPerWeek == null ||
-        blockName.trim().isEmpty ||
+        blockName.isEmpty ||
         _workouts.isEmpty) {
       return;
     }
@@ -421,10 +422,9 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
               child: Stepper(
                 currentStep: _currentStep,
                 onStepContinue: () {
-                  final scheduleVisible =
-                      _uniqueCount == 2 && _daysPerWeek == 3;
+                  final scheduleVisible = _uniqueCount == 2 && _daysPerWeek == 3;
                   if (_currentStep == 0) {
-                    if (blockName.trim().isNotEmpty) {
+                    if (_nameCtrl.text.trim().isNotEmpty) {
                       setState(() => _currentStep = 1);
                     }
                   } else if (_currentStep == 1) {
@@ -480,16 +480,15 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                   return const SizedBox.shrink();
                 },
                 steps: [
-            Step(
-              title: const Text('Block name'),
-              content: TextField(
-                controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Name'),
-                onChanged: (v) => blockName = v,
-                maxLength: 14,
-              ),
-              isActive: _currentStep >= 0,
-            ),
+                  Step(
+                    title: const Text('Block name'),
+                    content: TextField(
+                      controller: _nameCtrl,
+                      decoration: const InputDecoration(labelText: 'Name'),
+                      maxLength: 14,
+                    ),
+                    isActive: _currentStep >= 0,
+                  ),
             Step(
               title: const Text('Cover image'),
               content: Column(
