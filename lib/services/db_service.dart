@@ -806,6 +806,7 @@ class DBService {
       coverImagePath: blockRow['coverImagePath'] as String?,
       workouts: workouts,
       isDraft: (blockRow['isDraft'] as int) == 1,
+      scheduleType: 'standard',
     );
   }
 

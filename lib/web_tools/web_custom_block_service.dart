@@ -66,6 +66,7 @@ class WebCustomBlockService {
       'name': block.name,
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
+      'scheduleType': block.scheduleType,
       'isDraft': block.isDraft,
       'coverImageUrl': imageUrl,
       'ownerId': user.uid,
@@ -138,26 +139,35 @@ class WebCustomBlockService {
       'runNumber': runNumber,
     });
 
-    for (int wIndex = 0; wIndex < block.workouts.length; wIndex++) {
-      final workout = block.workouts[wIndex];
-      final workoutRef =
-          runRef.collection('workouts').doc(wIndex.toString());
+    final dist = _generateWebWorkoutDistribution(
+        block.workouts,
+        block.numWeeks,
+        block.daysPerWeek,
+        block.scheduleType);
+
+    for (int i = 0; i < dist.length; i++) {
+      final item = dist[i];
+      final workout = item['workout'] as CustomWorkout;
+      final week = item['week'] as int;
+      final dayIndex = item['dayIndex'] as int;
+
+      final workoutRef = runRef.collection('workouts').doc(i.toString());
       await workoutRef.set({
         'name': workout.name,
-        'dayIndex': workout.dayIndex,
+        'week': week,
+        'dayIndex': dayIndex,
       });
 
-      await runRef.collection('workout_totals').doc(wIndex.toString()).set({
+      await runRef.collection('workout_totals').doc(i.toString()).set({
         'workoutWorkload': 0.0,
         'workoutScore': 0.0,
-        // Store metadata so totals can be updated later
         'runNumber': runNumber,
         'blockId': block.id,
       });
 
-      for (int lIndex = 0; lIndex < workout.lifts.length; lIndex++) {
-        final lift = workout.lifts[lIndex];
-        await workoutRef.collection('lifts').doc(lIndex.toString()).set({
+      for (int l = 0; l < workout.lifts.length; l++) {
+        final lift = workout.lifts[l];
+        await workoutRef.collection('lifts').doc(l.toString()).set({
           'name': lift.name,
           'sets': lift.sets,
           'repsPerSet': lift.repsPerSet,
