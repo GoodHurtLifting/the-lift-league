@@ -146,14 +146,13 @@ class WebCustomBlockService {
         block.scheduleType);
 
     for (int i = 0; i < dist.length; i++) {
-      final item = dist[i];
-      final workout = item['workout'] as CustomWorkout;
-      final week = item['week'] as int;
-      final dayIndex = item['dayIndex'] as int;
+      final CustomWorkout w = dist[i]['workout'];
+      final int week = dist[i]['week'];
+      final int dayIndex = dist[i]['dayIndex'];
 
       final workoutRef = runRef.collection('workouts').doc(i.toString());
       await workoutRef.set({
-        'name': workout.name,
+        'name': w.name,
         'week': week,
         'dayIndex': dayIndex,
       });
@@ -165,8 +164,8 @@ class WebCustomBlockService {
         'blockId': block.id,
       });
 
-      for (int l = 0; l < workout.lifts.length; l++) {
-        final lift = workout.lifts[l];
+      for (int l = 0; l < w.lifts.length; l++) {
+        final lift = w.lifts[l];
         await workoutRef.collection('lifts').doc(l.toString()).set({
           'name': lift.name,
           'sets': lift.sets,
