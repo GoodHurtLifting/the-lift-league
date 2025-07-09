@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:lift_league/services/performance_service.dart';
+import 'package:lift_league/services/momentum_service.dart';
 
 class MomentumMeter extends StatefulWidget {
   final String userId;
@@ -17,7 +17,7 @@ class MomentumMeter extends StatefulWidget {
 }
 
 class _MomentumMeterState extends State<MomentumMeter> {
-  final PerformanceService _service = PerformanceService();
+  final MomentumService _service = MomentumService();
 
   late final StreamController<double> _momentumController;
   Timer? _timer;

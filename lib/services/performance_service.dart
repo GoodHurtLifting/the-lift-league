@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:lift_league/services/db_service.dart';
+import 'package:lift_league/services/momentum_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// ─────────────────────────────────────────────────────────
@@ -94,23 +95,11 @@ class PerformanceService {
   }
 
   // ──────────────────  MOMENTUM  ──────────────────
-  /// 0–100 % based on days since last completed workout (28-day decay).
-  Future<double> momentumPercent({required String userId}) async {
-    final db  = await _db.database;
-    final res = await db.rawQuery('''
-      SELECT MAX(endTime) AS lastCompleted
-        FROM workout_instances
-       WHERE userId = ? AND completed = 1;
-    ''', [userId]);
+  final MomentumService _momentum = MomentumService();
 
-    final last = res.first['lastCompleted'] as String?;
-    if (last == null) return 0;
-
-    final lastDt  = DateTime.parse(last);
-    final daysAgo = DateTime.now().difference(lastDt).inDays;
-    if (daysAgo >= 28) return 0;
-
-    return ((28 - daysAgo) / 28) * 100;     // linear decay
+  /// 0–100 % based on recent workout history.
+  Future<double> momentumPercent({required String userId}) {
+    return _momentum.momentumPercent(userId: userId);
   }
 
   // ──────────────────  EFFICIENCY  ──────────────────
