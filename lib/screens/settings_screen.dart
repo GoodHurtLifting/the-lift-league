@@ -83,6 +83,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _updateAllCheckInsPublic(bool isPublic) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final query = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('timeline_entries')
+        .where('type', isEqualTo: 'checkin')
+        .get();
+
+    final batch = FirebaseFirestore.instance.batch();
+    for (final doc in query.docs) {
+      batch.update(doc.reference, {'public': isPublic});
+    }
+
+    await batch.commit();
+  }
+
   Future<void> _updateRestSoundPref(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('playRestSound', value);
@@ -385,9 +404,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeColor: Colors.green,
             title: const Text('Show Check-In Stats', style: TextStyle(color: Colors.white)),
             value: showCheckInInfo,
-            onChanged: (val) {
-              setState(() => showCheckInInfo = val);
+              onChanged: (val) {
+                setState(() => showCheckInInfo = val);
               _updatePrivacy('showCheckInInfo', val);
+              _updateAllCheckInsPublic(val);
             },
           ),
           const Divider(color: Colors.white54),
@@ -399,5 +419,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
-  }
-}
+  }}
