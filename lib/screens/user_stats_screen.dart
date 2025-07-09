@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/widgets/lifetime_stats.dart';
 import 'package:lift_league/widgets/badge_display.dart';
 import 'package:lift_league/widgets/big_three_prs.dart';
@@ -92,12 +93,19 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
     return _defaultLayout;
   }
 
-  List<Widget> _buildWidgets(List<String> layout, Map<String, dynamic> userData) {
+  List<Widget> _buildWidgets(
+      List<String> layout, Map<String, dynamic> userData, bool isOwner) {
     final activeBlockId =
         widget.blockId ?? userData['activeBlockInstanceId']?.toString();
     final widgets = <Widget>[];
     bool shownNoBlockMsg = false;
     for (final id in layout) {
+      if (!isOwner &&
+          id != 'lifetimeStats' &&
+          id != 'bigThreePrs' &&
+          id != 'badgeDisplay') {
+        continue;
+      }
       switch (id) {
         case 'lifetimeStats':
           widgets.add(LifetimeStats(userId: widget.userId));
@@ -233,6 +241,8 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
               final layout = layoutSnap.data!;
+              final isOwner =
+                  widget.userId == FirebaseAuth.instance.currentUser?.uid;
               return SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -260,7 +270,7 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    ..._buildWidgets(layout, userData),
+                    ..._buildWidgets(layout, userData, isOwner),
                   ],
                 ),
               );
