@@ -404,10 +404,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             activeColor: Colors.green,
             title: const Text('Show Check-In Stats', style: TextStyle(color: Colors.white)),
             value: showCheckInInfo,
-              onChanged: (val) {
-                setState(() => showCheckInInfo = val);
+            onChanged: (val) async {
+              setState(() => showCheckInInfo = val);
               _updatePrivacy('showCheckInInfo', val);
-              _updateAllCheckInsPublic(val);
+              await _updateAllCheckInsPublic(val);
             },
           ),
           const Divider(color: Colors.white54),
@@ -418,5 +418,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
-  }}
+    );  }}
