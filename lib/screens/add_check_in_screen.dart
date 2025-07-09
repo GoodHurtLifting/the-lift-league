@@ -87,6 +87,7 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
     final userId = FirebaseAuth.instance.currentUser!.uid;
     final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
     final userData = userDoc.data() ?? {};
+    final bool isPublic = userData['showCheckInInfo'] ?? true;
     final now = DateTime.now();
     final monthKey = "${now.year}-${now.month.toString().padLeft(2, '0')}";
 
@@ -152,6 +153,7 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
       "displayName": userData['displayName'] ?? 'Lifter',
       "title": userData['title'] ?? '',
       "profileImageUrl": userData['profileImageUrl'] ?? '',
+      "public": isPublic,
     });
 
     Navigator.pop(context, true); // Done!
