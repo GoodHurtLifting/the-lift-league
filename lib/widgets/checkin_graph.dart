@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CheckInGraph extends StatefulWidget {
   final String userId;
@@ -128,13 +129,18 @@ class _CheckInGraphState extends State<CheckInGraph> {
   }
 
   Future<Map<String, List<FlSpot>>> _fetchData() async {
-    final snap = await FirebaseFirestore.instance
+    final currentUser = FirebaseAuth.instance.currentUser?.uid;
+    Query<Map<String, dynamic>> query = FirebaseFirestore.instance
         .collection('users')
         .doc(widget.userId)
         .collection('timeline_entries')
-        .where('type', isEqualTo: 'checkin')
-        .orderBy('timestamp')
-        .get();
+        .where('type', isEqualTo: 'checkin');
+
+    if (widget.userId != currentUser) {
+      query = query.where('public', isEqualTo: true);
+    }
+
+    final snap = await query.orderBy('timestamp').get();
 
     final weight = <FlSpot>[];
     final bodyFat = <FlSpot>[];

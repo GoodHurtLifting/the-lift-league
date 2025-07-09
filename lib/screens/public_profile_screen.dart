@@ -102,12 +102,18 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
   }
 
   Future<void> _checkBeforeAfterAvailability() async {
-    final snap = await FirebaseFirestore.instance
+    Query<Map<String, dynamic>> query = FirebaseFirestore.instance
         .collection('users')
         .doc(widget.userId)
         .collection('timeline_entries')
-        .where('type', isEqualTo: 'checkin')
-        .get();
+        .where('type', isEqualTo: 'checkin');
+
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (widget.userId != currentUserId) {
+      query = query.where('public', isEqualTo: true);
+    }
+
+    final snap = await query.get();
     final count = snap.docs.where((d) {
       final data = d.data();
       final urls = data['imageUrls'];
