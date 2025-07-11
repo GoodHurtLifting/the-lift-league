@@ -41,52 +41,39 @@ class BadgeService {
 
 
   // ─────────────────────────────────────────────────────────────────────
-  // 👩‍🍳 Lunch Lady Badge – lift PR milestones (135/225/315/405)
+  // 👩‍🍳 Lunch Lady Badge – new personal best on a big 3 lift
   // ─────────────────────────────────────────────────────────────────────
   Future<List<Map<String, dynamic>>> checkAndAwardLunchLadyBadge({
     required String userId,
     required String liftName,
     required double weight,
   }) async {
-    final badgeRef = _firestore.collection('users').doc(userId).collection('badges');
-    List<Map<String, dynamic>> newlyEarned = [];
+    // Only award for meaningful weights
+    if (weight <= 0) return [];
 
-    final List<Map<String, dynamic>> liftMilestones = [
-      {'lift': 'Bench Press', 'thresholds': [135, 225, 315]},
-      {'lift': 'Squats', 'thresholds': [225, 315, 405]},
-      {'lift': 'Deadlift', 'thresholds': [225, 315, 405]},
-    ];
+    final badgeRef =
+        _firestore.collection('users').doc(userId).collection('badges');
+    final badgeId =
+        'lunch_lady_${liftName.toLowerCase().replaceAll(' ', '_')}_${weight.floor()}';
 
-    for (final lift in liftMilestones) {
-      if (liftName != lift['lift']) continue;
+    final badgeDoc = await badgeRef.doc(badgeId).get();
+    if (badgeDoc.exists) return [];
 
-      for (final int milestone in lift['thresholds']) {
-        if (weight >= milestone) {
-          final badgeId = 'lunch_lady_${liftName.toLowerCase().replaceAll(' ', '_')}_$milestone';
-          final badgeDoc = await badgeRef.doc(badgeId).get();
+    final badgeData = {
+      'badgeId': badgeId,
+      'name': 'Lunch Lady',
+      'description': '$liftName PR - ${weight.toStringAsFixed(0)} lbs!',
+      'image': 'lunchLady_01.png',
+    };
 
-          if (!badgeDoc.exists) {
-            final badgeData = {
-              'badgeId': badgeId,
-              'name': 'Lunch Lady',
-              'description': '$liftName for $milestone lbs — that’s a stack of plates.',
-              'image': 'lunchLady_01.png',
-            };
+    await badgeRef.doc(badgeId).set({
+      ...badgeData,
+      'iconPath': 'assets/images/badges/lunchLadyIcon_01.png',
+      'imagePath': 'assets/images/badges/lunchLady_01.png',
+      'unlockDate': Timestamp.now(),
+    });
 
-            await badgeRef.doc(badgeId).set({
-              ...badgeData,
-              'iconPath': 'assets/images/badges/lunchLadyIcon_01.png',
-              'imagePath': 'assets/images/badges/lunchLady_01.png',
-              'unlockDate': Timestamp.now(),
-            });
-
-            newlyEarned.add(badgeData);
-          }
-        }
-      }
-    }
-
-    return newlyEarned;
+    return [badgeData];
   }
 
   // ─────────────────────────────────────────────────────────────────────

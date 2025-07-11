@@ -6,6 +6,7 @@ import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/services/badge_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/services/pr_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LiftEntry extends StatefulWidget {
   final int liftIndex;
@@ -147,19 +148,31 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
       final weights = _weightControllers
           .map((c) => double.tryParse(c.text) ?? 0)
           .toList();
-      final maxWeight = weights.isNotEmpty ? weights.reduce((a, b) => a > b ? a : b).toDouble() : 0.0;
+      final maxWeight =
+          weights.isNotEmpty ? weights.reduce((a, b) => a > b ? a : b).toDouble() : 0.0;
 
       if (maxWeight > 0) {
-        await BadgeService().checkAndAwardLunchLadyBadge(
-          userId: userId,
-          liftName: liftName,
-          weight: maxWeight,
-        );
-        await updateBig3PR(
-          userId: userId,
-          liftName: liftName,
-          weightUsed: maxWeight,
-        );
+        // Fetch existing PR to determine if this is a new personal best
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('big3_prs')
+            .doc(liftName)
+            .get();
+
+        final currentBest = (doc.data()?['bestWeight'] ?? 0).toDouble();
+        if (maxWeight > currentBest) {
+          await BadgeService().checkAndAwardLunchLadyBadge(
+            userId: userId,
+            liftName: liftName,
+            weight: maxWeight,
+          );
+          await updateBig3PR(
+            userId: userId,
+            liftName: liftName,
+            weightUsed: maxWeight,
+          );
+        }
       }
     }
   }
