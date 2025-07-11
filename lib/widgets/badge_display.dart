@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:intl/intl.dart';
-import 'package:lift_league/services/user_stats_service.dart';
 import 'package:lift_league/services/pr_service.dart';
 
 class BadgeDisplay extends StatelessWidget {
@@ -65,9 +64,10 @@ class BadgeDisplay extends StatelessWidget {
       counts[name] = (counts[name] ?? 0) + 1;
     }
     // Stats used for progress calculations
-    final totalLbs = await UserStatsService().getTotalLbsLifted(userId);
     final userDoc = await firestore.collection('users').doc(userId).get();
-    final likesGiven = (userDoc.data()?['likesGiven'] ?? 0) as int;
+    final userData = userDoc.data() ?? {};
+    final totalLbs = (userData['totalLbsLifted'] ?? 0).toDouble();
+    final likesGiven = (userData['likesGiven'] ?? 0) as int;
     final prs = await getBig3PRs(userId);
     double maxPr = 0;
     for (final w in prs.values) {
