@@ -24,7 +24,7 @@ class BadgeDisplay extends StatelessWidget {
         {
           'name': 'Punch Card',
           'icon': 'assets/images/badges/punchCard_01.png',
-          'description': '8 weeks of 3+ workouts'
+          'description': '4 weeks of 3+ workouts'
         },
         {
           'name': 'Hype Man',
@@ -74,15 +74,16 @@ class BadgeDisplay extends StatelessWidget {
       maxPr = max(maxPr, w);
     }
 
-    // Punch card streak
+    // Punch card progress (4-week streak, up to 12 workouts)
     final now = DateTime.now();
-    final eightWeeksAgo = now.subtract(const Duration(days: 56));
+    final startOfCurrentWeek = now.subtract(Duration(days: now.weekday - 1));
+    final fourWeeksStart = startOfCurrentWeek.subtract(const Duration(days: 21));
     final workoutsSnap = await firestore
         .collection('users')
         .doc(userId)
         .collection('workouts')
         .where('completed', isEqualTo: true)
-        .where('timestamp', isGreaterThan: Timestamp.fromDate(eightWeeksAgo))
+        .where('timestamp', isGreaterThan: Timestamp.fromDate(fourWeeksStart))
         .get();
 
     final Map<String, int> weeklyCounts = {};
@@ -92,23 +93,25 @@ class BadgeDisplay extends StatelessWidget {
       weeklyCounts[isoWeek] = (weeklyCounts[isoWeek] ?? 0) + 1;
     }
 
-// Build list of the last 8 ISO weeks (ending with this week), newest to oldest
-    List<String> last8Weeks = [];
-    DateTime cursor = now;
-    for (int i = 0; i < 8; i++) {
-      last8Weeks.add(_isoWeekKey(cursor));
-      cursor = cursor.subtract(const Duration(days: 7));
+    List<String> weekKeys = [];
+    DateTime cursor = fourWeeksStart;
+    for (int i = 0; i < 4; i++) {
+      weekKeys.add(_isoWeekKey(cursor));
+      cursor = cursor.add(const Duration(days: 7));
     }
 
-// Streak: count consecutive weeks with >=3 workouts, starting from this week, max 8
-    int streak = 0;
-    for (final weekKey in last8Weeks) {
-      if ((weeklyCounts[weekKey] ?? 0) >= 3) {
-        streak++;
+    int punchProgress = 0;
+    for (int i = 0; i < 3; i++) {
+      final count = weeklyCounts[weekKeys[i]] ?? 0;
+      if (count >= 3) {
+        punchProgress += 3;
       } else {
-        break; // streak broken
+        punchProgress = 0;
       }
     }
+    final currentWeekCount = weeklyCounts[weekKeys[3]] ?? 0;
+    punchProgress += currentWeekCount.clamp(0, 3);
+    punchProgress = punchProgress.clamp(0, 12);
 
     // Workouts logged this month (for Daily Driver progress)
     final startOfMonth = DateTime(now.year, now.month, 1);
@@ -127,7 +130,7 @@ class BadgeDisplay extends StatelessWidget {
       'totalLbs': totalLbs,
       'likesGiven': likesGiven,
       'maxPr': maxPr,
-      'streak': streak,
+      'punchProgress': punchProgress,
       'monthWorkouts': monthWorkouts,
     };
   }
@@ -148,7 +151,7 @@ class BadgeDisplay extends StatelessWidget {
         final totalLbs = data['totalLbs'] as double;
         final likesGiven = data['likesGiven'] as int;
         final maxPr = data['maxPr'] as double;
-        final streak = data['streak'] as int;
+        final punchProgress = data['punchProgress'] as int;
         final monthWorkouts = data['monthWorkouts'] as int;
 
         // Build display list with progress values
@@ -165,7 +168,7 @@ class BadgeDisplay extends StatelessWidget {
               progress = (maxPr / 405).clamp(0.0, 1.0);
               break;
             case 'Punch Card':
-              progress = (streak / 8).clamp(0.0, 1.0);
+              progress = (punchProgress / 12).clamp(0.0, 1.0);
               break;
             case 'Hype Man':
               progress = ((likesGiven % 100) / 100).clamp(0.0, 1.0);
