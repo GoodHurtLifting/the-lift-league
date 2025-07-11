@@ -77,18 +77,18 @@ class BadgeService {
   }
 
   // ─────────────────────────────────────────────────────────────────────
-  // 🕳️ Punch Card Badge – 8 consecutive weeks with ≥3 workouts
+  // 🕳️ Punch Card Badge – 4 consecutive weeks with ≥3 workouts
   // ─────────────────────────────────────────────────────────────────────
   Future<List<Map<String, dynamic>>> checkAndAwardPunchCardBadge(String userId) async {
     final now = DateTime.now();
-    final eightWeeksAgo = now.subtract(const Duration(days: 56));
+    final fourWeeksAgo = now.subtract(const Duration(days: 28));
 
     final workoutsSnap = await _firestore
         .collection('users')
         .doc(userId)
         .collection('workouts')
         .where('completed', isEqualTo: true)
-        .where('timestamp', isGreaterThan: Timestamp.fromDate(eightWeeksAgo))
+        .where('timestamp', isGreaterThan: Timestamp.fromDate(fourWeeksAgo))
         .get();
 
     final Map<String, int> weeklyCounts = {};
@@ -103,14 +103,14 @@ class BadgeService {
     for (String week in sortedWeeks.reversed) {
       if (weeklyCounts[week]! >= 3) {
         streak++;
-        if (streak == 8) break;
+        if (streak == 4) break;
       } else {
         break;
       }
     }
 
-    if (streak == 8) {
-      // Check for Punch Card badge earned in the past 56 days
+    if (streak == 4) {
+      // Check for Punch Card badge earned in the past 28 days
       final recentBadgesSnap = await _firestore
           .collection('users')
           .doc(userId)
@@ -122,8 +122,8 @@ class BadgeService {
 
       if (recentBadgesSnap.docs.isNotEmpty) {
         final lastUnlock = (recentBadgesSnap.docs.first['unlockDate'] as Timestamp).toDate();
-        if (now.difference(lastUnlock).inDays < 56) {
-          return []; // already earned in this 8-week window
+        if (now.difference(lastUnlock).inDays < 28) {
+          return []; // already earned in this 4-week window
         }
       }
 
@@ -131,7 +131,7 @@ class BadgeService {
       final badgeData = {
         'badgeId': badgeId,
         'name': 'Punch Card',
-        'description': '8 straight weeks of consistency. Clock in, clock out.',
+        'description': '4 straight weeks of consistency. Clock in, clock out.',
         'image': 'punchCard_01.png',
       };
 
