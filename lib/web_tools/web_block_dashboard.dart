@@ -9,6 +9,7 @@ import 'web_sign_in_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 
 class WebBlockDashboard extends StatefulWidget {
   final CustomBlock block;
@@ -329,6 +330,10 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/poss'),
+        ),
         title: Text(widget.block.name),
         actions: [
           if (_runId != null)
