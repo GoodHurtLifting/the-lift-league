@@ -338,6 +338,7 @@ class WebCustomBlockService {
           final workoutIndex = pattern[day % pattern.length];
           distribution.add({
             'workout': workouts[workoutIndex],
+            'workoutIndex': workoutIndex,
             'week': week + 1,
             'dayIndex': day,
           });
