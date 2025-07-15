@@ -30,6 +30,8 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
   final Map<String, double> _bestScoresByType = {};
   double _blockScore = 0.0;
 
+
+
   @override
   void initState() {
     super.initState();
@@ -176,49 +178,8 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
     await _loadRuns();
   }
 
-  Widget _buildWeekSection(int week) {
-    final List<Widget> dayTiles = [];
-    for (int day = 0; day < widget.block.daysPerWeek; day++) {
-      final index = week * widget.block.daysPerWeek + day;
-      if (index >= widget.block.workouts.length) break;
-      final workout = widget.block.workouts[index];
-      dayTiles.add(
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: ExpansionTile(
-            title: Text('Day ${day + 1}: ${workout.name}'),
-            children: [
-              ...workout.lifts.map(
-                (l) => ListTile(
-                  title: Text(l.name),
-                  subtitle: Text('${l.sets} x ${l.repsPerSet}'),
-                ),
-              ),
-              if (_runId != null)
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WebWorkoutLog(
-                            runId: _runId!,
-                            workoutIndex: index,
-                            block: widget.block,
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('Log Workout'),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      );
-    }
+  Widget _buildWeekSection(int week, List<Map<String, dynamic>> distribution) {
+    final weekDays = distribution.where((d) => d['week'] == week + 1).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,10 +191,48 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        ...dayTiles,
+        ...weekDays.map((d) {
+          final workout = d['workout'] as CustomWorkout;
+          final day = d['dayIndex'] as int;
+          return Card(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: ExpansionTile(
+              title: Text('Day ${day + 1}: ${workout.name}'),
+              children: [
+                ...workout.lifts.map(
+                      (l) => ListTile(
+                    title: Text(l.name),
+                    subtitle: Text('${l.sets} x ${l.repsPerSet}'),
+                  ),
+                ),
+                if (_runId != null)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => WebWorkoutLog(
+                              runId: _runId!,
+                              workoutIndex: day, // You might need a mapping here!
+                              block: widget.block,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Log Workout'),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
+
 
   Widget _buildHeader() {
     return Container(
@@ -311,6 +310,13 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
   }
 
   Widget _buildDashboard() {
+    final distribution = WebCustomBlockService().previewDistribution(
+      widget.block.workouts,
+      widget.block.numWeeks,
+      widget.block.daysPerWeek,
+      widget.block.scheduleType,
+    );
+
     return Column(
       children: [
         _buildHeader(),
@@ -318,13 +324,14 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
           child: ListView(
             children: [
               for (int week = 0; week < widget.block.numWeeks; week++)
-                _buildWeekSection(week),
+                _buildWeekSection(week, distribution),
             ],
           ),
         ),
       ],
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
