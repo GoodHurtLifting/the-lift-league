@@ -29,12 +29,19 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
   int _currentRunNumber = 1;
   final Map<String, double> _bestScoresByType = {};
   double _blockScore = 0.0;
+  late final List<Map<String, dynamic>> _schedule;
 
   @override
   void initState() {
     super.initState();
     debugPrint('[DEBUG] BlockDashboard opened with blockId = ${widget.block.id}');
     _runId = widget.runId;
+    _schedule = WebCustomBlockService().previewDistribution(
+      widget.block.workouts,
+      widget.block.numWeeks,
+      widget.block.daysPerWeek,
+      widget.block.scheduleType,
+    );
     _loadRuns();
   }
 
@@ -147,8 +154,8 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
 
     for (final doc in snap.docs) {
       final index = int.tryParse(doc.id) ?? 0;
-      if (index >= widget.block.workouts.length) continue;
-      final name = widget.block.workouts[index].name;
+      if (index >= _schedule.length) continue;
+      final name = (_schedule[index]['workout'] as WorkoutDraft).name;
       final score = (doc.data()['workoutScore'] as num?)?.toDouble() ?? 0.0;
 
       if (!_bestScoresByType.containsKey(name) || score > _bestScoresByType[name]!) {
@@ -180,8 +187,8 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
     final List<Widget> dayTiles = [];
     for (int day = 0; day < widget.block.daysPerWeek; day++) {
       final index = week * widget.block.daysPerWeek + day;
-      if (index >= widget.block.workouts.length) break;
-      final workout = widget.block.workouts[index];
+      if (index >= _schedule.length) break;
+      final workout = _schedule[index]['workout'] as WorkoutDraft;
       dayTiles.add(
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -206,6 +213,7 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
                             runId: _runId!,
                             workoutIndex: index,
                             block: widget.block,
+                            workout: workout,
                           ),
                         ),
                       );

@@ -9,7 +9,14 @@ class WebWorkoutLog extends StatefulWidget {
   final String runId;
   final int workoutIndex;
   final CustomBlock block;
-  const WebWorkoutLog({super.key, required this.runId, required this.workoutIndex, required this.block});
+  final WorkoutDraft workout;
+  const WebWorkoutLog({
+    super.key,
+    required this.runId,
+    required this.workoutIndex,
+    required this.block,
+    required this.workout,
+  });
 
   @override
   State<WebWorkoutLog> createState() => _WebWorkoutLogState();
@@ -32,7 +39,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
   @override
   void initState() {
     super.initState();
-    workout = widget.block.workouts[widget.workoutIndex];
+    workout = widget.workout;
     _loadCompletion();
   }
 
