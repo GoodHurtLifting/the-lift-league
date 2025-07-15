@@ -13,8 +13,6 @@ class WebLiftEntry extends StatefulWidget {
   /// contain `reps` and `weight` keys.
   final List<Map<String, dynamic>> previousEntries;
 
-  /// A recommended weight to display instead of previous weight when provided.
-  final double? recommendedWeight;
 
   /// Callback triggered whenever a field changes. Returns lists of reps and
   /// weights strings corresponding to each set.
@@ -25,7 +23,6 @@ class WebLiftEntry extends StatefulWidget {
     required this.liftIndex,
     required this.lift,
     this.previousEntries = const [],
-    this.recommendedWeight,
     this.onChanged,
   });
 
@@ -101,14 +98,10 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     child: Text('Prev Reps', textAlign: TextAlign.center),
                   ),
                   const SizedBox.shrink(),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      widget.recommendedWeight != null
-                          ? 'Recommended'
-                          : 'Prev Weight',
-                      textAlign: TextAlign.center,
-                    ),
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child:
+                        Text('Prev Weight', textAlign: TextAlign.center),
                   ),
                 ],
               ),
@@ -127,9 +120,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                       : prevWeightNum.toStringAsFixed(1);
                 }
 
-                final recWeight = widget.recommendedWeight;
-                final recText =
-                    recWeight != null ? recWeight.toStringAsFixed(0) : prevWeight;
+                final recText = prevWeight;
 
                 return TableRow(
                   children: [
