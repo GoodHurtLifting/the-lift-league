@@ -193,7 +193,7 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
         ),
         ...weekDays.map((d) {
           final workout = d['workout'] as CustomWorkout;
-          final workoutIndex = d['workoutIndex'] as int; // <-- Add this line!
+          final slot = d['slot'] as int;// <-- Add this line!
           final day = d['dayIndex'] as int;
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -216,7 +216,7 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
                           MaterialPageRoute(
                             builder: (_) => WebWorkoutLog(
                               runId: _runId!,
-                              workoutIndex: workoutIndex,
+                              workoutIndex:  slot,
                               block: widget.block,
                               workout: workout, // (or workoutDraft, see below)
                             ),

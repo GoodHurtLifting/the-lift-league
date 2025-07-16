@@ -313,54 +313,32 @@ class WebCustomBlockService {
   /// `weeks` parameter must be between 3 and 6 inclusive and `daysPerWeek` must
   /// be between 2 and 6 inclusive.
   List<Map<String, dynamic>> _generateWebWorkoutDistribution(
-    List<CustomWorkout> workouts,
-    int weeks,
-    int daysPerWeek,
-    String scheduleType,
-  ) {
+      List<CustomWorkout> workouts,
+      int weeks,
+      int daysPerWeek,
+      String scheduleType,
+      ) {
     assert(weeks >= 3 && weeks <= 6, 'weeks must be between 3 and 6');
     assert(daysPerWeek >= 2 && daysPerWeek <= 6,
-        'daysPerWeek must be between 2 and 6');
+    'daysPerWeek must be between 2 and 6');
 
     final distribution = <Map<String, dynamic>>[];
-
-    if (scheduleType == 'ab_alternate' &&
-        daysPerWeek == 3 &&
-        workouts.length == 2) {
-      // Alternate pattern for A/B programs.
-      final List<List<int>> patterns = [
-        [0, 1, 0],
-        [1, 0, 1],
-      ];
-      for (int week = 0; week < weeks; week++) {
-        final pattern = patterns[week % 2];
-        for (int day = 0; day < daysPerWeek; day++) {
-          final workoutIndex = pattern[day % pattern.length];
-          distribution.add({
-            'workout': workouts[workoutIndex],
-            'workoutIndex': workoutIndex,
-            'week': week + 1,
-            'dayIndex': day,
-          });
-        }
-      }
-      return distribution;
-    }
-
-    // Standard sequential distribution.
-    int index = 0;
     final totalSlots = weeks * daysPerWeek;
+
     for (int slot = 0; slot < totalSlots; slot++) {
       final week = (slot ~/ daysPerWeek) + 1;
       final day = slot % daysPerWeek;
+      final workoutIndex = slot % workouts.length; // simple cycling
       distribution.add({
-        'workout': workouts[index % workouts.length],
+        'workout': workouts[workoutIndex],
+        'workoutIndex': workoutIndex,
         'week': week,
         'dayIndex': day,
+        'slot': slot,
       });
-      index++;
     }
 
     return distribution;
   }
+
 }

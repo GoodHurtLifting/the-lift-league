@@ -51,7 +51,7 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
               await _createUserProfileIfNeeded(cred.user!);
               success = true;
               // Close the dialog so the home page can react to the new auth state.
-              if (context.mounted) Navigator.of(context).pop();
+              if (context.mounted) Navigator.of(context).pop(true);
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context)
@@ -69,7 +69,7 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
                 await _createUserProfileIfNeeded(cred.user!);
                 success = true;
                 // Close the dialog after a successful popup sign in.
-                if (context.mounted) Navigator.of(context).pop();
+                if (context.mounted) Navigator.of(context).pop(true);
               }
             } catch (e) {
               if (context.mounted) {
@@ -98,7 +98,7 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
               await _createUserProfileIfNeeded(userCred.user!);
               success = true;
               // Close the dialog once Apple sign in succeeds.
-              if (context.mounted) Navigator.of(context).pop();
+              if (context.mounted) Navigator.of(context).pop(true);
             } catch (e) {
               if (context.mounted) {
                 ScaffoldMessenger.of(context)
@@ -150,7 +150,7 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context, false),
                 child: const Text('Cancel'),
               ),
             ],

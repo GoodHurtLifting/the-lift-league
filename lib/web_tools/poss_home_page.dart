@@ -25,24 +25,11 @@ class POSSHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        } else if (snapshot.hasData) {
-          // Logged in: show the main POSS interface.
-          return const _POSSHomeView();
-        } else {
-          // Not logged in: present the sign in dialog. The empty Scaffold acts
-          // as a placeholder while the dialog is displayed.
-          Future.microtask(() => showWebSignInDialog(context));
-          return const Scaffold();
-        }
-      },
-    );
+    // Always show _POSSHomeView; it handles login for protected actions.
+    return const _POSSHomeView();
   }
 }
+
 
 class _POSSHomeView extends StatefulWidget {
   const _POSSHomeView({super.key});
@@ -250,7 +237,7 @@ class _POSSHomeViewState extends State<_POSSHomeView> {
             const Padding(
               padding: EdgeInsets.only(top: 16),
               child: Text(
-                'Build Workouts • Stay Motivated\nGet Feedback',
+                'Build Workouts • Stay Motivated',
                 textAlign: TextAlign.center,
                 softWrap: true,
                 style: TextStyle(fontSize: 14),
