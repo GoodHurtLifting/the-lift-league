@@ -1,4 +1,5 @@
 final List<String> titles = [
+  'Newb'
   'Lone Wolf',
   'Iron Hatchling',
   'Plate Apprentice',
@@ -13,10 +14,10 @@ final List<String> titles = [
   'League Champion',
   'Block Master',
   'Sun Eater',
-  'Titan Among Gods',
+  'God Among Titans',
 ];
 
-final List<int> titleMilestones = [1,2,3,4,5,6,7,8,9,10,11,12,18,24,36];
+final List<int> titleMilestones = [0,1,2,3,4,5,6,7,8,9,10,11,12,18,24,36];
 
 int getUserTitleIndex(int blocksCompleted) {
   for (int i = titleMilestones.length - 1; i >= 0; i--) {
