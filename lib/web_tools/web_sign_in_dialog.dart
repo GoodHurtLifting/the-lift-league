@@ -18,8 +18,9 @@ Future<bool> showWebSignInDialog(BuildContext context) async {
     if (!doc.exists) {
       await docRef.set({
         'displayName': user.displayName ?? 'New Lifter',
-        'title': getUserTitle(0),
+        'title': getUserTitle(blocksCompleted: 0, workoutsLogged: 0),
         'blocksCompleted': 0,
+        'workoutsCompleted': 0,
         'totalLbsLifted': 0,
         'profileImageUrl': user.photoURL ?? '',
         'isAdmin': false,

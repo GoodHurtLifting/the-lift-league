@@ -1641,7 +1641,13 @@ class DBService {
           await userStatsService.getTotalCompletedBlocks(userId);
 
       // Step 5: Update Firestore with new count + title
-      final newTitle = getUserTitle(totalBlocks);
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      final workoutsLogged = userDoc.data()?['workoutsCompleted'] ?? 0;
+      final newTitle = getUserTitle(
+          blocksCompleted: totalBlocks, workoutsLogged: workoutsLogged);
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
         'blocksCompleted': totalBlocks,
         'title': newTitle,

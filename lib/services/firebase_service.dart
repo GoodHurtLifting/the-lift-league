@@ -28,8 +28,9 @@ class FirebaseService {
         'uid': user.uid,
         'createdAt': FieldValue.serverTimestamp(),
         'displayName': 'New Lifter',
-        'title': 'Lone Wolf',
+        'title': getUserTitle(blocksCompleted: 0, workoutsLogged: 0),
         'blocksCompleted': 0,
+        'workoutsCompleted': 0,
         'totalLbsLifted': 0, // ✅ Add this
         'profileImageUrl': user.photoURL ?? '', // ✅ Already there
       });

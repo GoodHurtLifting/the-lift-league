@@ -1,6 +1,4 @@
 final List<String> titles = [
-  'Newb'
-  'Lone Wolf',
   'Iron Hatchling',
   'Plate Apprentice',
   'Barbell Acolyte',
@@ -17,7 +15,7 @@ final List<String> titles = [
   'God Among Titans',
 ];
 
-final List<int> titleMilestones = [0,1,2,3,4,5,6,7,8,9,10,11,12,18,24,36];
+final List<int> titleMilestones = [1,2,3,4,5,6,7,8,9,10,11,12,18,24,36];
 
 int getUserTitleIndex(int blocksCompleted) {
   for (int i = titleMilestones.length - 1; i >= 0; i--) {
@@ -26,7 +24,9 @@ int getUserTitleIndex(int blocksCompleted) {
   return 0;
 }
 
-String getUserTitle(int blocksCompleted) {
+String getUserTitle({required int blocksCompleted, required int workoutsLogged}) {
+  if (workoutsLogged == 0) return 'Newb';
+  if (blocksCompleted == 0) return 'Lone Wolf';
   final index = getUserTitleIndex(blocksCompleted);
   return titles[index];
 }
