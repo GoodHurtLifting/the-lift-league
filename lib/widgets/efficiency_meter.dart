@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:lift_league/services/notifications_service.dart';
 import 'package:lift_league/services/performance_service.dart';
 
 class EfficiencyMeter extends StatefulWidget {
@@ -13,7 +12,6 @@ class EfficiencyMeter extends StatefulWidget {
 }
 
 class _EfficiencyMeterState extends State<EfficiencyMeter> {
-  bool _notified = false;
 
   late final StreamController<EfficiencyStats> _statsController;
   Timer? _timer;
@@ -29,7 +27,6 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
         userId: widget.userId,
         blockInstanceId: int.tryParse(widget.blockId) ?? 0,
       );
-      _handleNotification(stats.efficient);
       if (!_statsController.isClosed) {
         _statsController.add(stats);
       }
@@ -40,23 +37,10 @@ class _EfficiencyMeterState extends State<EfficiencyMeter> {
           blockInstanceId: int.tryParse(widget.blockId) ?? 0,
         )
         .then((stats) {
-      _handleNotification(stats.efficient);
       if (!_statsController.isClosed) {
         _statsController.add(stats);
       }
     });
-  }
-
-  void _handleNotification(bool efficient) {
-    if (efficient && !_notified) {
-      NotificationService().showSimpleNotification(
-        'Great work!',
-        'Efficiency improved this week!',
-      );
-      _notified = true;
-    } else if (!efficient) {
-      _notified = false;
-    }
   }
 
   Icon _trendIcon(int trend) {
