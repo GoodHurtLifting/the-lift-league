@@ -139,6 +139,7 @@ class _UserDashboardState extends State<UserDashboard> {
 
     if (data != null) {
       final int completed = data['blocksCompleted'] ?? 0;
+      final int workouts = data['workoutsCompleted'] ?? 0;
       final String? url = data['profileImageUrl'];
       final bool admin = data['isAdmin'] ?? false;
 
@@ -146,7 +147,8 @@ class _UserDashboardState extends State<UserDashboard> {
       setState(() {
         displayName = data['displayName'] ?? 'New Lifter';
         blocksCompleted = completed;
-        userTitle = getUserTitle(completed); // ✅ use correct variable
+        userTitle = getUserTitle(
+            blocksCompleted: completed, workoutsLogged: workouts);
         totalLbsLifted = (data['totalLbsLifted'] as num?)?.toDouble() ?? 0.0;
         profileImageUrl = (url != null && url.isNotEmpty)
             ? url

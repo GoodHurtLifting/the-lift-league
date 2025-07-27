@@ -69,8 +69,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
         'displayName': 'New Lifter',
-        'title': getUserTitle(0),
+        'title': getUserTitle(blocksCompleted: 0, workoutsLogged: 0),
         'blocksCompleted': 0,
+        'workoutsCompleted': 0,
         'totalLbsLifted': 0,
         'profileImageUrl': '',
         'isAdmin': false,
@@ -99,8 +100,9 @@ class _LoginScreenState extends State<LoginScreen> {
             .doc(userCred.user!.uid)
             .set({
           'displayName': userCred.user!.displayName ?? 'New Lifter',
-          'title': getUserTitle(0),
+          'title': getUserTitle(blocksCompleted: 0, workoutsLogged: 0),
           'blocksCompleted': 0,
+          'workoutsCompleted': 0,
           'totalLbsLifted': 0,
           'profileImageUrl': userCred.user!.photoURL ?? '',
         });
@@ -136,8 +138,9 @@ class _LoginScreenState extends State<LoginScreen> {
             .doc(userCred.user!.uid)
             .set({
           'displayName': userCred.user!.displayName ?? 'New Lifter',
-          'title': getUserTitle(0),
+          'title': getUserTitle(blocksCompleted: 0, workoutsLogged: 0),
           'blocksCompleted': 0,
+          'workoutsCompleted': 0,
           'totalLbsLifted': 0,
           'profileImageUrl': '',
         });
