@@ -59,6 +59,8 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
 
   @override
   Widget build(BuildContext context) {
+    print('Rendering WebLiftEntry for ${widget.lift.name}');
+    print('previousEntries: ${widget.previousEntries}');
     final repScheme = '${widget.lift.sets} x ${widget.lift.repsPerSet}';
     final prev = widget.previousEntries;
 
