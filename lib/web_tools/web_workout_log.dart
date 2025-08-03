@@ -238,10 +238,8 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Workout Score: ' +
-                      _workoutScore.toStringAsFixed(1)),
-                  Text('Total Workload: ' +
-                      _workoutWorkload.toStringAsFixed(1) + ' lbs'),
+                  Text('Workout Score: ${_workoutScore.toStringAsFixed(1)}'),
+                  Text('Total Workload: ${_workoutWorkload.toStringAsFixed(1)} lbs'),
                 ],
               ),
             );
