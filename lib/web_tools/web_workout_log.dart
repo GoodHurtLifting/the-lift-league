@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/custom_block_models.dart';
 import '../services/calculations.dart';
 import 'web_custom_block_service.dart';
+import 'web_lift_entry.dart';
 
 class WebWorkoutLog extends StatefulWidget {
   final String runId;
@@ -247,56 +248,23 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
           }
 
           final lift = workout.lifts[index];
-          final repCtrls = _repCtrls[index] ?? [];
-          final weightCtrls = _weightCtrls[index] ?? [];
           final prev = _prevEntries[index] ?? [];
 
-          return Card(
-            margin: const EdgeInsets.all(8),
-            child: ExpansionTile(
-              title: Text(lift.name),
-              children: [
-                ...List.generate(lift.sets, (set) {
-                  final prevEntry = set < prev.length ? prev[set] : null;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        Text('Set ${set + 1}'),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: repCtrls[set],
-                            decoration:
-                                const InputDecoration(labelText: 'Reps'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => _saveLift(index),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: weightCtrls[set],
-                            decoration:
-                                const InputDecoration(labelText: 'Weight'),
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => _saveLift(index),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (prevEntry != null)
-                          Text(
-                              'Prev ${prevEntry['reps']} x ${prevEntry['weight'] ?? 0}'),
-                        const SizedBox(width: 8),
-                        if (_recommendedWeights[index] != null)
-                          Text('Rec ${_recommendedWeights[index]!.toStringAsFixed(0)}'),
-                      ],
-                    ),
-                  );
-                }),
-              ],
-            ),
+          return WebLiftEntry(
+            liftIndex: index,
+            lift: lift,
+            previousEntries: prev,
+            onChanged: (reps, weights) {
+              final repCtrls = _repCtrls[index] ??=
+                  List.generate(lift.sets, (_) => TextEditingController());
+              final weightCtrls = _weightCtrls[index] ??=
+                  List.generate(lift.sets, (_) => TextEditingController());
+              for (var i = 0; i < lift.sets; i++) {
+                repCtrls[i].text = reps[i];
+                weightCtrls[i].text = weights[i];
+              }
+              _saveLift(index);
+            },
           );
         },
       ),
