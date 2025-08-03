@@ -1768,6 +1768,18 @@ class DBService {
     await userRef.update({
       'workoutsCompleted': FieldValue.increment(1),
     });
+
+// Fetch updated counts
+    final updatedDoc = await userRef.get();
+    final blocksCompleted = updatedDoc.data()?['blocksCompleted'] ?? 0;
+    final workoutsLogged = updatedDoc.data()?['workoutsCompleted'] ?? 0;
+
+// Update title if needed
+    final newTitle = getUserTitle(
+      blocksCompleted: blocksCompleted,
+      workoutsLogged: workoutsLogged,
+    );
+    await userRef.update({'title': newTitle});
   }
 
   Future<void> recalculateBlockTotals(int blockInstanceId) async {
