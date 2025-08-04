@@ -36,6 +36,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
   final Map<int, double> _liftWorkloads = {};
   double _workoutScore = 0.0;
   double _workoutWorkload = 0.0;
+  bool _workoutFinished = false;
 
   @override
   void initState() {
@@ -47,6 +48,15 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
   Future<void> _loadCompletion() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+    final workoutDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('block_runs')
+        .doc(widget.runId)
+        .collection('workouts')
+        .doc(widget.workoutIndex.toString())
+        .get();
+    _workoutFinished = workoutDoc.data()?['completedAt'] != null;
     for (int i = 0; i < workout.lifts.length; i++) {
       final liftDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -207,7 +217,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         .collection('lifts')
         .doc(liftIndex.toString());
 
-    await liftRef.update({'entries': entries});
+    await liftRef.set({'entries': entries}, SetOptions(merge: true));
 
     await WebCustomBlockService()
         .updateLiftTotals(widget.runId, widget.workoutIndex, liftIndex);
@@ -225,46 +235,98 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         .updateWorkoutTotals(widget.runId, widget.workoutIndex);
   }
 
+  Future<void> _finishWorkout() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    for (int i = 0; i < workout.lifts.length; i++) {
+      await _saveLift(i);
+    }
+    final workoutRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('block_runs')
+        .doc(widget.runId)
+        .collection('workouts')
+        .doc(widget.workoutIndex.toString());
+    await workoutRef.set({'completedAt': FieldValue.serverTimestamp()},
+        SetOptions(merge: true));
+    if (!mounted) return;
+    setState(() => _workoutFinished = true);
+    Navigator.pop(context);
+  }
+
+  Future<bool> _confirmExit() async {
+    if (_workoutFinished) return true;
+    final shouldLeave = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Leave Workout?'),
+            content: const Text(
+                'Your progress is saved automatically, but the workout is not finished. Exit anyway?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Stay'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Leave'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    return shouldLeave;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(workout.name)),
-      body: ListView.builder(
-        itemCount: workout.lifts.length + 1,
-        itemBuilder: (context, index) {
-          if (index == workout.lifts.length) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Workout Score: ${_workoutScore.toStringAsFixed(1)}'),
-                  Text('Total Workload: ${_workoutWorkload.toStringAsFixed(1)} lbs'),
-                ],
-              ),
+    return WillPopScope(
+      onWillPop: _confirmExit,
+      child: Scaffold(
+        appBar: AppBar(title: Text(workout.name)),
+        body: ListView.builder(
+          itemCount: workout.lifts.length + 1,
+          itemBuilder: (context, index) {
+            if (index == workout.lifts.length) {
+              return Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Workout Score: ${_workoutScore.toStringAsFixed(1)}'),
+                    Text('Total Workload: ${_workoutWorkload.toStringAsFixed(1)} lbs'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _finishWorkout,
+                      child: const Text('Finish Workout'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final lift = workout.lifts[index];
+            final prev = _prevEntries[index] ?? [];
+
+            return WebLiftEntry(
+              liftIndex: index,
+              lift: lift,
+              previousEntries: prev,
+              onChanged: (reps, weights) {
+                final repCtrls = _repCtrls[index] ??=
+                    List.generate(lift.sets, (_) => TextEditingController());
+                final weightCtrls = _weightCtrls[index] ??=
+                    List.generate(lift.sets, (_) => TextEditingController());
+                for (var i = 0; i < lift.sets; i++) {
+                  repCtrls[i].text = reps[i];
+                  weightCtrls[i].text = weights[i];
+                }
+                _saveLift(index);
+              },
             );
-          }
-
-          final lift = workout.lifts[index];
-          final prev = _prevEntries[index] ?? [];
-
-          return WebLiftEntry(
-            liftIndex: index,
-            lift: lift,
-            previousEntries: prev,
-            onChanged: (reps, weights) {
-              final repCtrls = _repCtrls[index] ??=
-                  List.generate(lift.sets, (_) => TextEditingController());
-              final weightCtrls = _weightCtrls[index] ??=
-                  List.generate(lift.sets, (_) => TextEditingController());
-              for (var i = 0; i < lift.sets; i++) {
-                repCtrls[i].text = reps[i];
-                weightCtrls[i].text = weights[i];
-              }
-              _saveLift(index);
-            },
-          );
-        },
+          },
+        ),
       ),
     );
   }
