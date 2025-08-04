@@ -70,6 +70,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
           .get();
 
       final List<dynamic> entriesData = liftDoc.data()?['entries'] ?? [];
+      print('Loaded entries for lift $i: $entriesData');
       _repCtrls[i] = List.generate(workout.lifts[i].sets, (index) {
         final ctrl = TextEditingController();
         if (index < entriesData.length) {
@@ -222,7 +223,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     await WebCustomBlockService()
         .updateLiftTotals(widget.runId, widget.workoutIndex, liftIndex);
 
-    _prevEntries[liftIndex] = List.from(entries);
+   // _prevEntries[liftIndex] = List.from(entries);
     _recommendedWeights[liftIndex] = _calculateRecommendedWeight(liftIndex);
     _recalculateTotals();
     if (mounted) setState(() {});
