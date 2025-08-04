@@ -66,6 +66,34 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
     final repScheme = '${widget.lift.sets} x ${widget.lift.repsPerSet}';
     final prev = widget.previousEntries;
 
+    // Calculate previous totals if data exists
+    final prevReps = prev.isNotEmpty
+        ? getLiftRepsFromDb(prev,
+            isDumbbellLift: widget.lift.isDumbbellLift)
+        : 0;
+    final prevWorkload = prev.isNotEmpty
+        ? getLiftWorkloadFromDb(prev,
+            isDumbbellLift: widget.lift.isDumbbellLift)
+        : 0.0;
+    final prevScore = prev.isNotEmpty
+        ? calculateLiftScoreFromEntries(
+            prev,
+            widget.lift.multiplier,
+            isDumbbellLift: widget.lift.isDumbbellLift,
+            scoreType: widget.lift.isBodyweight ? 'bodyweight' : 'default',
+          )
+        : 0.0;
+    final prevWorkloadText = prev.isNotEmpty
+        ? (prevWorkload % 1 == 0
+            ? prevWorkload.toInt().toString()
+            : prevWorkload.toStringAsFixed(1))
+        : '-';
+    final prevScoreText = prev.isNotEmpty
+        ? (prevScore % 1 == 0
+            ? prevScore.toInt().toString()
+            : prevScore.toStringAsFixed(1))
+        : '-';
+
     final liftReps = getLiftReps(_repCtrls,
         isDumbbellLift: widget.lift.isDumbbellLift);
     final liftWorkload = getLiftWorkload(
@@ -103,6 +131,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
               5: FlexColumnWidth(1),
               6: FlexColumnWidth(0.4),
               7: FlexColumnWidth(1.2),
+              8: FlexColumnWidth(1.2),
             },
             children: [
               TableRow(
@@ -127,6 +156,10 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     padding: EdgeInsets.all(8.0),
                     child:
                         Text('Prev Weight', textAlign: TextAlign.center),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text('Prev Score', textAlign: TextAlign.center),
                   ),
                 ],
               ),
@@ -191,6 +224,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                       padding: const EdgeInsets.all(8.0),
                       child: Text(recText, textAlign: TextAlign.center),
                     ),
+                    const SizedBox.shrink(),
                   ],
                 );
               }),
@@ -212,8 +246,21 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                         Text(workloadText, textAlign: TextAlign.center),
                   ),
                   const SizedBox.shrink(),
-                  const SizedBox.shrink(),
-                  const SizedBox.shrink(),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      prevReps == 0 ? '-' : prevReps.toString(),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text('x', textAlign: TextAlign.center),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(prevWorkloadText, textAlign: TextAlign.center),
+                  ),
                   const SizedBox.shrink(),
                 ],
               ),
@@ -241,6 +288,14 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   const SizedBox.shrink(),
                   const SizedBox.shrink(),
                   const SizedBox.shrink(),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      prevScoreText,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 ],
               ),
             ],
