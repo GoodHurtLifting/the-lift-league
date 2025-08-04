@@ -310,19 +310,18 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
             final lift = workout.lifts[index];
             final prev = _prevEntries[index] ?? [];
 
+            final repCtrls =
+                _repCtrls[index] ??= List.generate(lift.sets, (_) => TextEditingController());
+            final weightCtrls = _weightCtrls[index] ??=
+                List.generate(lift.sets, (_) => TextEditingController());
+
             return WebLiftEntry(
               liftIndex: index,
               lift: lift,
               previousEntries: prev,
-              onChanged: (reps, weights) {
-                final repCtrls = _repCtrls[index] ??=
-                    List.generate(lift.sets, (_) => TextEditingController());
-                final weightCtrls = _weightCtrls[index] ??=
-                    List.generate(lift.sets, (_) => TextEditingController());
-                for (var i = 0; i < lift.sets; i++) {
-                  repCtrls[i].text = reps[i];
-                  weightCtrls[i].text = weights[i];
-                }
+              repControllers: repCtrls,
+              weightControllers: weightCtrls,
+              onChanged: (_, __) {
                 _saveLift(index);
               },
             );

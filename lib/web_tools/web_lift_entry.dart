@@ -14,6 +14,12 @@ class WebLiftEntry extends StatefulWidget {
   /// contain `reps` and `weight` keys.
   final List<Map<String, dynamic>> previousEntries;
 
+  /// Controllers for reps input fields, one per set.
+  final List<TextEditingController> repControllers;
+
+  /// Controllers for weight input fields, one per set.
+  final List<TextEditingController> weightControllers;
+
 
   /// Callback triggered whenever a field changes. Returns lists of reps and
   /// weights strings corresponding to each set.
@@ -23,6 +29,8 @@ class WebLiftEntry extends StatefulWidget {
     super.key,
     required this.liftIndex,
     required this.lift,
+    required this.repControllers,
+    required this.weightControllers,
     this.previousEntries = const [],
     this.onChanged,
   });
@@ -32,30 +40,11 @@ class WebLiftEntry extends StatefulWidget {
 }
 
 class _WebLiftEntryState extends State<WebLiftEntry> {
-  late final List<TextEditingController> _repCtrls;
-  late final List<TextEditingController> _weightCtrls;
-
-  @override
-  void initState() {
-    super.initState();
-    _repCtrls =
-        List.generate(widget.lift.sets, (_) => TextEditingController());
-    _weightCtrls =
-        List.generate(widget.lift.sets, (_) => TextEditingController());
-  }
-
-  @override
-  void dispose() {
-    for (final c in _repCtrls) c.dispose();
-    for (final c in _weightCtrls) c.dispose();
-    super.dispose();
-  }
-
   void _notifyChanged() {
     setState(() {});
     widget.onChanged?.call(
-      _repCtrls.map((c) => c.text).toList(),
-      _weightCtrls.map((c) => c.text).toList(),
+      widget.repControllers.map((c) => c.text).toList(),
+      widget.weightControllers.map((c) => c.text).toList(),
     );
   }
 
@@ -94,16 +83,16 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
             : prevScore.toStringAsFixed(1))
         : '-';
 
-    final liftReps = getLiftReps(_repCtrls,
+    final liftReps = getLiftReps(widget.repControllers,
         isDumbbellLift: widget.lift.isDumbbellLift);
     final liftWorkload = getLiftWorkload(
-      _repCtrls,
-      _weightCtrls,
+      widget.repControllers,
+      widget.weightControllers,
       isDumbbellLift: widget.lift.isDumbbellLift,
     );
     final liftScore = getLiftScore(
-      _repCtrls,
-      _weightCtrls,
+      widget.repControllers,
+      widget.weightControllers,
       widget.lift.multiplier,
       isDumbbellLift: widget.lift.isDumbbellLift,
       scoreType: widget.lift.isBodyweight ? 'bodyweight' : 'default',
@@ -190,7 +179,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TextField(
-                        controller: _repCtrls[set],
+                        controller: widget.repControllers[set],
                         keyboardType: TextInputType.number,
                         onChanged: (_) => _notifyChanged(),
                         decoration: const InputDecoration(),
@@ -204,7 +193,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: TextField(
-                        controller: _weightCtrls[set],
+                        controller: widget.weightControllers[set],
                         keyboardType: TextInputType.number,
                         onChanged: (_) => _notifyChanged(),
                         decoration: const InputDecoration(),
