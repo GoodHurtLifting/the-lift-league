@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/custom_block_models.dart';
+import '../services/calculations.dart';
 
 /// Displays an editable table for logging a single lift within a web workout.
 class WebLiftEntry extends StatefulWidget {
@@ -51,6 +52,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
   }
 
   void _notifyChanged() {
+    setState(() {});
     widget.onChanged?.call(
       _repCtrls.map((c) => c.text).toList(),
       _weightCtrls.map((c) => c.text).toList(),
@@ -63,6 +65,27 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
     print('previousEntries: ${widget.previousEntries}');
     final repScheme = '${widget.lift.sets} x ${widget.lift.repsPerSet}';
     final prev = widget.previousEntries;
+
+    final liftReps = getLiftReps(_repCtrls,
+        isDumbbellLift: widget.lift.isDumbbellLift);
+    final liftWorkload = getLiftWorkload(
+      _repCtrls,
+      _weightCtrls,
+      isDumbbellLift: widget.lift.isDumbbellLift,
+    );
+    final liftScore = getLiftScore(
+      _repCtrls,
+      _weightCtrls,
+      widget.lift.multiplier,
+      isDumbbellLift: widget.lift.isDumbbellLift,
+      scoreType: widget.lift.isBodyweight ? 'bodyweight' : 'default',
+    );
+    final workloadText = liftWorkload % 1 == 0
+        ? liftWorkload.toInt().toString()
+        : liftWorkload.toStringAsFixed(1);
+    final scoreText = liftScore % 1 == 0
+        ? liftScore.toInt().toString()
+        : liftScore.toStringAsFixed(1);
 
     return Card(
       margin: const EdgeInsets.all(8),
@@ -171,6 +194,55 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   ],
                 );
               }),
+              TableRow(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text('Total', textAlign: TextAlign.center),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child:
+                        Text(liftReps.toString(), textAlign: TextAlign.center),
+                  ),
+                  const SizedBox.shrink(),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child:
+                        Text(workloadText, textAlign: TextAlign.center),
+                  ),
+                  const SizedBox.shrink(),
+                  const SizedBox.shrink(),
+                  const SizedBox.shrink(),
+                  const SizedBox.shrink(),
+                ],
+              ),
+              TableRow(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text(
+                      'Score',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox.shrink(),
+                  const SizedBox.shrink(),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      scoreText,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox.shrink(),
+                  const SizedBox.shrink(),
+                  const SizedBox.shrink(),
+                  const SizedBox.shrink(),
+                ],
+              ),
             ],
           ),
         ],
