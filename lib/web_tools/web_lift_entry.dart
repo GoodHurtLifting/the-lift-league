@@ -20,7 +20,6 @@ class WebLiftEntry extends StatefulWidget {
   /// Controllers for weight input fields, one per set.
   final List<TextEditingController> weightControllers;
 
-
   /// Callback triggered whenever a field changes. Returns lists of reps and
   /// weights strings corresponding to each set.
   final void Function(List<String> reps, List<String> weights)? onChanged;
@@ -57,8 +56,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
 
     // Calculate previous totals if data exists
     final prevReps = prev.isNotEmpty
-        ? getLiftRepsFromDb(prev,
-            isDumbbellLift: widget.lift.isDumbbellLift)
+        ? getLiftRepsFromDb(prev, isDumbbellLift: widget.lift.isDumbbellLift)
         : 0;
     final prevWorkload = prev.isNotEmpty
         ? getLiftWorkloadFromDb(prev,
@@ -112,19 +110,19 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
         children: [
           Table(
             columnWidths: const {
-              0: FlexColumnWidth(1.2),
-              1: FlexColumnWidth(1.2),
-              2: FlexColumnWidth(0.4),
-              3: FlexColumnWidth(1.4),
-              4: FixedColumnWidth(1),
-              5: FlexColumnWidth(1),
-              6: FlexColumnWidth(0.4),
-              7: FlexColumnWidth(1.2),
+              0: FlexColumnWidth(1.2),   // Set
+              1: FlexColumnWidth(1.2),   // Reps
+              2: FlexColumnWidth(0.4),   // x
+              3: FlexColumnWidth(1.4),   // Weight
+              4: FixedColumnWidth(1),    // Divider
+              5: FlexColumnWidth(1.2),   // Prev Reps
+              6: FlexColumnWidth(1.2),   // Prev Weight (or Score in last row)
             },
             children: [
+              // Header row (7 columns)
               TableRow(
                 children: [
-                  const SizedBox.shrink(),
+                  const SizedBox.shrink(), // Set
                   const Padding(
                     padding: EdgeInsets.all(.0),
                     child: Text(
@@ -133,7 +131,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
-                  const SizedBox.shrink(),
+                  const SizedBox.shrink(), // x
                   const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Text(
@@ -155,7 +153,6 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
-                  const SizedBox.shrink(),
                   const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Text(
@@ -166,24 +163,17 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   ),
                 ],
               ),
+              // Sets rows (7 columns)
               ...List.generate(widget.lift.sets, (set) {
                 final prevEntry = set < prev.length ? prev[set] : null;
-                if (prevEntry != null) {
-                  print('Prev data for ${widget.lift.name} set ${set + 1}: '
-                      '${prevEntry['reps']}x${prevEntry['weight']}');
-                }
-                final prevReps =
-                    prevEntry != null ? (prevEntry['reps']?.toString() ?? '') : '';
-                final prevWeightNum =
-                    prevEntry != null ? (prevEntry['weight'] as num?)?.toDouble() : null;
+                final prevReps = prevEntry != null ? (prevEntry['reps']?.toString() ?? '') : '';
+                final prevWeightNum = prevEntry != null ? (prevEntry['weight'] as num?)?.toDouble() : null;
                 String prevWeight = '';
                 if (prevWeightNum != null && prevWeightNum > 0) {
                   prevWeight = prevWeightNum % 1 == 0
                       ? prevWeightNum.toInt().toString()
                       : prevWeightNum.toStringAsFixed(1);
                 }
-
-                final recText = prevWeight;
 
                 return TableRow(
                   children: [
@@ -221,24 +211,20 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     ),
                     Container(
                       width: 1,
-                      height: double.infinity,
                       color: Colors.grey.shade300,
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(prevReps, textAlign: TextAlign.center),
                     ),
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text('x', textAlign: TextAlign.center),
-                    ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text(recText, textAlign: TextAlign.center),
+                      child: Text(prevWeight, textAlign: TextAlign.center),
                     ),
                   ],
                 );
               }),
+              // Totals row (7 columns)
               TableRow(
                 children: [
                   const Padding(
@@ -247,14 +233,12 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child:
-                        Text(liftReps.toString(), textAlign: TextAlign.center),
+                    child: Text(liftReps.toString(), textAlign: TextAlign.center),
                   ),
                   const SizedBox.shrink(),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child:
-                        Text(workloadText, textAlign: TextAlign.center),
+                    child: Text(workloadText, textAlign: TextAlign.center),
                   ),
                   Container(
                     width: 1,
@@ -263,14 +247,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      prev.isEmpty ? '' : prevReps.toString(),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text('x', textAlign: TextAlign.center),
+                    child: Text(prev.isEmpty ? '' : prevReps.toString(), textAlign: TextAlign.center),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -278,6 +255,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   ),
                 ],
               ),
+              // Score row (7 columns, last two cells: current and previous score)
               TableRow(
                 children: [
                   const Padding(
@@ -303,7 +281,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     height: double.infinity,
                     color: Colors.grey.shade300,
                   ),
-                  const SizedBox.shrink(),
+                  // Leave this cell blank for visual spacing
                   const SizedBox.shrink(),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -316,7 +294,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                 ],
               ),
             ],
-          ),
+          )
         ],
       ),
     );

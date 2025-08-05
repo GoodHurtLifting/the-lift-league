@@ -224,7 +224,7 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
                         );
                       },
                       icon: const Icon(Icons.play_arrow),
-                      label: const Text('Log Workout'),
+                      label: const Text('Open Workout'),
                     ),
                   ),
               ],
