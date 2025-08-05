@@ -76,12 +76,12 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
         ? (prevWorkload % 1 == 0
             ? prevWorkload.toInt().toString()
             : prevWorkload.toStringAsFixed(1))
-        : '-';
+        : '';
     final prevScoreText = prev.isNotEmpty
         ? (prevScore % 1 == 0
             ? prevScore.toInt().toString()
             : prevScore.toStringAsFixed(1))
-        : '-';
+        : '';
 
     final liftReps = getLiftReps(widget.repControllers,
         isDumbbellLift: widget.lift.isDumbbellLift);
@@ -154,13 +154,15 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
               ),
               ...List.generate(widget.lift.sets, (set) {
                 final prevEntry = set < prev.length ? prev[set] : null;
-                final prevReps = prevEntry != null
-                    ? (prevEntry['reps']?.toString() ?? '-')
-                    : '-';
-                final prevWeightNum = prevEntry != null
-                    ? (prevEntry['weight'] as num?)?.toDouble()
-                    : null;
-                String prevWeight = '-';
+                if (prevEntry != null) {
+                  print('Prev data for ${widget.lift.name} set ${set + 1}: '
+                      '${prevEntry['reps']}x${prevEntry['weight']}');
+                }
+                final prevReps =
+                    prevEntry != null ? (prevEntry['reps']?.toString() ?? '') : '';
+                final prevWeightNum =
+                    prevEntry != null ? (prevEntry['weight'] as num?)?.toDouble() : null;
+                String prevWeight = '';
                 if (prevWeightNum != null && prevWeightNum > 0) {
                   prevWeight = prevWeightNum % 1 == 0
                       ? prevWeightNum.toInt().toString()
@@ -238,7 +240,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      prevReps == 0 ? '-' : prevReps.toString(),
+                      prev.isEmpty ? '' : prevReps.toString(),
                       textAlign: TextAlign.center,
                     ),
                   ),

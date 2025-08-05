@@ -98,43 +98,57 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     if (mounted) setState(() {});
   }
 
+  /// Returns past workout documents for [workout.name] sorted by most recent
+  /// completion. This mimics a shared `getPreviousWorkoutInstances` service.
+  /// TODO: replace with a dedicated service method.
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      _getPreviousWorkoutInstances(String userId, String workoutName) async {
+    final runsSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('block_runs')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    final List<QueryDocumentSnapshot<Map<String, dynamic>>> workouts = [];
+    for (final run in runsSnap.docs) {
+      if (run.id == widget.runId) continue; // Skip current run
+      final snap = await run.reference
+          .collection('workouts')
+          .where('name', isEqualTo: workoutName)
+          .get();
+      for (final doc in snap.docs) {
+        if (doc.data()['completedAt'] != null) {
+          workouts.add(doc);
+        }
+      }
+    }
+
+    workouts.sort((a, b) {
+      final aTime = (a.data()['completedAt'] as Timestamp).toDate();
+      final bTime = (b.data()['completedAt'] as Timestamp).toDate();
+      return bTime.compareTo(aTime);
+    });
+    print('Found ${workouts.length} previous workouts for $workoutName');
+    return workouts;
+  }
+
   Future<List<Map<String, dynamic>>> _getPreviousEntries(int liftIndex) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
 
-    final runDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('block_runs')
-        .doc(widget.runId)
-        .get();
+    final workouts =
+        await _getPreviousWorkoutInstances(user.uid, workout.name);
+    if (workouts.isEmpty) return [];
 
-    final currentRunNumber = (runDoc.data()?['runNumber'] as num?)?.toInt() ?? 1;
+    final prevWorkout = workouts.first;
+    print('Using previous workout from run '
+        '${prevWorkout.reference.parent.parent?.id}');
 
-    final prevRunSnap = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('block_runs')
-        .where('blockName', isEqualTo: widget.block.name)
-        .where('runNumber', isLessThan: currentRunNumber)
-        .orderBy('runNumber', descending: true)
-        .limit(1)
-        .get();
-
-    if (prevRunSnap.docs.isEmpty) return [];
-
-    final prevRunId = prevRunSnap.docs.first.id;
-    final prevLiftDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('block_runs')
-        .doc(prevRunId)
-        .collection('workouts')
-        .doc(widget.workoutIndex.toString())
+    final prevLiftDoc = await prevWorkout.reference
         .collection('lifts')
         .doc(liftIndex.toString())
         .get();
-
     final List<dynamic> prevData = prevLiftDoc.data()?['entries'] ?? [];
     return prevData.cast<Map<String, dynamic>>();
   }
