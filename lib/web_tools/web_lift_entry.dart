@@ -116,11 +116,10 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
               1: FlexColumnWidth(1.2),
               2: FlexColumnWidth(0.4),
               3: FlexColumnWidth(1.4),
-              4: FlexColumnWidth(0.05),
+              4: FixedColumnWidth(1),
               5: FlexColumnWidth(1),
               6: FlexColumnWidth(0.4),
               7: FlexColumnWidth(1.2),
-              8: FlexColumnWidth(1.2),
             },
             children: [
               TableRow(
@@ -128,27 +127,42 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   const SizedBox.shrink(),
                   const Padding(
                     padding: EdgeInsets.all(.0),
-                    child: Text('Reps', textAlign: TextAlign.center),
+                    child: Text(
+                      'Reps',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13),
+                    ),
                   ),
                   const SizedBox.shrink(),
                   const Padding(
                     padding: EdgeInsets.all(8.0),
-                    child: Text('Weight', textAlign: TextAlign.center),
+                    child: Text(
+                      'Weight',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: double.infinity,
+                    color: Colors.grey.shade300,
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text(
+                      'Reps',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13),
+                    ),
                   ),
                   const SizedBox.shrink(),
                   const Padding(
                     padding: EdgeInsets.all(8.0),
-                    child: Text('Reps', textAlign: TextAlign.center),
-                  ),
-                  const SizedBox.shrink(),
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child:
-                        Text('Weight', textAlign: TextAlign.center),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text('Prev Score', textAlign: TextAlign.center),
+                    child: Text(
+                      'Weight',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13),
+                    ),
                   ),
                 ],
               ),
@@ -175,8 +189,11 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text('Set ${set + 1}',
-                          textAlign: TextAlign.center),
+                      child: Text(
+                        'Set ${set + 1}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 13),
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -202,7 +219,11 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                         textAlign: TextAlign.center,
                       ),
                     ),
-                    const SizedBox.shrink(),
+                    Container(
+                      width: 1,
+                      height: double.infinity,
+                      color: Colors.grey.shade300,
+                    ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(prevReps, textAlign: TextAlign.center),
@@ -215,7 +236,6 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                       padding: const EdgeInsets.all(8.0),
                       child: Text(recText, textAlign: TextAlign.center),
                     ),
-                    const SizedBox.shrink(),
                   ],
                 );
               }),
@@ -236,7 +256,11 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     child:
                         Text(workloadText, textAlign: TextAlign.center),
                   ),
-                  const SizedBox.shrink(),
+                  Container(
+                    width: 1,
+                    height: double.infinity,
+                    color: Colors.grey.shade300,
+                  ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
@@ -252,7 +276,6 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     padding: const EdgeInsets.all(8.0),
                     child: Text(prevWorkloadText, textAlign: TextAlign.center),
                   ),
-                  const SizedBox.shrink(),
                 ],
               ),
               TableRow(
@@ -275,8 +298,11 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
-                  const SizedBox.shrink(),
-                  const SizedBox.shrink(),
+                  Container(
+                    width: 1,
+                    height: double.infinity,
+                    color: Colors.grey.shade300,
+                  ),
                   const SizedBox.shrink(),
                   const SizedBox.shrink(),
                   Padding(
