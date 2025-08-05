@@ -239,18 +239,14 @@ class _WebBlockDashboardState extends State<WebBlockDashboard> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      color: Colors.grey.shade200,
+      color: Colors.transparent,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.block.name,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
           if (_runNumbers.length > 1)
             Padding(
-              padding: const EdgeInsets.only(top: 8.0),
+              padding: const EdgeInsets.only(bottom: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: _runNumbers.map((n) {
