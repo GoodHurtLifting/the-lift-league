@@ -36,6 +36,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
   final Map<int, double> _liftWorkloads = {};
   double _workoutScore = 0.0;
   double _workoutWorkload = 0.0;
+  double? _previousScore;
   bool _workoutFinished = false;
 
   @override
@@ -57,6 +58,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         .doc(widget.workoutIndex.toString())
         .get();
     _workoutFinished = workoutDoc.data()?['completedAt'] != null;
+    final List<double> prevScores = [];
     for (int i = 0; i < workout.lifts.length; i++) {
       final liftDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -91,10 +93,23 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         return ctrl;
       });
 
-      _prevEntries[i] = await _getPreviousEntries(i);
+      final prevEntriesList = await _getPreviousEntries(i);
+      _prevEntries[i] = prevEntriesList;
+      if (prevEntriesList.isNotEmpty) {
+        final lift = workout.lifts[i];
+        final prevScore = calculateLiftScoreFromEntries(
+          prevEntriesList,
+          lift.multiplier,
+          isDumbbellLift: lift.isDumbbellLift,
+          scoreType: lift.isBodyweight ? 'bodyweight' : 'multiplier',
+        );
+        prevScores.add(prevScore);
+      }
       _recommendedWeights[i] = _calculateRecommendedWeight(i);
     }
     _recalculateTotals();
+    _previousScore =
+        prevScores.isEmpty ? null : calculatePreviousWorkoutScore(prevScores);
     if (mounted) setState(() {});
   }
 
@@ -310,6 +325,8 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Workout Score: ${_workoutScore.toStringAsFixed(1)}'),
+                    Text(
+                        'Previous Score: ${_previousScore != null ? _previousScore!.toStringAsFixed(1) : '--'}'),
                     Text('Total Workload: ${_workoutWorkload.toStringAsFixed(1)} lbs'),
                     const SizedBox(height: 16),
                     ElevatedButton(
