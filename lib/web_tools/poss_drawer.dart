@@ -85,7 +85,7 @@ class POSSDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.download),
-            title: const Text('Get the App'),
+            title: const Text('Migrate to App'),
             onTap: () {
               Navigator.pop(context);
               Navigator.push(
