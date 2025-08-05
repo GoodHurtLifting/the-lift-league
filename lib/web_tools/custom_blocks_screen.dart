@@ -77,13 +77,26 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
     }
   }
 
+  // Opens the block builder and refreshes the list when a new block is created.
+  Future<void> _createBlock() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => POSSBlockBuilder(
+          onSaved: _loadBlocks,
+        ),
+      ),
+    );
+    await _loadBlocks();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_blocks.isEmpty) {
       return Center(
         child: ElevatedButton(
-          onPressed: widget.onCreateNew,
+          onPressed: _createBlock,
           child: const Text('Create Your First Block'),
         ),
       );
@@ -241,7 +254,7 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
         ),
         const SizedBox(height: 8),
         ElevatedButton(
-          onPressed: widget.onCreateNew,
+          onPressed: _createBlock,
           child: const Text('Create Block'),
         ),
         const SizedBox(height: 8),
