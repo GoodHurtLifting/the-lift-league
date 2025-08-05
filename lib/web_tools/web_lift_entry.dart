@@ -112,7 +112,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
         children: [
           Table(
             columnWidths: const {
-              0: FlexColumnWidth(1.1),
+              0: FlexColumnWidth(1.2),
               1: FlexColumnWidth(1.2),
               2: FlexColumnWidth(0.4),
               3: FlexColumnWidth(1.4),
@@ -127,7 +127,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                 children: [
                   const SizedBox.shrink(),
                   const Padding(
-                    padding: EdgeInsets.all(8.0),
+                    padding: EdgeInsets.all(.0),
                     child: Text('Reps', textAlign: TextAlign.center),
                   ),
                   const SizedBox.shrink(),
@@ -138,13 +138,13 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   const SizedBox.shrink(),
                   const Padding(
                     padding: EdgeInsets.all(8.0),
-                    child: Text('Prev Reps', textAlign: TextAlign.center),
+                    child: Text('Reps', textAlign: TextAlign.center),
                   ),
                   const SizedBox.shrink(),
                   const Padding(
                     padding: EdgeInsets.all(8.0),
                     child:
-                        Text('Prev Weight', textAlign: TextAlign.center),
+                        Text('Weight', textAlign: TextAlign.center),
                   ),
                   const Padding(
                     padding: EdgeInsets.all(8.0),
