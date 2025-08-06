@@ -5,8 +5,8 @@ import 'package:lift_league/widgets/lifetime_stats.dart';
 import 'package:lift_league/widgets/badge_display.dart';
 import 'package:lift_league/widgets/big_three_prs.dart';
 import 'package:lift_league/widgets/checkin_graph.dart';
-import 'package:lift_league/widgets/consistency_meter.dart';
-import 'package:lift_league/widgets/efficiency_meter.dart';
+/*import 'package:lift_league/widgets/consistency_meter.dart';
+import 'package:lift_league/widgets/efficiency_meter.dart';*/
 import 'package:lift_league/widgets/momentum_meter.dart';
 import 'package:lift_league/widgets/stats/calories_workout_chart.dart';
 import 'package:lift_league/widgets/stats/body_weight_chart.dart';
@@ -15,8 +15,8 @@ import 'package:lift_league/services/db_service.dart';
 
 const Map<String, String> _widgetNames = {
   'lifetimeStats': 'Lifetime Stats',
-  'consistencyMeter': 'Consistency',
-  'efficiencyMeter': 'Efficiency',
+/*  'consistencyMeter': 'Consistency',
+  'efficiencyMeter': 'Efficiency',*/
   'momentumMeter': 'Momentum',
   'caloriesChart': 'Calories Chart',
   'bodyWeightChart': 'Body Weight Chart',
@@ -111,7 +111,7 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
           widgets.add(LifetimeStats(userId: widget.userId));
           widgets.add(const SizedBox(height: 20));
           break;
-        case 'consistencyMeter':
+        /*case 'consistencyMeter':
           if (activeBlockId == null) {
             if (!shownNoBlockMsg) {
               widgets.add(
@@ -138,7 +138,7 @@ class _UserStatsScreenState extends State<UserStatsScreen> {
                 userId: widget.userId, blockId: activeBlockId));
             widgets.add(const SizedBox(height: 20));
           }
-          break;
+          break;*/
         case 'momentumMeter':
           if (activeBlockId != null) {
             widgets.add(const Text('Momentum',
