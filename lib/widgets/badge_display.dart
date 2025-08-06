@@ -100,18 +100,16 @@ class BadgeDisplay extends StatelessWidget {
       cursor = cursor.add(const Duration(days: 7));
     }
 
-    int punchProgress = 0;
-    for (int i = 0; i < 3; i++) {
+    int streak = 0;
+    for (int i = 0; i < 4; i++) {
       final count = weeklyCounts[weekKeys[i]] ?? 0;
       if (count >= 3) {
-        punchProgress += 3;
+        streak++;
       } else {
-        punchProgress = 0;
+        break;
       }
     }
-    final currentWeekCount = weeklyCounts[weekKeys[3]] ?? 0;
-    punchProgress += currentWeekCount.clamp(0, 3);
-    punchProgress = punchProgress.clamp(0, 12);
+    int punchProgress = streak * 3; // Fill by 3 for each week
 
     // Workouts logged this month (for Daily Driver progress)
     final startOfMonth = DateTime(now.year, now.month, 1);
