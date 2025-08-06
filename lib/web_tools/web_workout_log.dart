@@ -127,15 +127,20 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
 
     final List<QueryDocumentSnapshot<Map<String, dynamic>>> workouts = [];
     for (final run in runsSnap.docs) {
-      if (run.id == widget.runId) continue; // Skip current run
       final snap = await run.reference
           .collection('workouts')
           .where('name', isEqualTo: workoutName)
           .get();
       for (final doc in snap.docs) {
-        if (doc.data()['completedAt'] != null) {
-          workouts.add(doc);
+        final completedAt = doc.data()['completedAt'] as Timestamp?;
+        if (completedAt == null) continue;
+        if (run.id == widget.runId &&
+            doc.id == widget.workoutIndex.toString() &&
+            !_workoutFinished) {
+          // Skip the current workout if it's still in progress.
+          continue;
         }
+        workouts.add(doc);
       }
     }
 
@@ -144,7 +149,12 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
       final bTime = (b.data()['completedAt'] as Timestamp).toDate();
       return bTime.compareTo(aTime);
     });
-    print('Found ${workouts.length} previous workouts for $workoutName');
+    if (workouts.isNotEmpty) {
+      final latestRunId = workouts.first.reference.parent.parent?.id;
+      print('Found previous workout from run $latestRunId');
+    } else {
+      print('No previous completed workout found for $workoutName');
+    }
     return workouts;
   }
 
@@ -157,13 +167,26 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     if (workouts.isEmpty) return [];
 
     final prevWorkout = workouts.first;
-    print('Using previous workout from run '
-        '${prevWorkout.reference.parent.parent?.id}');
 
-    final prevLiftDoc = await prevWorkout.reference
-        .collection('lifts')
-        .doc(liftIndex.toString())
-        .get();
+    final liftsCol = prevWorkout.reference.collection('lifts');
+
+    // Try to match by a unique liftId if present, otherwise by index
+    DocumentSnapshot<Map<String, dynamic>>? prevLiftDoc;
+    int? liftId;
+    try {
+      final dynamic lift = workout.lifts[liftIndex];
+      liftId = lift.liftId ?? lift.id;
+    } catch (_) {}
+
+    if (liftId != null) {
+      final query = await liftsCol.where('liftId', isEqualTo: liftId).limit(1).get();
+      if (query.docs.isNotEmpty) {
+        prevLiftDoc = query.docs.first;
+      }
+    }
+
+    prevLiftDoc ??= await liftsCol.doc(liftIndex.toString()).get();
+
     final List<dynamic> prevData = prevLiftDoc.data()?['entries'] ?? [];
     return prevData.cast<Map<String, dynamic>>();
   }
