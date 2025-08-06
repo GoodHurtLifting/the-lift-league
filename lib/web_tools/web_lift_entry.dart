@@ -142,7 +142,6 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   ),
                   Container(
                     width: 1,
-                    height: double.infinity,
                     color: Colors.grey.shade300,
                   ),
                   const Padding(
@@ -242,7 +241,6 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   ),
                   Container(
                     width: 1,
-                    height: double.infinity,
                     color: Colors.grey.shade300,
                   ),
                   Padding(
@@ -278,7 +276,6 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                   ),
                   Container(
                     width: 1,
-                    height: double.infinity,
                     color: Colors.grey.shade300,
                   ),
                   // Leave this cell blank for visual spacing
