@@ -301,8 +301,13 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         .doc(widget.runId)
         .collection('workouts')
         .doc(widget.workoutIndex.toString());
-    await workoutRef.set({'completedAt': FieldValue.serverTimestamp()},
-        SetOptions(merge: true));
+    // Record when this workout was finished by stamping the current time.
+    await workoutRef.set(
+      {
+        'completedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
     if (!mounted) return;
     setState(() => _workoutFinished = true);
     Navigator.pop(context);

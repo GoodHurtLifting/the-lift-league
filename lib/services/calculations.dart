@@ -112,7 +112,7 @@ double calculateLiftScoreFromEntries(
     return double.parse(score.toStringAsFixed(1));
   }
   // Default multiplier-based formula remains unchanged:
-  double totalWeight = getLiftWorkloadFromDb(entries, isDumbbellLift: isDumbbellLift);
+  double totalWeight = getLiftWeightFromDb(entries);
   int liftReps = getLiftRepsFromDb(entries, isDumbbellLift: isDumbbellLift);
   double score = totalWeight * liftReps * scoreMultiplier;
   return double.parse(score.toStringAsFixed(1));
