@@ -39,6 +39,18 @@ class WebLiftEntry extends StatefulWidget {
 }
 
 class _WebLiftEntryState extends State<WebLiftEntry> {
+  bool _initialized = false;
+
+  void _removeInitialZero() {
+    if (_initialized) return;
+    for (final c in widget.repControllers) {
+      if (c.text == '0') {
+        c.text = '';
+      }
+    }
+    _initialized = true;
+  }
+
   void _notifyChanged() {
     setState(() {});
     widget.onChanged?.call(
@@ -49,6 +61,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
 
   @override
   Widget build(BuildContext context) {
+    _removeInitialZero();
     print('Rendering WebLiftEntry for ${widget.lift.name}');
     print('previousEntries: ${widget.previousEntries}');
     final repScheme = '${widget.lift.sets} x ${widget.lift.repsPerSet}';
