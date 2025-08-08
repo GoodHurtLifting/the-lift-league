@@ -31,7 +31,6 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
 
   final Map<int, List<Map<String, dynamic>>> _prevEntries = {};
 
-  final Map<int, double?> _recommendedWeights = {};
   final Map<int, double> _liftScores = {};
   final Map<int, double> _liftWorkloads = {};
   double _workoutScore = 0.0;
@@ -105,7 +104,6 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         );
         prevScores.add(prevScore);
       }
-      _recommendedWeights[i] = _calculateRecommendedWeight(i);
     }
     _recalculateTotals();
     _previousScore =
@@ -191,27 +189,6 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     return prevData.cast<Map<String, dynamic>>();
   }
 
-  double? _calculateRecommendedWeight(int liftIndex) {
-    final prev = _prevEntries[liftIndex] ?? [];
-    if (prev.isEmpty) return null;
-    double total = 0.0;
-    int count = 0;
-    for (final e in prev) {
-      final w = (e['weight'] as num?)?.toDouble() ?? 0.0;
-      if (w > 0) {
-        total += w;
-        count++;
-      }
-    }
-    if (count == 0) return null;
-    final avg = total / count;
-    return getRecommendedWeight(
-      liftId: liftIndex,
-      referenceWeight: avg,
-      percentOfReference: 1.0,
-    );
-  }
-
   void _recalculateTotals() {
     _workoutScore = 0.0;
     _workoutWorkload = 0.0;
@@ -276,7 +253,6 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         .updateLiftTotals(widget.runId, widget.workoutIndex, liftIndex);
 
    // _prevEntries[liftIndex] = List.from(entries);
-    _recommendedWeights[liftIndex] = _calculateRecommendedWeight(liftIndex);
     _recalculateTotals();
     if (mounted) setState(() {});
 

@@ -175,8 +175,8 @@ class WebCustomBlockService {
           'isDumbbellLift': lift.isDumbbellLift,
           'entries': List.generate(lift.sets, (_) {
             return {
-              'reps': 0,
-              'weight': 0.0,
+              'reps': '',
+              'weight': '',
               'liftWorkload': 0.0,
               'liftScore': 0.0,
               'liftReps': 0,

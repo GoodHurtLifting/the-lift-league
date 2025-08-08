@@ -80,7 +80,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
             prev,
             widget.lift.multiplier,
             isDumbbellLift: widget.lift.isDumbbellLift,
-            scoreType: widget.lift.isBodyweight ? 'bodyweight' : 'default',
+            scoreType: widget.lift.isBodyweight ? 'bodyweight' : 'multiplier',
           )
         : 0.0;
     final prevWorkloadText = prev.isNotEmpty
@@ -106,7 +106,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
       widget.weightControllers,
       widget.lift.multiplier,
       isDumbbellLift: widget.lift.isDumbbellLift,
-      scoreType: widget.lift.isBodyweight ? 'bodyweight' : 'default',
+      scoreType: widget.lift.isBodyweight ? 'bodyweight' : 'multiplier',
     );
     final workloadText = liftWorkload % 1 == 0
         ? liftWorkload.toInt().toString()
