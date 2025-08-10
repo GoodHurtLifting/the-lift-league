@@ -122,6 +122,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
         subtitle: Text(repScheme),
         children: [
           Table(
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
             columnWidths: const {
               0: FlexColumnWidth(1.2),   // Set
               1: FlexColumnWidth(1.2),   // Reps
@@ -137,7 +138,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                 children: [
                   const SizedBox.shrink(), // Set
                   const Padding(
-                    padding: EdgeInsets.all(.0),
+                    padding: EdgeInsets.all(8.0),
                     child: Text(
                       'Reps',
                       textAlign: TextAlign.center,
@@ -178,8 +179,8 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
               // Sets rows (7 columns)
               ...List.generate(widget.lift.sets, (set) {
                 final prevEntry = set < prev.length ? prev[set] : null;
-                final prevReps = prevEntry != null ? (prevEntry['reps']?.toString() ?? '') : '';
-                final prevWeightNum = prevEntry != null ? (prevEntry['weight'] as num?)?.toDouble() : null;
+                final prevReps = prevEntry != null ? (prevEntry['prev']?.toString() ?? '') : '';
+                final prevWeightNum = prevEntry != null ? (prevEntry['lift'] as num?)?.toDouble() : null;
                 String prevWeight = '';
                 if (prevWeightNum != null && prevWeightNum > 0) {
                   prevWeight = prevWeightNum % 1 == 0
@@ -284,7 +285,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     child: Text(
                       scoreText,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                   ),
                   Container(

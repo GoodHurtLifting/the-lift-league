@@ -133,9 +133,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         final completedAt = doc.data()['completedAt'] as Timestamp?;
         if (completedAt == null) continue;
         if (run.id == widget.runId &&
-            doc.id == widget.workoutIndex.toString() &&
-            !_workoutFinished) {
-          // Skip the current workout if it's still in progress.
+            doc.id == widget.workoutIndex.toString()) {
           continue;
         }
         workouts.add(doc);
