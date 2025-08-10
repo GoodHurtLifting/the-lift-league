@@ -179,8 +179,11 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
               // Sets rows (7 columns)
               ...List.generate(widget.lift.sets, (set) {
                 final prevEntry = set < prev.length ? prev[set] : null;
-                final prevReps = prevEntry != null ? (prevEntry['prev']?.toString() ?? '') : '';
-                final prevWeightNum = prevEntry != null ? (prevEntry['lift'] as num?)?.toDouble() : null;
+                final prevSetReps =
+                    prevEntry != null ? (prevEntry['reps']?.toString() ?? '') : '';
+                final prevWeightNum = prevEntry != null
+                    ? (prevEntry['weight'] as num?)?.toDouble()
+                    : null;
                 String prevWeight = '';
                 if (prevWeightNum != null && prevWeightNum > 0) {
                   prevWeight = prevWeightNum % 1 == 0
@@ -228,7 +231,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text(prevReps, textAlign: TextAlign.center),
+                      child: Text(prevSetReps, textAlign: TextAlign.center),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
