@@ -179,11 +179,22 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
               // Sets rows (7 columns)
               ...List.generate(widget.lift.sets, (set) {
                 final prevEntry = set < prev.length ? prev[set] : null;
-                final prevSetReps =
-                    prevEntry != null ? (prevEntry['reps']?.toString() ?? '') : '';
-                final prevWeightNum = prevEntry != null
-                    ? (prevEntry['weight'] as num?)?.toDouble()
-                    : null;
+                String prevSetReps = '';
+                double? prevWeightNum;
+                if (prevEntry != null) {
+                  final r = prevEntry['reps'];
+                  if (r is num) {
+                    prevSetReps = r.toInt().toString();
+                  } else if (r is String) {
+                    prevSetReps = r;
+                  }
+                  final w = prevEntry['weight'];
+                  if (w is num) {
+                    prevWeightNum = w.toDouble();
+                  } else if (w is String) {
+                    prevWeightNum = double.tryParse(w);
+                  }
+                }
                 String prevWeight = '';
                 if (prevWeightNum != null && prevWeightNum > 0) {
                   prevWeight = prevWeightNum % 1 == 0
