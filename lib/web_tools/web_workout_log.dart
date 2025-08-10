@@ -184,7 +184,19 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     prevLiftDoc ??= await liftsCol.doc(liftIndex.toString()).get();
 
     final List<dynamic> prevData = prevLiftDoc.data()?['entries'] ?? [];
-    return prevData.cast<Map<String, dynamic>>();
+    return prevData
+        .map<Map<String, dynamic>>((e) {
+          // Normalize legacy keys ('prev' and 'lift') to the current
+          // 'reps'/'weight' structure so older workout logs still display
+          // correctly in the UI.
+          if (e is Map<String, dynamic>) {
+            final reps = e['reps'] ?? e['prev'] ?? 0;
+            final weight = e['weight'] ?? e['lift'] ?? 0;
+            return {'reps': reps, 'weight': weight};
+          }
+          return {'reps': 0, 'weight': 0};
+        })
+        .toList();
   }
 
   void _recalculateTotals() {
