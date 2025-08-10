@@ -125,12 +125,15 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
 
     final List<QueryDocumentSnapshot<Map<String, dynamic>>> workouts = [];
     for (final run in runsSnap.docs) {
-      final snap = await run.reference
-          .collection('workouts')
-          .where('name', isEqualTo: workoutName)
-          .get();
+      // Fetch all workouts so we can support both 'name' and legacy
+      // 'workoutName' field keys without requiring composite indexes.
+      final snap = await run.reference.collection('workouts').get();
       for (final doc in snap.docs) {
-        final completedAt = doc.data()['completedAt'] as Timestamp?;
+        final data = doc.data();
+        final name = (data['name'] ?? data['workoutName'])?.toString();
+        if (name != workoutName) continue;
+
+        final completedAt = data['completedAt'] as Timestamp?;
         if (completedAt == null) continue;
         if (run.id == widget.runId &&
             doc.id == widget.workoutIndex.toString()) {
@@ -188,13 +191,20 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         .map<Map<String, dynamic>>((e) {
           // Normalize legacy keys ('prev' and 'lift') to the current
           // 'reps'/'weight' structure so older workout logs still display
-          // correctly in the UI.
+          // correctly in the UI. Convert any string values to numbers so
+          // downstream calculations remain accurate.
           if (e is Map<String, dynamic>) {
-            final reps = e['reps'] ?? e['prev'] ?? 0;
-            final weight = e['weight'] ?? e['lift'] ?? 0;
+            final repsVal = e['reps'] ?? e['prev'] ?? 0;
+            final weightVal = e['weight'] ?? e['lift'] ?? 0;
+            final reps = repsVal is int
+                ? repsVal
+                : int.tryParse(repsVal.toString()) ?? 0;
+            final weight = weightVal is num
+                ? weightVal.toDouble()
+                : double.tryParse(weightVal.toString()) ?? 0.0;
             return {'reps': reps, 'weight': weight};
           }
-          return {'reps': 0, 'weight': 0};
+          return {'reps': 0, 'weight': 0.0};
         })
         .toList();
   }
