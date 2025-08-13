@@ -24,6 +24,21 @@ class WebWorkoutLog extends StatefulWidget {
 }
 
 class _WebWorkoutLogState extends State<WebWorkoutLog> {
+  double _toDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v.trim()) ?? 0.0;
+    return 0.0;
+  }
+
+  int _toInt(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v.trim()) ?? 0;
+    return 0;
+  }
+
   late final WorkoutDraft workout;
 
   final Map<int, List<TextEditingController>> _repCtrls = {};
@@ -76,7 +91,8 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         final ctrl = TextEditingController();
         if (index < entriesData.length) {
           final e = entriesData[index] as Map<String, dynamic>;
-          ctrl.text = e['reps']?.toString() ?? '';
+          final r = _toInt(e['reps']);              // uses the helper you added earlier
+          if (r > 0) ctrl.text = r.toString();      // leave blank if 0 or null
         }
         return ctrl;
       });
@@ -84,9 +100,9 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         final ctrl = TextEditingController();
         if (index < entriesData.length) {
           final e = entriesData[index] as Map<String, dynamic>;
-          final w = (e['weight'] as num?)?.toDouble();
-          if (w != null && w > 0) {
-            ctrl.text = w % 1 == 0 ? w.toInt().toString() : w.toString();
+          final w = _toDouble(e['weight']);
+          if (w > 0) {
+            ctrl.text = (w % 1 == 0) ? w.toInt().toString() : w.toStringAsFixed(1);
           }
         }
         return ctrl;
@@ -114,48 +130,110 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
   /// Returns past workout documents for [workout.name] sorted by most recent
   /// completion. This mimics a shared `getPreviousWorkoutInstances` service.
   /// TODO: replace with a dedicated service method.
-  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
-      _getPreviousWorkoutInstances(String userId, String workoutName) async {
+  Future<List<DocumentSnapshot<Map<String, dynamic>>>>
+  _getPreviousWorkoutInstances(String userId, String workoutName) async {
+
+    // ---------- Pass A: search current run for earlier instance by name ----------
+    final currentRunRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('block_runs')
+        .doc(widget.runId);
+
+    final List<DocumentSnapshot<Map<String, dynamic>>> candidates = [];
+
+    try {
+      final byNameSnap = await currentRunRef
+          .collection('workouts')
+          .where('name', isEqualTo: workoutName)
+          .get();
+
+      final filtered = byNameSnap.docs.where((d) {
+        final done = d.data()['completedAt'] as Timestamp?;
+        final isCurrent = d.id == widget.workoutIndex.toString();
+        return done != null && !isCurrent;
+      }).toList();
+
+      filtered.sort((a, b) {
+        final aTs = (a.data()['completedAt'] as Timestamp).millisecondsSinceEpoch;
+        final bTs = (b.data()['completedAt'] as Timestamp).millisecondsSinceEpoch;
+        return bTs.compareTo(aTs);
+      });
+
+      if (filtered.isNotEmpty) {
+        // add just the most recent prior in this run
+        candidates.add(filtered.first);
+      }
+    } catch (_) {
+      // If 'name' is missing on workout docs, skip Pass A.
+    }
+
+    if (candidates.isNotEmpty) {
+      print('Found previous within current run for "$workoutName" -> workoutId=${candidates.first.id}');
+      return candidates;
+    }
+
+    // ---------- Pass B: search prior runs of the SAME block by index ----------
     final runsSnap = await FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
         .collection('block_runs')
-        .orderBy('createdAt', descending: true)
+        .where('blockName', isEqualTo: widget.block.name)
         .get();
 
-    final List<QueryDocumentSnapshot<Map<String, dynamic>>> workouts = [];
-    for (final run in runsSnap.docs) {
-      // Fetch all workouts so we can support both 'name' and legacy
-      // 'workoutName' field keys without requiring composite indexes.
-      final snap = await run.reference.collection('workouts').get();
-      for (final doc in snap.docs) {
-        final data = doc.data();
-        final name = (data['name'] ?? data['workoutName'])?.toString();
-        if (name != workoutName) continue;
+    final runs = runsSnap.docs;
+    runs.sort((a, b) {
+      final aTs = (a.data()['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+      final bTs = (b.data()['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+      return bTs.compareTo(aTs);
+    });
 
-        final completedAt = data['completedAt'] as Timestamp?;
-        if (completedAt == null) continue;
-        if (run.id == widget.runId &&
-            doc.id == widget.workoutIndex.toString()) {
-          continue;
+    final List<DocumentSnapshot<Map<String, dynamic>>> workouts = [];
+
+    for (final run in runs) {
+      if (run.id == widget.runId && !_workoutFinished) continue;
+
+      final wDoc = await run.reference
+          .collection('workouts')
+          .doc(widget.workoutIndex.toString())
+          .get();
+
+      final completedAt = wDoc.data()?['completedAt'] as Timestamp?;
+      if (completedAt != null) {
+        workouts.add(wDoc);
+        break; // most recent prior found
+      } else {
+        // Optional fallback by name (in case index schema changed)
+        try {
+          final byName = await run.reference
+              .collection('workouts')
+              .where('name', isEqualTo: workoutName)
+              .limit(1)
+              .get();
+          if (byName.docs.isNotEmpty) {
+            final d = byName.docs.first;
+            final done = d.data()['completedAt'] as Timestamp?;
+            if (done != null) {
+              workouts.add(d);
+              break;
+            }
+          }
+        } catch (_) {
+          // ignore and continue
         }
-        workouts.add(doc);
       }
     }
 
-    workouts.sort((a, b) {
-      final aTime = (a.data()['completedAt'] as Timestamp).toDate();
-      final bTime = (b.data()['completedAt'] as Timestamp).toDate();
-      return bTime.compareTo(aTime);
-    });
     if (workouts.isNotEmpty) {
       final latestRunId = workouts.first.reference.parent.parent?.id;
-      print('Found previous workout from run $latestRunId');
+      print('Found previous workout index ${widget.workoutIndex} from prior run $latestRunId');
     } else {
-      print('No previous completed workout found for $workoutName');
+      print('No previous completed workout found for "$workoutName" (block=${widget.block.name})');
     }
     return workouts;
   }
+
+
 
   Future<List<Map<String, dynamic>>> _getPreviousEntries(int liftIndex) async {
     final user = FirebaseAuth.instance.currentUser;
@@ -187,26 +265,7 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     prevLiftDoc ??= await liftsCol.doc(liftIndex.toString()).get();
 
     final List<dynamic> prevData = prevLiftDoc.data()?['entries'] ?? [];
-    return prevData
-        .map<Map<String, dynamic>>((e) {
-          // Normalize legacy keys ('prev' and 'lift') to the current
-          // 'reps'/'weight' structure so older workout logs still display
-          // correctly in the UI. Convert any string values to numbers so
-          // downstream calculations remain accurate.
-          if (e is Map<String, dynamic>) {
-            final repsVal = e['reps'] ?? e['prev'] ?? 0;
-            final weightVal = e['weight'] ?? e['lift'] ?? 0;
-            final reps = repsVal is int
-                ? repsVal
-                : int.tryParse(repsVal.toString()) ?? 0;
-            final weight = weightVal is num
-                ? weightVal.toDouble()
-                : double.tryParse(weightVal.toString()) ?? 0.0;
-            return {'reps': reps, 'weight': weight};
-          }
-          return {'reps': 0, 'weight': 0.0};
-        })
-        .toList();
+    return prevData.cast<Map<String, dynamic>>();
   }
 
   void _recalculateTotals() {
@@ -246,15 +305,18 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     if (user == null) return;
 
     final reps = _repCtrls[liftIndex]!
-        .map((c) => int.tryParse(c.text) ?? 0)
+        .map((c) => c.text.trim().isEmpty ? null : int.tryParse(c.text.trim()))
         .toList();
     final weights = _weightCtrls[liftIndex]!
-        .map((c) => double.tryParse(c.text) ?? 0.0)
+        .map((c) => c.text.trim().isEmpty ? null : double.tryParse(c.text.trim()))
         .toList();
 
     final entries = <Map<String, dynamic>>[];
     for (int i = 0; i < reps.length; i++) {
-      entries.add({'reps': reps[i], 'weight': weights[i]});
+      entries.add({
+        if (reps[i] != null) 'reps': reps[i],
+        if (weights[i] != null) 'weight': weights[i],
+      });
     }
 
     final liftRef = FirebaseFirestore.instance
@@ -301,9 +363,12 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     await workoutRef.set(
       {
         'completedAt': FieldValue.serverTimestamp(),
+        'name': workout.name,
+        'blockName': widget.block.name,
       },
       SetOptions(merge: true),
     );
+
     if (!mounted) return;
     setState(() => _workoutFinished = true);
     Navigator.pop(context);

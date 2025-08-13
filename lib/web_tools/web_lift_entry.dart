@@ -62,8 +62,6 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
   @override
   Widget build(BuildContext context) {
     _removeInitialZero();
-    print('Rendering WebLiftEntry for ${widget.lift.name}');
-    print('previousEntries: ${widget.previousEntries}');
     final repScheme = '${widget.lift.sets} x ${widget.lift.repsPerSet}';
     final prev = widget.previousEntries;
 
@@ -179,22 +177,8 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
               // Sets rows (7 columns)
               ...List.generate(widget.lift.sets, (set) {
                 final prevEntry = set < prev.length ? prev[set] : null;
-                String prevSetReps = '';
-                double? prevWeightNum;
-                if (prevEntry != null) {
-                  final r = prevEntry['reps'];
-                  if (r is num) {
-                    prevSetReps = r.toInt().toString();
-                  } else if (r is String) {
-                    prevSetReps = r;
-                  }
-                  final w = prevEntry['weight'];
-                  if (w is num) {
-                    prevWeightNum = w.toDouble();
-                  } else if (w is String) {
-                    prevWeightNum = double.tryParse(w);
-                  }
-                }
+                final prevReps = prevEntry != null ? (prevEntry['reps']?.toString() ?? '') : '';
+                final prevWeightNum = prevEntry != null ? (prevEntry['weight'] as num?)?.toDouble() : null;
                 String prevWeight = '';
                 if (prevWeightNum != null && prevWeightNum > 0) {
                   prevWeight = prevWeightNum % 1 == 0
@@ -242,7 +226,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text(prevSetReps, textAlign: TextAlign.center),
+                      child: Text(prevReps, textAlign: TextAlign.center),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8.0),
@@ -299,7 +283,7 @@ class _WebLiftEntryState extends State<WebLiftEntry> {
                     child: Text(
                       scoreText,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
                   Container(

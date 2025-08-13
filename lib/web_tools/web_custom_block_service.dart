@@ -155,8 +155,6 @@ class WebCustomBlockService {
         'name': w.name,
         'week': week,
         'dayIndex': dayIndex,
-        'workoutIndex': false,
-        'createdAt': FieldValue.serverTimestamp(),
       });
 
       await runRef.collection('workout_totals').doc(i.toString()).set({
