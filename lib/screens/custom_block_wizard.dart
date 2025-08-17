@@ -25,6 +25,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   String blockName = '';
   int? numWeeks;
   int? daysPerWeek;
+  int? _uniqueCount;
+  String _scheduleType = 'standard';
   late List<WorkoutDraft> workouts;
   int _currentStep = 0;
   int _workoutIndex = 0;
@@ -39,6 +41,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       blockName = block.name;
       numWeeks = block.numWeeks;
       daysPerWeek = block.daysPerWeek;
+      _scheduleType = block.scheduleType;
       // Only include the first instance of each workout when editing.
       // This allows the user to edit one week and have the changes
       // applied across all repeated weeks when the block is saved.
@@ -52,7 +55,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                 name: w.name,
                 lifts: w.lifts
                     .map(
-                    (l) => LiftDraft(
+                      (l) => LiftDraft(
                         name: l.name,
                         sets: l.sets,
                         repsPerSet: l.repsPerSet,
@@ -68,22 +71,20 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       if (_coverImagePath != null && File(_coverImagePath!).existsSync()) {
         _coverImageBytes = File(_coverImagePath!).readAsBytesSync();
       }
-      _currentStep = 4;
+      _nameCtrl.text = block.name;
+      _currentStep = 5;
     } else {
       workouts = [];
     }
   }
 
-  void _createDrafts() {
-    final count = daysPerWeek ?? 0;
-    final List<WorkoutDraft> newList = List.generate(
+  void _initializeWorkouts() {
+    final count = _uniqueCount ?? 0;
+    workouts = List.generate(
       count,
-      (i) => WorkoutDraft(id: i, dayIndex: i, name: '', lifts: []),
+      (i) =>
+          WorkoutDraft(id: i, dayIndex: i, name: 'Workout ${i + 1}', lifts: []),
     );
-    for (var i = 0; i < newList.length && i < workouts.length; i++) {
-      newList[i] = workouts[i];
-    }
-    workouts = newList;
   }
 
   Future<void> _pickCoverImage() async {
@@ -120,8 +121,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       );
       return;
     }
-    if (workouts.isEmpty && (daysPerWeek ?? 0) > 0) {
-      _createDrafts();
+    if (workouts.isEmpty && (_uniqueCount ?? 0) > 0) {
+      _initializeWorkouts();
     }
     final int id =
         widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
@@ -133,6 +134,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       coverImagePath: _coverImagePath ?? 'assets/logo25.jpg',
       workouts: workouts,
       isDraft: true,
+      scheduleType: _scheduleType,
     );
     if (widget.initialBlock != null) {
       await DBService().updateCustomBlock(block);
@@ -142,30 +144,70 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     if (mounted) Navigator.pop(context);
   }
 
+  Future<void> _previewSchedule() async {
+    if (numWeeks == null || daysPerWeek == null || workouts.isEmpty) return;
+
+    // Simple STANDARD rotation: cycle through `workouts` across `numWeeks * daysPerWeek`.
+    final totalDays = (numWeeks ?? 0) * (daysPerWeek ?? 0);
+    final List<Map<String, dynamic>> dist = List.generate(totalDays, (i) {
+      final week = (i ~/ (daysPerWeek!)) + 1;
+      final dayIndex = i % daysPerWeek!;
+      final workout = workouts[i % workouts.length];
+      return {
+        'week': week,
+        'dayIndex': dayIndex,
+        'workout': workout,
+      };
+    });
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Schedule Preview'),
+        content: SizedBox(
+          width: 300,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: dist.length,
+            itemBuilder: (_, i) {
+              final item = dist[i];
+              final w = item['workout'] as WorkoutDraft;
+              return ListTile(
+                dense: true,
+                title: Text(
+                    'Week ${item['week']} – Day ${item['dayIndex'] + 1}: ${w.name.isEmpty ? 'Workout ${w.id + 1}' : w.name}'),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
   Future<void> _finish() async {
-    final List<WorkoutDraft> allWorkouts = [];
-    int idCounter = 0;
-    for (var week = 0; week < (numWeeks ?? 0); week++) {
-      for (var day = 0; day < workouts.length; day++) {
-        final base = workouts[day];
-        final copiedLifts = base.lifts
-            .map((l) => LiftDraft(
-                  name: l.name,
-                  sets: l.sets,
-                  repsPerSet: l.repsPerSet,
-                  multiplier: l.multiplier,
-                  isBodyweight: l.isBodyweight,
-                  isDumbbellLift: l.isDumbbellLift,
-                ))
-            .toList();
-        allWorkouts.add(WorkoutDraft(
-          id: idCounter++,
-          dayIndex: week * workouts.length + day,
-          name: base.name,
-          lifts: copiedLifts,
-        ));
-      }
-    }
+    final List<WorkoutDraft> allWorkouts = [
+      for (final w in workouts)
+        WorkoutDraft(
+          id: w.id,
+          dayIndex: w.dayIndex,
+          name: w.name,
+          lifts: [
+            for (final l in w.lifts)
+              LiftDraft(
+                name: l.name,
+                sets: l.sets,
+                repsPerSet: l.repsPerSet,
+                multiplier: l.multiplier,
+                isBodyweight: l.isBodyweight,
+                isDumbbellLift: l.isDumbbellLift,
+              ),
+          ],
+        )
+    ];
 
     final int id =
         widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
@@ -177,6 +219,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       coverImagePath: _coverImagePath ?? 'assets/logo25.jpg',
       workouts: allWorkouts,
       isDraft: false,
+      scheduleType: _scheduleType,
     );
     if (widget.initialBlock != null) {
       await DBService().updateCustomBlock(block);
@@ -212,9 +255,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       'name': block.name,
       'numWeeks': block.numWeeks,
       'daysPerWeek': block.daysPerWeek,
+      'scheduleType': block.scheduleType,
       'isDraft': block.isDraft,
       'coverImageUrl': imageUrl,
       'ownerId': user.uid,
+      'source': 'mobile_custom_builder',
       'workouts': block.workouts
           .map((w) => {
                 'id': w.id,
@@ -271,13 +316,17 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           } else if (_currentStep == 1) {
             setState(() => _currentStep = 2);
           } else if (_currentStep == 2) {
-            if (numWeeks != null) {
+            if (_uniqueCount != null) {
+              _initializeWorkouts();
               setState(() => _currentStep = 3);
             }
           } else if (_currentStep == 3) {
             if (daysPerWeek != null) {
-              _createDrafts();
               setState(() => _currentStep = 4);
+            }
+          } else if (_currentStep == 4) {
+            if (numWeeks != null) {
+              setState(() => _currentStep = 5);
             }
           }
         },
@@ -289,7 +338,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           }
         },
         controlsBuilder: (context, details) {
-          if (_currentStep < 4) {
+          if (_currentStep < 5) {
             return Row(
               children: [
                 ElevatedButton(
@@ -354,16 +403,16 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             isActive: _currentStep >= 1,
           ),
           Step(
-            title: const Text('How many weeks?'),
+            title: const Text('# Unique Workouts'),
             content: DropdownButton<int>(
-              value: numWeeks,
-              hint: const Text('Select Weeks'),
-              items: List.generate(4, (i) => i + 3)
+              value: _uniqueCount,
+              hint: const Text('Select Count'),
+              items: List.generate(5, (i) => i + 2)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                   .toList(),
-              onChanged: (v) => setState(() => numWeeks = v),
+              onChanged: (v) => setState(() => _uniqueCount = v),
             ),
-            isActive: _currentStep >= 2,
+            isActive: _currentStep >= 4,
           ),
           Step(
             title: const Text('Days per week?'),
@@ -378,25 +427,52 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             isActive: _currentStep >= 3,
           ),
           Step(
+            title: const Text('How many weeks?'),
+            content: DropdownButton<int>(
+              value: numWeeks,
+              hint: const Text('Select Weeks'),
+              items: List.generate(4, (i) => i + 3)
+                  .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
+                  .toList(),
+              onChanged: (v) => setState(() => numWeeks = v),
+            ),
+            isActive: _currentStep >= 2,
+          ),
+          Step(
             title: Text('Workout ${_workoutIndex + 1}'),
             content: workouts.isEmpty
                 ? const SizedBox.shrink()
-                : SizedBox(
-                    height: 400,
-                    child: WorkoutBuilder(
-                      workout: workouts[_workoutIndex],
-                      allWorkouts: workouts,
-                      currentIndex: _workoutIndex,
-                      onSelectWorkout: (i) => setState(() => _workoutIndex = i),
-                      isLast: _workoutIndex == workouts.length - 1,
-                      onComplete: () async {
-                        if (_workoutIndex < workouts.length - 1) {
-                          setState(() => _workoutIndex++);
-                        } else {
-                          await _finish();
-                        }
-                      },
-                    ),
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 400,
+                        child: WorkoutBuilder(
+                          workout: workouts[_workoutIndex],
+                          allWorkouts: workouts,
+                          currentIndex: _workoutIndex,
+                          onSelectWorkout: (i) =>
+                              setState(() => _workoutIndex = i),
+                          isLast: _workoutIndex == workouts.length - 1,
+                          onComplete: () async {
+                            if (_workoutIndex < workouts.length - 1) {
+                              setState(() => _workoutIndex++);
+                            } else {
+                              await _finish();
+                            }
+                          },
+                          showDumbbellOption: true,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: ElevatedButton(
+                          onPressed: _previewSchedule,
+                          child: const Text('Preview Schedule'),
+                        ),
+                      ),
+                    ],
                   ),
             isActive: _currentStep >= 4,
           ),

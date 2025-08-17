@@ -48,10 +48,12 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     _nameController.dispose();
     super.dispose();
   }
+
   void _showAddLiftSheet() {
     final nameController = TextEditingController();
-    int sets = 3;
-    int reps = 10;
+    final setsCtrl = TextEditingController(text: '');
+    final repsCtrl = TextEditingController(text: '');
+
     bool isBodyweight = false;
     bool isDumbbellLift = false;
 
@@ -64,92 +66,147 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             .toSet()
             .toList()
           ..sort();
+
         return Padding(
-            padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            MediaQuery.of(ctx).viewInsets.bottom + 16,
-        ),
-        child: SingleChildScrollView(
-        child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-              Autocomplete<String>(
-                optionsBuilder: (TextEditingValue text) {
-                  if (text.text.isEmpty) return const Iterable<String>.empty();
-                  return liftNames.where((n) => n.toLowerCase().contains(text.text.toLowerCase()));
-                },
-                fieldViewBuilder: (context, controller, focus, onSubmit) {
-                  nameController.text = controller.text;
-                  return TextField(
-                    controller: controller,
-                    focusNode: focus,
-                    decoration: const InputDecoration(labelText: 'Lift name'),
-                  );
-                },
-                onSelected: (v) => nameController.text = v,
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      decoration: const InputDecoration(labelText: 'Sets'),
-                      keyboardType: TextInputType.number,
-                      onChanged: (v) => sets = int.tryParse(v) ?? sets,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      decoration: const InputDecoration(labelText: 'Reps'),
-                      keyboardType: TextInputType.number,
-                      onChanged: (v) => reps = int.tryParse(v) ?? reps,
-                    ),
-                  ),
-                ],
-              ),
-              CheckboxListTile(
-                value: isBodyweight,
-                onChanged: (v) => setState(() => isBodyweight = v ?? false),
-                title: const Text('Body-weight move'),
-              ),
-              if (widget.showDumbbellOption)
-                CheckboxListTile(
-                  value: isDumbbellLift,
-                  onChanged: (v) =>
-                      setState(() => isDumbbellLift = v ?? false),
-                  title: const Text('Dumbbell lift'),
-                ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  final name = nameController.text.trim();
-                  if (name.isEmpty) return;
-                  final multiplier = ScoreMultiplierService().getMultiplier(
-                    sets: sets,
-                    repsPerSet: reps,
-                    isBodyweight: isBodyweight,
-                  );
-                  setState(() {
-                    widget.workout.lifts.add(LiftDraft(
-                      name: name,
-                      sets: sets,
-                    repsPerSet: reps,
-                    multiplier: multiplier,
-                    isBodyweight: isBodyweight,
-                    isDumbbellLift: isDumbbellLift,
-                  ));
-                  });
-                  Navigator.pop(context);
-                },
-                child: const Text('Save'),
-              ),
-            ],
+          padding: EdgeInsets.fromLTRB(
+            16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16,
           ),
-        ),
+          child: StatefulBuilder(
+            builder: (ctx, setLocalState) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Lift name
+                    Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue text) {
+                        if (text.text.isEmpty) return const Iterable<String>.empty();
+                        return liftNames.where(
+                              (n) => n.toLowerCase().contains(text.text.toLowerCase()),
+                        );
+                      },
+                      fieldViewBuilder: (context, controller, focus, onSubmit) {
+                        return TextField(
+                          controller: controller,
+                          focusNode: focus,
+                          decoration: const InputDecoration(labelText: 'Lift name'),
+                          onChanged: (v) => nameController.text = v,
+                        );
+                      },
+                      onSelected: (v) => nameController.text = v,
+                    ),
+
+                    // Sets / Reps
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: setsCtrl,
+                            decoration: const InputDecoration(labelText: 'Sets'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: repsCtrl,
+                            decoration: const InputDecoration(labelText: 'Reps'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Mutually exclusive checkboxes
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Bodyweight'),
+                            value: isBodyweight,
+                            onChanged: (v) {
+                              setLocalState(() {
+                                isBodyweight = v ?? false;
+                                if (isBodyweight) isDumbbellLift = false;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Dumbbell lift'),
+                            value: isDumbbellLift,
+                            onChanged: (v) {
+                              setLocalState(() {
+                                isDumbbellLift = v ?? false;
+                                if (isDumbbellLift) isBodyweight = false;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        final name = nameController.text.trim();
+                        if (name.isEmpty) return;
+
+                        final sets = int.tryParse(setsCtrl.text) ?? 3;
+                        final reps = int.tryParse(repsCtrl.text) ?? 10;
+
+                        // Get multiplier (should be PURE; if it mutates inputs, we'll catch below)
+                        final multiplier = ScoreMultiplierService().getMultiplier(
+                          sets: sets,
+                          repsPerSet: reps,
+                          isBodyweight: isBodyweight,
+                        );
+
+                        // Add lift using exactly what the user chose
+                        final newLift = LiftDraft(
+                          name: name,
+                          sets: sets,
+                          repsPerSet: reps,
+                          multiplier: multiplier,
+                          isBodyweight: isBodyweight,
+                          isDumbbellLift: isDumbbellLift,
+                        );
+
+                        // Debug before add
+                        // ignore: avoid_print
+                        print('[AddLift] BEFORE add → ${newLift.name}: ${newLift.sets}x${newLift.repsPerSet} (BW=$isBodyweight, DB=$isDumbbellLift)');
+
+                        setState(() {
+                          final idx = widget.workout.lifts.length;
+                          widget.workout.lifts.add(newLift);
+
+                          // Post-add guard: force the chosen values back on, in case anything tried to normalize
+                          widget.workout.lifts[idx].sets = sets;
+                          widget.workout.lifts[idx].repsPerSet = reps;
+
+                          // Debug after add
+                          // ignore: avoid_print
+                          print('[AddLift] AFTER add  → ${widget.workout.lifts[idx].name}: '
+                              '${widget.workout.lifts[idx].sets}x${widget.workout.lifts[idx].repsPerSet}');
+                        });
+
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         );
-        },
+      },
     );
   }
 
@@ -208,7 +265,6 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
           child: Text(widget.isLast ? 'Build Block' : 'Next Workout'),
         ),
         const SizedBox(height: 8),
-
       ],
     );
   }
