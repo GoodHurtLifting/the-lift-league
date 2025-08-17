@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'poss_drawer.dart';
 
-
-Color? lightGrey = Colors.grey[400];
+final Color brandRed = Colors.red;
+final Color brandBlack = Colors.black;
+final Color brandWhite = Colors.white;
+final Color? lightGrey = Colors.grey[400];
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -14,7 +16,8 @@ class AboutScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           foregroundColor: lightGrey,
-          title: const Text('POSS Block Builder'),
+          title: const Text('About POSS'),
+          centerTitle: true,
         ),
         drawer: const POSSDrawer(),
         body: Padding(
@@ -23,80 +26,102 @@ class AboutScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'What it does',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                // Badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: brandBlack.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: brandRed.withOpacity(0.5)),
+                  ),
+                  child: const Text(
+                    'POSS = Progressive Overload Scoring System',
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                // 1
-                RichText(
-                  text: TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey[400]),
-                    children: const [
-                      TextSpan(
-                        text: '1. Build & save structured workouts\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                            '    Craft multi-week training blocks and store everything in-browser. No downloads, no exports.\n\n',
-                      ),
-                    ],
+
+                // What is POSS
+                const Text(
+                  'What is POSS?',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'A simple way to build training blocks and turn every session into a single score you can beat.',
+                  style: TextStyle(fontSize: 16, color: lightGrey),
+                ),
+
+                const SizedBox(height: 20),
+                Divider(color: brandBlack.withOpacity(0.2)),
+                const SizedBox(height: 12),
+
+                // What it does
+                const Text(
+                  'What it does',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                const _Bullet(
+                  title: 'Build & save structured workouts',
+                  body:
+                  'Create multi‑week training blocks and keep them in your browser (no downloads required).',
+                  icon: Icons.folder,
+                ),
+                const _Bullet(
+                  title: 'Score every workout',
+                  body:
+                  'POSS condenses sets × reps × weight into one number so progress is obvious.',
+                  icon: Icons.score,
+                ),
+                const _Bullet(
+                  title: 'Stay motivated',
+                  body:
+                  'Your score makes “did I get better?” a yes/no you can see—and chase.',
+                  icon: Icons.local_fire_department,
+                ),
+
+                const SizedBox(height: 20),
+                Divider(color: brandBlack.withOpacity(0.2)),
+                const SizedBox(height: 12),
+
+                // Short closer
+                Text(
+                  'Build. Score. Improve.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: lightGrey,
                   ),
                 ),
-                // 2
-                RichText(
-                  text: TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey[400]),
-                    children: const [
-                      TextSpan(
-                        text: '2. Turn every workout into a single score to beat\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text:
-                            '    The Progressive Overload Scoring System condenses all your reps, sets, and weights into a single number. Chase that number upward, make gains.\n\n',
-                      ),
-                    ],
-                  ),
-                ),
-                // 3
-                RichText(
-                  text: TextSpan(
-                    style: TextStyle(fontSize: 16, color: Colors.grey[400]),
-                    children: const [
-                      TextSpan(
-                        text: '3. AI checks program balance\n',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(
-                        text: '    An integrated assistant reviews each block for:\n',
-                      ),
-                      TextSpan(
-                        text: '        • balanced muscle-group coverage\n'
-                            '        • rep-scheme fit for your goal (strength / power / hypertrophy)\n'
-                            '        • useful mixes of training styles\n'
-                            '        • lagging areas (e.g., add triceps to match biceps work)\n\n',
-                      ),
-                    ],
-                  ),
-                ),
-                Text('Build, score, refine in your browser.',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[400])),
                 const SizedBox(height: 6),
                 const Text(
                   'Powered by The Lift League',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w400,
-                  ),
+                  style: TextStyle(fontSize: 12),
                 ),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _Bullet extends StatelessWidget {
+  final String title;
+  final String body;
+  final IconData icon;
+  const _Bullet({required this.title, required this.body, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      leading: Icon(icon, color: Colors.red),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(body),
     );
   }
 }

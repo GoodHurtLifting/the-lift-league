@@ -10,8 +10,9 @@ import '../screens/login_screen.dart';
 import 'web_sign_in_dialog.dart';
 
 class POSSDrawer extends StatelessWidget {
-  final VoidCallback? onHome;
-  const POSSDrawer({super.key, this.onHome});
+  final Future<void> Function()? onMyBlocks;
+  final VoidCallback? onOpenBuilder;
+  const POSSDrawer({super.key, this.onMyBlocks, this.onOpenBuilder});
 
   @override
   Widget build(BuildContext context) {
@@ -23,31 +24,38 @@ class POSSDrawer extends StatelessWidget {
             decoration: BoxDecoration(color: Colors.black54),
             child: Text('Menu'),
           ),
+          // My Blocks
           ListTile(
             leading: const Icon(Icons.folder),
             title: const Text('My Blocks'),
             onTap: () async {
               Navigator.pop(context);
-              if (FirebaseAuth.instance.currentUser == null) {
-                final signedIn = await showWebSignInDialog(context);
-                if (!signedIn) return;
-              }
-              if (onHome != null) {
-                onHome!();
+              if (onMyBlocks != null) {
+                await onMyBlocks!(); // PAGES handle auth; no duplicate sign-in here
               } else {
+                // fallback: keep existing sign-in behavior
+                if (FirebaseAuth.instance.currentUser == null) {
+                  final signedIn = await showWebSignInDialog(context);
+                  if (!signedIn) return;
+                }
                 Navigator.of(context).popUntil((route) => route.isFirst);
               }
             },
           ),
+          // Block Builder
           ListTile(
             leading: const Icon(Icons.settings),
             title: const Text('Block Builder'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const POSSBlockBuilder()),
-              );
+              if (onOpenBuilder != null) {
+                onOpenBuilder!(); // lets page supply onSaved version
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const POSSBlockBuilder()),
+                );
+              }
             },
           ),
           ListTile(

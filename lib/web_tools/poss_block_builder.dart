@@ -5,9 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../services/google_auth_service.dart';
 import 'poss_drawer.dart';
 import 'web_sign_in_dialog.dart';
 import 'auth_utils.dart';
@@ -406,7 +404,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
           foregroundColor: _lightGrey,
-          title: const Text('Build Training Block'),
+          title: const Text('Training Block Builder'),
           actions: [
             if (_currentStep > 0)
               IconButton(

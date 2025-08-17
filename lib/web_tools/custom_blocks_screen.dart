@@ -93,17 +93,41 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) return const Center(child: CircularProgressIndicator());
+
+    // No blocks → show button slightly above center
     if (_blocks.isEmpty) {
-      return Center(
-        child: ElevatedButton(
+      return Align(
+        alignment: const Alignment(0, -0.2), // slightly above vertical center
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.red,      // brand red
+            foregroundColor: Colors.black,    // black text/icon
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
           onPressed: _createBlock,
-          child: const Text('Create Your First Block'),
+          icon: const Icon(Icons.add),
+          label: const Text('Create Your First Block'),
         ),
       );
     }
 
+    // Has blocks → button above grid
     return Column(
       children: [
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          onPressed: _createBlock,
+          icon: const Icon(Icons.add),
+          label: const Text('Create Block'),
+        ),
+        const SizedBox(height: 16),
         Expanded(
           child: GridView.builder(
             padding: const EdgeInsets.all(10),
@@ -116,16 +140,13 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
             itemCount: _blocks.length,
             itemBuilder: (context, index) {
               final b = _blocks[index];
-              // Blocks saved from the web builder store the cover image under
-              // `coverImageUrl` while legacy blocks might use `coverImagePath`.
               final path = b['coverImagePath']?.toString() ??
-                  b['coverImageUrl']?.toString() ?? 'assets/logo25.jpg';
-              final Widget imageWidget;
-              if (path.startsWith('assets/')) {
-                imageWidget = Image.asset(path, fit: BoxFit.cover);
-              } else {
-                imageWidget = Image.network(path, fit: BoxFit.cover);
-              }
+                  b['coverImageUrl']?.toString() ??
+                  'assets/logo25.jpg';
+              final Widget imageWidget = path.startsWith('assets/')
+                  ? Image.asset(path, fit: BoxFit.cover)
+                  : Image.network(path, fit: BoxFit.cover);
+
               return InkWell(
                 onTap: () {
                   final id = b["id"].toString();
@@ -252,12 +273,6 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
             },
           ),
         ),
-        const SizedBox(height: 8),
-        ElevatedButton(
-          onPressed: _createBlock,
-          child: const Text('Create Block'),
-        ),
-        const SizedBox(height: 8),
       ],
     );
   }

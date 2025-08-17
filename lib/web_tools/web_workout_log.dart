@@ -233,21 +233,100 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
     return workouts;
   }
 
+  Future<bool> _hasAnyPriorCompletedInstance() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
 
+    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    // --- A) Look in the CURRENT run for an earlier completed instance ---
+    final currentRunWorkouts = userRef
+        .collection('block_runs')
+        .doc(widget.runId)
+        .collection('workouts');
+
+    try {
+      // Prefer matching by name (safer if workout order changes)
+      final sameNameSnap =
+      await currentRunWorkouts.where('name', isEqualTo: workout.name).get();
+
+      final hasEarlierCompletedHere = sameNameSnap.docs.any((d) {
+        if (d.id == widget.workoutIndex.toString()) return false; // skip current
+        final done = d.data()['completedAt'] as Timestamp?;
+        if (done == null) return false;
+        final idx = int.tryParse(d.id) ?? 1 << 30;
+        return idx < widget.workoutIndex; // earlier instance in this run
+      });
+
+      if (hasEarlierCompletedHere) return true;
+    } catch (_) {
+      // Fallback: check the immediate previous index only (if name missing)
+      final prevIdxDoc =
+      await currentRunWorkouts.doc((widget.workoutIndex - 1).toString()).get();
+      final done = prevIdxDoc.data()?['completedAt'] as Timestamp?;
+      if (done != null) return true;
+    }
+
+    // --- B) Look in PRIOR runs of the SAME block for a completed instance ---
+    final runsSnap = await userRef
+        .collection('block_runs')
+        .where('blockName', isEqualTo: widget.block.name)
+        .get();
+
+    // Sort newest -> oldest (just for determinism)
+    final runs = runsSnap.docs
+      ..sort((a, b) {
+        final aTs =
+            (a.data()['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+        final bTs =
+            (b.data()['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ?? 0;
+        return bTs.compareTo(aTs);
+      });
+
+    for (final run in runs) {
+      if (run.id == widget.runId) continue; // skip current run
+
+      // Try by exact index first
+      final wByIndex =
+      await run.reference.collection('workouts').doc(widget.workoutIndex.toString()).get();
+      final byIndexDone = wByIndex.data()?['completedAt'] as Timestamp?;
+      if (byIndexDone != null) return true;
+
+      // Fallback by name
+      try {
+        final byName = await run.reference
+            .collection('workouts')
+            .where('name', isEqualTo: workout.name)
+            .limit(1)
+            .get();
+        if (byName.docs.isNotEmpty) {
+          final done = byName.docs.first.data()['completedAt'] as Timestamp?;
+          if (done != null) return true;
+        }
+      } catch (_) {
+        // ignore and continue
+      }
+    }
+
+    // No completed instance found anywhere
+    return false;
+  }
 
   Future<List<Map<String, dynamic>>> _getPreviousEntries(int liftIndex) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return [];
 
-    final workouts =
-        await _getPreviousWorkoutInstances(user.uid, workout.name);
+    // Show previous ONLY if a completed instance exists before now (this run or any prior run).
+    final hasPrior = await _hasAnyPriorCompletedInstance();
+    if (!hasPrior) return [];
+
+    // (rest stays the same)
+    final workouts = await _getPreviousWorkoutInstances(user.uid, workout.name);
     if (workouts.isEmpty) return [];
 
     final prevWorkout = workouts.first;
-
     final liftsCol = prevWorkout.reference.collection('lifts');
 
-    // Try to match by a unique liftId if present, otherwise by index
     DocumentSnapshot<Map<String, dynamic>>? prevLiftDoc;
     int? liftId;
     try {
@@ -261,12 +340,12 @@ class _WebWorkoutLogState extends State<WebWorkoutLog> {
         prevLiftDoc = query.docs.first;
       }
     }
-
     prevLiftDoc ??= await liftsCol.doc(liftIndex.toString()).get();
 
     final List<dynamic> prevData = prevLiftDoc.data()?['entries'] ?? [];
     return prevData.cast<Map<String, dynamic>>();
   }
+
 
   void _recalculateTotals() {
     _workoutScore = 0.0;

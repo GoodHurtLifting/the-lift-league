@@ -2,13 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'about_screen.dart';
+import 'package:lift_league/web_tools/poss_drawer.dart';
 import 'custom_blocks_screen.dart';
 import 'poss_block_builder.dart';
-import 'privacy_policy_screen.dart';
-import 'terms_of_service_screen.dart';
-import 'download_app_screen.dart';
 import 'web_custom_block_service.dart';
 import '../services/promo_popup_service.dart';
 import 'web_sign_in_dialog.dart';
@@ -18,8 +14,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 Color? _lightGrey = Colors.grey[400];
 
 /// Entry widget that reacts to Firebase auth changes.
-/// When a user signs in or out the `StreamBuilder` rebuilds and shows the
-/// appropriate UI without requiring a manual page refresh.
 class POSSHomePage extends StatelessWidget {
   const POSSHomePage({super.key});
 
@@ -30,7 +24,6 @@ class POSSHomePage extends StatelessWidget {
   }
 }
 
-
 class _POSSHomeView extends StatefulWidget {
   const _POSSHomeView({super.key});
 
@@ -38,7 +31,7 @@ class _POSSHomeView extends StatefulWidget {
   State<_POSSHomeView> createState() => _POSSHomeViewState();
 }
 
-class _POSSHomeViewState extends State<_POSSHomeView> {
+class _POSSHomeViewState extends State<_POSSHomeView> with TickerProviderStateMixin {
   bool _showGrid = false;
   bool _loading = true;
   StreamSubscription<User?>? _authSub;
@@ -47,8 +40,7 @@ class _POSSHomeViewState extends State<_POSSHomeView> {
   void initState() {
     super.initState();
     _checkBlocks();
-    // Reload blocks whenever the user signs in or out so the
-    // UI reflects the correct state immediately.
+    // Reload blocks whenever the user signs in or out.
     _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
       _checkBlocks();
     });
@@ -96,6 +88,13 @@ class _POSSHomeViewState extends State<_POSSHomeView> {
     setState(() => _showGrid = true);
   }
 
+  void _openBuilder() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => POSSBlockBuilder(onSaved: _onSaved)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     Widget body;
@@ -106,14 +105,61 @@ class _POSSHomeViewState extends State<_POSSHomeView> {
         setState(() => _showGrid = false);
       });
     } else {
-      body = const Center(
-        child: Text(
-          'There are no saved blocks yet',
-          textAlign: TextAlign.center,
-          softWrap: true,
+      // Empty state: icon bullets with staggered fade/slide + CTA
+      body = Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 60), // shift from AppBar
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center, // center the block
+            children: [
+              // list wrapper so bullets are left-aligned within the centered column
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _FadeInUp(
+                    delayMs: 0,
+                    child: const _Bullet(icon: Icons.fitness_center, text: 'Pick Workouts'),
+                  ),
+                  const SizedBox(height: 8),
+                  _FadeInUp(
+                    delayMs: 100,
+                    child: const _Bullet(icon: Icons.add_circle_outline, text: 'Add Your Lifts'),
+                  ),
+                  const SizedBox(height: 8),
+                  _FadeInUp(
+                    delayMs: 200,
+                    child: const _Bullet(icon: Icons.calendar_today, text: 'Set Days/Week'),
+                  ),
+                  const SizedBox(height: 8),
+                  _FadeInUp(
+                    delayMs: 300,
+                    child: const _Bullet(icon: Icons.timelapse, text: 'Choose Total Weeks'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              _FadeInUp(
+                delayMs: 450,
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.red,   // brand red
+                    foregroundColor: Colors.black, // black text/icon
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: _openBuilder,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Build a Training Block'),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
+
 
     return DefaultTextStyle(
       style: TextStyle(color: _lightGrey),
@@ -122,127 +168,17 @@ class _POSSHomeViewState extends State<_POSSHomeView> {
           foregroundColor: _lightGrey,
           centerTitle: true,
           title: const Text(
-            'Progressive Overload\nScoring System',
+            'Build Scored Workouts\nStay Motivated',
             textAlign: TextAlign.center,
             softWrap: true,
           ),
         ),
-        drawer: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(color: Colors.black54),
-                child: Text('Menu'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.folder),
-                title: const Text('My Blocks'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _openMyBlocks();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: const Text('Block Builder'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => POSSBlockBuilder(onSaved: _onSaved)),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.info),
-                title: const Text('About'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AboutScreen()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.privacy_tip),
-                title: const Text('Privacy Policy'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const PrivacyPolicyScreen()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.description),
-                title: const Text('Terms of Service'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const TermsOfServiceScreen()),
-                  );
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.download),
-                title: const Text('Get the App'),
-                onTap: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const DownloadAppScreen()),
-                  );
-                },
-              ),
-              const Divider(),
-              Builder(
-                builder: (context) {
-                  final user = FirebaseAuth.instance.currentUser;
-                  if (user == null) {
-                    return ListTile(
-                      leading: const Icon(Icons.login),
-                      title: const Text('Sign In'),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        final signedIn = await showWebSignInDialog(context);
-                        if (signedIn) await _checkBlocks();
-                      },
-                    );
-                  } else {
-                    return ListTile(
-                      leading: const Icon(Icons.logout),
-                      title: const Text('Sign Out'),
-                      onTap: () async {
-                        Navigator.pop(context);
-                        await FirebaseAuth.instance.signOut();
-                        if (mounted) setState(() => _showGrid = false);
-                      },
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
+        drawer: POSSDrawer(
+          onMyBlocks: _openMyBlocks, // uses your auth+reauth flow
+          onOpenBuilder: _openBuilder,
         ),
         body: Column(
           children: [
-            const Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: Text(
-                'Build Workouts • Stay Motivated',
-                textAlign: TextAlign.center,
-                softWrap: true,
-                style: TextStyle(fontSize: 14),
-              ),
-            ),
             Expanded(child: body),
           ],
         ),
@@ -253,6 +189,72 @@ class _POSSHomeViewState extends State<_POSSHomeView> {
   @override
   void dispose() {
     _authSub?.cancel();
+    super.dispose();
+  }
+}
+
+/// ─────────────────────────────────────────────────────────
+/// UI helpers
+/// ─────────────────────────────────────────────────────────
+
+class _Bullet extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _Bullet({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(width: 4),
+        Icon(icon, color: Colors.red, size: 20),
+        const SizedBox(width: 8),
+        Text(text, style: const TextStyle(fontSize: 16)),
+        const SizedBox(width: 4),
+      ],
+    );
+  }
+}
+
+class _FadeInUp extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeInUp({required this.child, this.delayMs = 0});
+
+  @override
+  State<_FadeInUp> createState() => _FadeInUpState();
+}
+
+class _FadeInUpState extends State<_FadeInUp> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _opacity;
+  late final Animation<Offset> _offset;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _offset = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _opacity,
+      child: SlideTransition(position: _offset, child: widget.child),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
     super.dispose();
   }
 }
