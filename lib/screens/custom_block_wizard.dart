@@ -443,7 +443,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             content: workouts.isEmpty
                 ? const SizedBox.shrink()
                 : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox(
                         height: 400,
@@ -464,13 +464,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                           showDumbbellOption: true,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: ElevatedButton(
-                          onPressed: _previewSchedule,
-                          child: const Text('Preview Schedule'),
-                        ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _previewSchedule,
+                        child: const Text('Preview Schedule'),
                       ),
                     ],
                   ),
