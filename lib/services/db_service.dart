@@ -1648,13 +1648,65 @@ class DBService {
       orElse: () => {},
     );
 
-    final List<int> liftIds = List<int>.from(workoutDef['liftIds'] ?? []);
+    List<int> liftIds = List<int>.from(workoutDef['liftIds'] ?? []);
 
+    // If no lifts are defined in the static workout data, fall back to the DB
     if (liftIds.isEmpty) {
-      print("⚠️ No lifts defined for workoutId $workoutId");
-      return;
+      // Try pulling the lifts from lift_workouts for this workoutId
+      final liftWorkouts = await db.query(
+        'lift_workouts',
+        columns: ['liftId'],
+        where: 'workoutId = ?',
+        whereArgs: [workoutId],
+      );
+
+      liftIds = liftWorkouts
+          .map((row) => (row['liftId'] as num).toInt())
+          .toList();
+
+      // If still empty, aggregate directly from lift_totals for this instance
+      if (liftIds.isEmpty) {
+        final totals = await db.rawQuery('''
+        SELECT liftId, SUM(liftScore) AS liftScore, SUM(liftWorkload) AS liftWorkload
+        FROM lift_totals
+        WHERE workoutInstanceId = ? AND userId = ?
+        GROUP BY liftId
+      ''', [workoutInstanceId, userId]);
+
+        if (totals.isEmpty) {
+          print("⚠️ No lifts found for workoutId $workoutId (instance $workoutInstanceId)");
+          return;
+        }
+
+        double totalScore = 0.0;
+        double totalWorkload = 0.0;
+        for (final row in totals) {
+          totalScore += (row['liftScore'] as num?)?.toDouble() ?? 0.0;
+          totalWorkload += (row['liftWorkload'] as num?)?.toDouble() ?? 0.0;
+        }
+
+        final averageScore = totalScore / totals.length;
+
+        await upsertWorkoutTotals(
+          workoutInstanceId: workoutInstanceId,
+          userId: userId,
+          blockInstanceId: blockInstanceId,
+          workoutWorkload: totalWorkload,
+          workoutScore: averageScore,
+        );
+
+        print(
+            "✅ Updated workout_totals (dynamic lifts): Workout $workoutInstanceId | Workload: $totalWorkload | Score: $averageScore");
+
+        await recalculateBlockTotals(blockInstanceId);
+        if (syncToCloud) {
+          await syncWorkoutTotalsToFirestore(userId);
+        }
+        return;
+      }
     }
 
+    // Aggregate using the liftIds list
     double totalScore = 0.0;
     double totalWorkload = 0.0;
 
@@ -1669,13 +1721,10 @@ class DBService {
         totalScore += (liftTotal.first['liftScore'] as num?)?.toDouble() ?? 0.0;
         totalWorkload +=
             (liftTotal.first['liftWorkload'] as num?)?.toDouble() ?? 0.0;
-      } else {
-        totalScore += 0.0;
       }
     }
 
-    final averageScore =
-        liftIds.isNotEmpty ? (totalScore / liftIds.length) : 0.0;
+    final averageScore = liftIds.isNotEmpty ? (totalScore / liftIds.length) : 0.0;
 
     // 🧠 Step 3: Write to workout_totals
     await upsertWorkoutTotals(
