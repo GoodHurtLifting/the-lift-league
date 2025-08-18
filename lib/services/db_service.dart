@@ -28,9 +28,9 @@ class DBService {
   }
 
   // ──────────────────────────────────────────────────────────
-  // 🔄 DATABASE INIT (v16, cleaned up)
+  // 🔄 DATABASE INIT (v17, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 16;   // bump any time the schema changes
+  static const _dbVersion = 17;   // bump any time the schema changes
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
@@ -59,6 +59,11 @@ class DBService {
           await db.execute(
             "CREATE INDEX IF NOT EXISTS idx_wi_sched "
             "ON workout_instances (scheduledDate);"
+          );
+        }
+        if (oldV < 17) {
+          await db.execute(
+            "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;"
           );
         }
       },
@@ -234,6 +239,7 @@ class DBService {
         repsPerSet INTEGER,
         multiplier REAL,
         isBodyweight INTEGER,
+        isDumbbellLift INTEGER,
         FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
       )
     ''');
@@ -715,6 +721,7 @@ class DBService {
         'repsPerSet': lift.repsPerSet,
         'multiplier': lift.multiplier,
         'isBodyweight': lift.isBodyweight ? 1 : 0,
+        'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
       });
     }
   }
@@ -790,11 +797,12 @@ class DBService {
                     name: l['name'] as String,
                     sets: l['sets'] as int,
                     repsPerSet: l['repsPerSet'] as int,
-                    multiplier: (l['multiplier'] as num).toDouble(),
-                    isBodyweight: (l['isBodyweight'] as int) == 1,
-                  ))
-              .toList(),
-        ),
+                  multiplier: (l['multiplier'] as num).toDouble(),
+                  isBodyweight: (l['isBodyweight'] as int) == 1,
+                  isDumbbellLift: (l['isDumbbellLift'] as int) == 1,
+                ))
+            .toList(),
+      ),
       );
     }
 
