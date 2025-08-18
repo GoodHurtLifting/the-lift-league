@@ -425,14 +425,14 @@ class DBService {
       int workoutInstanceId) async {
     final db = await database;
     return await db.rawQuery('''
-      SELECT lw.liftId, l.liftName,
-             CASE WHEN lw.repsPerSet IS NOT NULL THEN
-               (lw.numSets || ' sets x ' || lw.repsPerSet || ' reps')
-             ELSE l.repScheme END AS repScheme,
-             lw.numSets,
-             COALESCE(lw.multiplier, l.scoreMultiplier) AS scoreMultiplier,
+      SELECT lw.liftId,
+             l.liftName,
+             COALESCE(lw.numSets, l.numSets) AS sets,
+             lw.repsPerSet,
+             COALESCE(lw.multiplier, l.scoreMultiplier) AS multiplier,
              COALESCE(lw.isDumbbellLift, l.isDumbbellLift) AS isDumbbellLift,
              CASE WHEN lw.isBodyweight = 1 THEN 'bodyweight' ELSE l.scoreType END AS scoreType,
+             l.repScheme,
              l.youtubeUrl,
              l.description,
              l.referenceLiftId,
