@@ -153,15 +153,20 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
     } else {
       final liftsFromDb = await db.getWorkoutLifts(widget.workoutInstanceId);
       for (final lift in liftsFromDb) {
+        final int sets = (lift['sets'] as int?) ?? 3;
+        final int? repsPerSet = lift['repsPerSet'] as int?;
+        final repScheme = repsPerSet != null
+            ? '$sets sets x $repsPerSet reps'
+            : (lift['repScheme'] ?? '');
         orderedLifts.add(
           Liftinfo(
             liftId: lift['liftId'] as int,
             workoutInstanceId: widget.workoutInstanceId,
             liftName: lift['liftName'] ?? 'Unknown',
-            repScheme: lift['repScheme'] ?? '',
-            numSets: lift['numSets'] ?? 3,
-            scoreMultiplier: (lift['scoreMultiplier'] ?? 1.0).toDouble(),
-            isDumbbellLift: lift['isDumbbellLift'] == 1,
+            repScheme: repScheme,
+            numSets: sets,
+            scoreMultiplier: (lift['multiplier'] ?? 1.0).toDouble(),
+            isDumbbellLift: (lift['isDumbbellLift'] ?? 0) == 1,
             scoreType: lift['scoreType'] ?? 'multiplier',
             youtubeUrl: lift['youtubeUrl'],
             description: lift['description'] ?? '',
