@@ -62,9 +62,33 @@ class DBService {
           );
         }
         if (oldV < 17) {
+
           await db.execute(
             "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;"
           );
+
+          // add custom lift fields
+          try {
+            await db.execute(
+                "ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;");
+          } catch (_) {}
+          try {
+            await db.execute(
+                "ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;");
+          } catch (_) {}
+          try {
+            await db.execute(
+                "ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;");
+          } catch (_) {}
+          try {
+            await db.execute(
+                "ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;");
+          } catch (_) {}
+          try {
+            await db.execute(
+                "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER;");
+          } catch (_) {}
+
         }
       },
     );
@@ -153,6 +177,10 @@ class DBService {
         workoutId INTEGER,
         liftId INTEGER,
         numSets INTEGER DEFAULT 3,
+        repsPerSet INTEGER,
+        multiplier REAL,
+        isBodyweight INTEGER,
+        isDumbbellLift INTEGER,
         FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE,
         FOREIGN KEY (liftId) REFERENCES lifts(liftId) ON DELETE CASCADE
       )
@@ -396,13 +424,24 @@ class DBService {
   Future<List<Map<String, dynamic>>> getWorkoutLifts(
       int workoutInstanceId) async {
     final db = await database;
-
     return await db.rawQuery('''
-      SELECT DISTINCT le.liftId, l.liftName, l.repScheme, l.numSets, l.scoreMultiplier, 
-             l.isDumbbellLift, l.scoreType, l.youtubeUrl, l.description
-      FROM lift_entries le
-      JOIN lifts l ON le.liftId = l.liftId
-      WHERE le.workoutInstanceId = ?
+      SELECT lw.liftId, l.liftName,
+             CASE WHEN lw.repsPerSet IS NOT NULL THEN
+               (lw.numSets || ' sets x ' || lw.repsPerSet || ' reps')
+             ELSE l.repScheme END AS repScheme,
+             lw.numSets,
+             COALESCE(lw.multiplier, l.scoreMultiplier) AS scoreMultiplier,
+             COALESCE(lw.isDumbbellLift, l.isDumbbellLift) AS isDumbbellLift,
+             CASE WHEN lw.isBodyweight = 1 THEN 'bodyweight' ELSE l.scoreType END AS scoreType,
+             l.youtubeUrl,
+             l.description,
+             l.referenceLiftId,
+             l.percentOfReference,
+             lw.isBodyweight AS isBodyweight
+      FROM workout_instances wi
+      JOIN lift_workouts lw ON lw.workoutId = wi.workoutId
+      JOIN lifts l ON lw.liftId = l.liftId
+      WHERE wi.workoutInstanceId = ?
     ''', [workoutInstanceId]);
   }
 
@@ -630,11 +669,24 @@ class DBService {
       // ✅ Insert lifts into `lift_workouts` (separately)
       if (workout.containsKey('liftIds') && workout['liftIds'] is List) {
         for (int liftId in workout['liftIds']) {
+          final liftRow = await db.query('lifts',
+              where: 'liftId = ?', whereArgs: [liftId], limit: 1);
+          final int numSets =
+              liftRow.isNotEmpty ? liftRow.first['numSets'] as int : 3;
+          final double? multiplier = liftRow.isNotEmpty
+              ? (liftRow.first['scoreMultiplier'] as num?)?.toDouble()
+              : null;
+          final int? isDumbbell =
+              liftRow.isNotEmpty ? liftRow.first['isDumbbellLift'] as int? : null;
+
           await db.insert(
               'lift_workouts',
               {
                 'workoutId': workout['workoutId'],
                 'liftId': liftId,
+                'numSets': numSets,
+                if (multiplier != null) 'multiplier': multiplier,
+                if (isDumbbell != null) 'isDumbbellLift': isDumbbell,
               },
               conflictAlgorithm: ConflictAlgorithm.ignore);
         }
@@ -797,12 +849,13 @@ class DBService {
                     name: l['name'] as String,
                     sets: l['sets'] as int,
                     repsPerSet: l['repsPerSet'] as int,
-                  multiplier: (l['multiplier'] as num).toDouble(),
-                  isBodyweight: (l['isBodyweight'] as int) == 1,
-                  isDumbbellLift: (l['isDumbbellLift'] as int) == 1,
-                ))
-            .toList(),
-      ),
+                    multiplier: (l['multiplier'] as num).toDouble(),
+                    isBodyweight: (l['isBodyweight'] as int) == 1,
+                    isDumbbellLift: (l['isDumbbellLift'] as int) == 1,
+                  ))
+              .toList(),
+        ),
+
       );
     }
 
@@ -889,6 +942,11 @@ class DBService {
           await db.insert('lift_workouts', {
             'workoutId': workoutId,
             'liftId': liftId,
+            'numSets': lift.sets,
+            'repsPerSet': lift.repsPerSet,
+            'multiplier': lift.multiplier,
+            'isBodyweight': lift.isBodyweight ? 1 : 0,
+            'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
           });
         } else {
           print('❌ Unknown lift name: ${lift.name}');
@@ -1371,11 +1429,12 @@ class DBService {
     int workoutId = workoutInstanceData.first['workoutId'];
 
     // ✅ Fetch lifts associated with this workout
-    List<Map<String, dynamic>> lifts = await db.rawQuery('''
-    SELECT lw.liftId, l.numSets FROM lift_workouts lw
-    JOIN lifts l ON lw.liftId = l.liftId
-    WHERE lw.workoutId = ?
-  ''', [workoutId]);
+    List<Map<String, dynamic>> lifts = await db.query(
+      'lift_workouts',
+      columns: ['liftId', 'numSets'],
+      where: 'workoutId = ?',
+      whereArgs: [workoutId],
+    );
 
     if (lifts.isEmpty) {
       throw Exception("❌ No lifts found for Workout ID: $workoutId");
@@ -2316,7 +2375,19 @@ class DBService {
   Future<List<Map<String, dynamic>>> getLiftsByWorkoutId(int workoutId) async {
     final db = await database;
     return await db.rawQuery('''
-      SELECT l.*
+      SELECT lw.liftId, l.liftName,
+             CASE WHEN lw.repsPerSet IS NOT NULL THEN
+               (lw.numSets || ' sets x ' || lw.repsPerSet || ' reps')
+             ELSE l.repScheme END AS repScheme,
+             lw.numSets,
+             COALESCE(lw.multiplier, l.scoreMultiplier) AS scoreMultiplier,
+             COALESCE(lw.isDumbbellLift, l.isDumbbellLift) AS isDumbbellLift,
+             CASE WHEN lw.isBodyweight = 1 THEN 'bodyweight' ELSE l.scoreType END AS scoreType,
+             l.youtubeUrl,
+             l.description,
+             l.referenceLiftId,
+             l.percentOfReference,
+             lw.isBodyweight AS isBodyweight
       FROM lift_workouts lw
       JOIN lifts l ON lw.liftId = l.liftId
       WHERE lw.workoutId = ?
@@ -2328,8 +2399,19 @@ class DBService {
     final db = await database;
     return await db.rawQuery('''
       SELECT b.blockId, b.blockName, w.workoutId, w.workoutName,
-             l.liftId, l.liftName, l.repScheme, l.numSets, l.scoreMultiplier,
-             l.isDumbbellLift, l.scoreType, l.youtubeUrl, l.description
+             l.liftId, l.liftName,
+             CASE WHEN lw.repsPerSet IS NOT NULL THEN
+               (lw.numSets || ' sets x ' || lw.repsPerSet || ' reps')
+             ELSE l.repScheme END AS repScheme,
+             lw.numSets,
+             COALESCE(lw.multiplier, l.scoreMultiplier) AS scoreMultiplier,
+             COALESCE(lw.isDumbbellLift, l.isDumbbellLift) AS isDumbbellLift,
+             CASE WHEN lw.isBodyweight = 1 THEN 'bodyweight' ELSE l.scoreType END AS scoreType,
+             l.youtubeUrl,
+             l.description,
+             l.referenceLiftId,
+             l.percentOfReference,
+             lw.isBodyweight AS isBodyweight
       FROM blocks b
       JOIN workouts_blocks wb ON wb.blockId = b.blockId
       JOIN workouts w ON wb.workoutId = w.workoutId
