@@ -213,6 +213,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Padding(
           padding: const EdgeInsets.all(8.0),
@@ -259,12 +260,11 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
           onPressed: _showAddLiftSheet,
           child: const Text('Add Lift'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 16),
         ElevatedButton(
           onPressed: widget.onComplete,
           child: Text(widget.isLast ? 'Build Block' : 'Next Workout'),
         ),
-        const SizedBox(height: 8),
       ],
     );
   }
