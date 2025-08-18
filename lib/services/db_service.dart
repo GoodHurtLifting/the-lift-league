@@ -912,6 +912,75 @@ class DBService {
     }
   }
 
+  /// Replaces the standard block definition with the latest data from a
+  /// custom block. Any existing block, workouts, and associated lifts are
+  /// deleted before recreating them from the custom block.
+  Future<void> replaceStandardBlockFromCustom(int customId) async {
+    final customBlock = await getCustomBlock(customId);
+    if (customBlock == null) return;
+
+    final db = await database;
+
+    await db.transaction((txn) async {
+      // Remove existing standard block (if any)
+      final existing = await txn.query('blocks',
+          where: 'blockName = ?', whereArgs: [customBlock.name], limit: 1);
+      if (existing.isNotEmpty) {
+        final int oldBlockId = existing.first['blockId'] as int;
+
+        // Fetch workouts tied to this block so we can cascade manually
+        final workouts = await txn.query('workouts_blocks',
+            where: 'blockId = ?', whereArgs: [oldBlockId]);
+        final workoutIds =
+            workouts.map((w) => w['workoutId'] as int).toList();
+
+        if (workoutIds.isNotEmpty) {
+          final placeholders = List.filled(workoutIds.length, '?').join(',');
+          await txn.delete('lift_workouts',
+              where: 'workoutId IN ($placeholders)', whereArgs: workoutIds);
+          await txn.delete('workouts',
+              where: 'workoutId IN ($placeholders)', whereArgs: workoutIds);
+        }
+
+        await txn
+            .delete('workouts_blocks', where: 'blockId = ?', whereArgs: [oldBlockId]);
+        await txn.delete('blocks', where: 'blockId = ?', whereArgs: [oldBlockId]);
+      }
+
+      // Insert fresh standard block from the custom block data
+      final int newBlockId = await txn.insert('blocks', {
+        'blockName': customBlock.name,
+        'scheduleType': 'standard',
+        'numWorkouts': customBlock.workouts.length,
+      });
+
+      for (final workout in customBlock.workouts) {
+        final int workoutId =
+            await txn.insert('workouts', {'workoutName': workout.name});
+
+        await txn.insert('workouts_blocks', {
+          'blockId': newBlockId,
+          'workoutId': workoutId,
+        });
+
+        for (final lift in workout.lifts) {
+          final liftId = _findLiftIdByName(lift.name);
+          if (liftId != null) {
+            await txn.insert('lift_workouts', {
+              'workoutId': workoutId,
+              'liftId': liftId,
+              'numSets': lift.sets,
+              'repsPerSet': lift.repsPerSet,
+              'multiplier': lift.multiplier,
+              'isBodyweight': lift.isBodyweight ? 1 : 0,
+              'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+            });
+          }
+        }
+      }
+    });
+  }
+
   Future<int> createBlockFromCustomBlockId(int customId, String userId) async {
     final customBlock = await getCustomBlock(customId);
     if (customBlock == null) {
@@ -971,48 +1040,38 @@ class DBService {
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
 // ──────────────────────────────────────────────
-  /// Creates a new block instance for the given [blockName]. If the block does
-  /// not exist in the standard `blocks` table, this will look for a matching
-  /// entry in `custom_blocks` and automatically convert it to a standard block
-  /// (along with its workouts and lifts) before creating the instance.
+  /// Creates a new block instance for the given [blockName]. If a matching
+  /// custom block exists, the standard block definition is refreshed from it
+  /// before the instance is created, ensuring any edits are respected on
+  /// subsequent builds.
   Future<int> insertNewBlockInstance(String blockName, String userId) async {
     final db = await database;
+    final cleanName = blockName.replaceAll(' (draft)', '');
 
-// ✅ Fetch blockId from the `blocks` table. If not found, attempt to convert
-    // a custom block with the same name into a standard one.
-    var blockData = await db.query(
-      'blocks',
-      where: 'blockName = ?',
-      whereArgs: [blockName],
-      limit: 1,
-    );
-
-    int blockId;
-
-    if (blockData.isEmpty) {
-      final cleanName = blockName.replaceAll(' (draft)', '');
-      final custom = await db.query('custom_blocks',
-          where: 'name = ?', whereArgs: [cleanName], limit: 1);
-      if (custom.isEmpty) {
-        throw Exception('❌ Block not found: $blockName');
-      }
-      return await createBlockFromCustomBlockId(
-          custom.first['id'] as int, userId);
-    } else {
-      blockId = blockData.first['blockId'] as int;
+    // If there's a custom block with this name, refresh the standard block
+    final custom = await db
+        .query('custom_blocks', where: 'name = ?', whereArgs: [cleanName], limit: 1);
+    if (custom.isNotEmpty) {
+      await replaceStandardBlockFromCustom(custom.first['id'] as int);
     }
 
-    // ✅ Insert new block instance with userId
-    int newBlockInstanceId = await db.insert('block_instances', {
+    // Fetch the (possibly refreshed) blockId from the standard blocks table
+    final blockData = await db.query('blocks',
+        where: 'blockName = ?', whereArgs: [cleanName], limit: 1);
+    if (blockData.isEmpty) {
+      throw Exception('❌ Block not found: $blockName');
+    }
+    final int blockId = blockData.first['blockId'] as int;
+
+    // Insert new block instance with userId
+    return await db.insert('block_instances', {
       'blockId': blockId,
-      'blockName': blockName,
+      'blockName': cleanName,
       'userId': userId,
       'startDate': null,
       'endDate': null,
       'status': "inactive",
     });
-
-    return newBlockInstanceId;
   }
 
   Future<void> activateBlockInstanceIfNeeded(
