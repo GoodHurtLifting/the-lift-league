@@ -153,26 +153,23 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
     } else {
       final liftsFromDb = await db.getWorkoutLifts(widget.workoutInstanceId);
       for (final lift in liftsFromDb) {
-        final liftData = await db.getLiftById(lift['liftId']);
-        if (liftData != null) {
-          orderedLifts.add(
-            Liftinfo(
-              liftId: liftData['liftId'] as int,
-              workoutInstanceId: widget.workoutInstanceId,
-              liftName: liftData['liftName'] ?? 'Unknown',
-              repScheme: liftData['repScheme'] ?? '',
-              numSets: liftData['numSets'] ?? 3,
-              scoreMultiplier: (liftData['scoreMultiplier'] ?? 1.0).toDouble(),
-              isDumbbellLift: liftData['isDumbbellLift'] == 1,
-              scoreType: liftData['scoreType'] ?? 'multiplier',
-              youtubeUrl: liftData['youtubeUrl'],
-              description: liftData['description'] ?? '',
-              referenceLiftId: liftData['referenceLiftId'],
-              percentOfReference:
-              (liftData['percentOfReference'] as num?)?.toDouble(),
-            ),
-          );
-        }
+        orderedLifts.add(
+          Liftinfo(
+            liftId: lift['liftId'] as int,
+            workoutInstanceId: widget.workoutInstanceId,
+            liftName: lift['liftName'] ?? 'Unknown',
+            repScheme: lift['repScheme'] ?? '',
+            numSets: lift['numSets'] ?? 3,
+            scoreMultiplier: (lift['scoreMultiplier'] ?? 1.0).toDouble(),
+            isDumbbellLift: lift['isDumbbellLift'] == 1,
+            scoreType: lift['scoreType'] ?? 'multiplier',
+            youtubeUrl: lift['youtubeUrl'],
+            description: lift['description'] ?? '',
+            referenceLiftId: lift['referenceLiftId'],
+            percentOfReference:
+                (lift['percentOfReference'] as num?)?.toDouble(),
+          ),
+        );
       }
       workoutDefinition = {
         'workoutId': workoutId,
