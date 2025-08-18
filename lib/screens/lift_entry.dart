@@ -13,7 +13,6 @@ class LiftEntry extends StatefulWidget {
   final Liftinfo lift;
   final int blockId;
   final int workoutInstanceId;
-  final int numSets;
   final int blockInstanceId;
   final String blockName;
   final Map<String, TextEditingController> controllerMap;
@@ -29,7 +28,6 @@ class LiftEntry extends StatefulWidget {
     required this.lift,
     required this.blockId,
     required this.workoutInstanceId,
-    required this.numSets,
     required this.blockInstanceId,
     required this.blockName,
     required this.controllerMap,
@@ -48,8 +46,8 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
   bool get wantKeepAlive => true;
   late List<TextEditingController> _repsControllers = [];
   late List<TextEditingController> _weightControllers = [];
-  List<String> _prevReps = List.filled(5, "-"); // Default placeholder for 5 sets
-  List<String> _prevWeights = List.filled(5, "-"); // Default placeholder for 5 sets
+  List<String> _prevReps = [];
+  List<String> _prevWeights = [];
   int _prevTotalReps = 0;
   double _prevTotalWeight = 0.0;
   double _prevLiftScore = 0.0;
@@ -113,11 +111,13 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
   }
 
   void _initializeControllers() {
-    if (_repsControllers.isNotEmpty && _weightControllers.isNotEmpty) {
+    final setCount = widget.lift.numSets;
+
+    if (_repsControllers.length == setCount && _weightControllers.length == setCount) {
       return;
     }
 
-    _repsControllers = List.generate(widget.numSets, (index) {
+    _repsControllers = List.generate(setCount, (index) {
       final controller = TextEditingController();
       widget.controllerMap['${widget.lift.liftId}_rep_$index'] = controller;
       widget.focusMap['${widget.lift.liftId}_rep_$index'] = FocusNode();
@@ -125,13 +125,16 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
       return controller;
     });
 
-    _weightControllers = List.generate(widget.numSets, (index) {
+    _weightControllers = List.generate(setCount, (index) {
       final controller = TextEditingController();
       widget.controllerMap['${widget.lift.liftId}_weight_$index'] = controller;
       widget.focusMap['${widget.lift.liftId}_weight_$index'] = FocusNode();
       controller.addListener(_onFieldChanged);
       return controller;
     });
+
+    _prevReps = List.filled(setCount, '-');
+    _prevWeights = List.filled(setCount, '-');
   }
 
   void _onFieldChanged() {

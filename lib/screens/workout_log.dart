@@ -570,7 +570,6 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
                 lift: lift,
                 blockId: widget.blockInstanceId,
                 workoutInstanceId: widget.workoutInstanceId,
-                numSets: lift.numSets,
                 controllerMap: _controllerMap,
                 focusMap: _focusMap,
                 openNumpad: _showInlineNumpad,
