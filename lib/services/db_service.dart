@@ -28,7 +28,7 @@ class DBService {
   }
 
   // ──────────────────────────────────────────────────────────
-  // 🔄 DATABASE INIT (v16, cleaned up)
+  // 🔄 DATABASE INIT (v17, cleaned up)
   // ──────────────────────────────────────────────────────────
   static const _dbVersion = 17;   // bump any time the schema changes
 
@@ -62,6 +62,11 @@ class DBService {
           );
         }
         if (oldV < 17) {
+
+          await db.execute(
+            "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;"
+          );
+
           // add custom lift fields
           try {
             await db.execute(
@@ -83,6 +88,7 @@ class DBService {
             await db.execute(
                 "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER;");
           } catch (_) {}
+
         }
       },
     );
@@ -849,6 +855,7 @@ class DBService {
                   ))
               .toList(),
         ),
+
       );
     }
 
