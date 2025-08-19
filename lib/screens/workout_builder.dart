@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/data/lift_data.dart';
 import 'package:lift_league/services/score_multiplier_service.dart';
+import 'package:lift_league/services/db_service.dart';
 
 class WorkoutBuilder extends StatefulWidget {
   final WorkoutDraft workout;
@@ -195,10 +196,168 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           print('[AddLift] AFTER add  → ${widget.workout.lifts[idx].name}: '
                               '${widget.workout.lifts[idx].sets}x${widget.workout.lifts[idx].repsPerSet}');
                         });
+                        DBService().updateWorkoutDraftLifts(
+                            widget.workout.id, widget.workout.lifts);
 
                         Navigator.pop(context);
                       },
                       child: const Text('Save'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEditLiftSheet(int index) {
+    final lift = widget.workout.lifts[index];
+    final nameController = TextEditingController(text: lift.name);
+    final setsCtrl = TextEditingController(text: lift.sets.toString());
+    final repsCtrl = TextEditingController(text: lift.repsPerSet.toString());
+
+    bool isBodyweight = lift.isBodyweight;
+    bool isDumbbellLift = lift.isDumbbellLift;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final liftNames = liftDataList
+            .map((e) => e['liftName'] as String)
+            .toSet()
+            .toList()
+          ..sort();
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: StatefulBuilder(
+            builder: (ctx, setLocalState) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Autocomplete<String>(
+                      optionsBuilder: (TextEditingValue text) {
+                        if (text.text.isEmpty) return const Iterable<String>.empty();
+                        return liftNames.where(
+                          (n) => n.toLowerCase().contains(text.text.toLowerCase()),
+                        );
+                      },
+                      fieldViewBuilder: (context, controller, focus, onSubmit) {
+                        controller.text = nameController.text;
+                        return TextField(
+                          controller: controller,
+                          focusNode: focus,
+                          decoration: const InputDecoration(labelText: 'Lift name'),
+                          onChanged: (v) => nameController.text = v,
+                        );
+                      },
+                      onSelected: (v) => nameController.text = v,
+                    ),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: setsCtrl,
+                            decoration: const InputDecoration(labelText: 'Sets'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: repsCtrl,
+                            decoration: const InputDecoration(labelText: 'Reps'),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Bodyweight'),
+                            value: isBodyweight,
+                            onChanged: (v) {
+                              setLocalState(() {
+                                isBodyweight = v ?? false;
+                                if (isBodyweight) isDumbbellLift = false;
+                              });
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Dumbbell lift'),
+                            value: isDumbbellLift,
+                            onChanged: (v) {
+                              setLocalState(() {
+                                isDumbbellLift = v ?? false;
+                                if (isDumbbellLift) isBodyweight = false;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        final name = nameController.text.trim();
+                        if (name.isEmpty) return;
+
+                        final sets = int.tryParse(setsCtrl.text) ?? lift.sets;
+                        final reps = int.tryParse(repsCtrl.text) ?? lift.repsPerSet;
+
+                        final multiplier = ScoreMultiplierService().getMultiplier(
+                          sets: sets,
+                          repsPerSet: reps,
+                          isBodyweight: isBodyweight,
+                        );
+
+                        setState(() {
+                          final l = widget.workout.lifts[index];
+                          l
+                            ..name = name
+                            ..sets = sets
+                            ..repsPerSet = reps
+                            ..multiplier = multiplier
+                            ..isBodyweight = isBodyweight
+                            ..isDumbbellLift = isDumbbellLift;
+                        });
+
+                        DBService().updateWorkoutDraftLifts(
+                            widget.workout.id, widget.workout.lifts);
+
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Save'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          widget.workout.lifts.removeAt(index);
+                        });
+                        DBService().updateWorkoutDraftLifts(
+                            widget.workout.id, widget.workout.lifts);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Delete'),
                     ),
                   ],
                 ),
@@ -220,7 +379,10 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
           child: TextField(
             controller: _nameController,
             decoration: const InputDecoration(labelText: 'Workout name'),
-            onChanged: (v) => widget.workout.name = v,
+            onChanged: (v) {
+              widget.workout.name = v;
+              DBService().updateWorkoutDraftName(widget.workout.id, v);
+            },
           ),
         ),
         if (widget.allWorkouts.length > 1)
@@ -252,6 +414,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                 title: Text('Lift ${index + 1}: ${lift.name}'),
                 subtitle: Text('${lift.sets} x ${lift.repsPerSet}'),
                 trailing: Text(lift.multiplier.toStringAsFixed(3)),
+                onLongPress: () => _showEditLiftSheet(index),
               );
             },
           ),
