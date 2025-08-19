@@ -781,6 +781,66 @@ class DBService {
     }
   }
 
+  /// Loads a single [WorkoutDraft] with its associated lifts from the database.
+  Future<WorkoutDraft?> fetchWorkoutDraft(int workoutId) async {
+    final db = await database;
+    final workoutRows = await db.query('workout_drafts',
+        where: 'id = ?', whereArgs: [workoutId], limit: 1);
+    if (workoutRows.isEmpty) return null;
+    final w = workoutRows.first;
+    final liftRows =
+        await db.query('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
+    final lifts = liftRows
+        .map(
+          (l) => LiftDraft(
+            name: l['name'] as String,
+            sets: l['sets'] as int,
+            repsPerSet: l['repsPerSet'] as int,
+            multiplier: (l['multiplier'] as num).toDouble(),
+            isBodyweight: (l['isBodyweight'] as int) == 1,
+            isDumbbellLift: (l['isDumbbellLift'] as int) == 1,
+          ),
+        )
+        .toList();
+
+    return WorkoutDraft(
+      id: w['id'] as int,
+      dayIndex: w['dayIndex'] as int,
+      name: w['name'] as String? ?? '',
+      lifts: lifts,
+    );
+  }
+
+  /// Replaces an entire workout draft—including its lifts—in a single
+  /// transaction.
+  Future<void> updateWorkoutDraft(WorkoutDraft workout) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.update(
+        'workout_drafts',
+        {
+          'name': workout.name,
+          'dayIndex': workout.dayIndex,
+        },
+        where: 'id = ?',
+        whereArgs: [workout.id],
+      );
+      await txn
+          .delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workout.id]);
+      for (final lift in workout.lifts) {
+        await txn.insert('lift_drafts', {
+          'workoutId': workout.id,
+          'name': lift.name,
+          'sets': lift.sets,
+          'repsPerSet': lift.repsPerSet,
+          'multiplier': lift.multiplier,
+          'isBodyweight': lift.isBodyweight ? 1 : 0,
+          'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+        });
+      }
+    });
+  }
+
   /// Replaces all lift entries for a workout draft with [lifts]. This is used
   /// when editing or reordering lifts within a custom block draft.
   Future<void> updateWorkoutDraftLifts(int workoutId, List<LiftDraft> lifts) async {

@@ -34,11 +34,15 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.workout.name);
+    _loadWorkoutFromDb();
   }
 
   @override
   void didUpdateWidget(covariant WorkoutBuilder oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.workout.id != widget.workout.id) {
+      _loadWorkoutFromDb();
+    }
     if (oldWidget.workout != widget.workout) {
       _nameController.text = widget.workout.name;
     }
@@ -48,6 +52,21 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   void dispose() {
     _nameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadWorkoutFromDb() async {
+    final fetched = await DBService().fetchWorkoutDraft(widget.workout.id);
+    if (fetched != null && mounted) {
+      setState(() {
+        widget.workout
+          ..name = fetched.name
+          ..dayIndex = fetched.dayIndex
+          ..lifts
+            ..clear()
+            ..addAll(fetched.lifts);
+      });
+      _nameController.text = fetched.name;
+    }
   }
 
   void _showAddLiftSheet() {
@@ -196,8 +215,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           print('[AddLift] AFTER add  → ${widget.workout.lifts[idx].name}: '
                               '${widget.workout.lifts[idx].sets}x${widget.workout.lifts[idx].repsPerSet}');
                         });
-                        DBService().updateWorkoutDraftLifts(
-                            widget.workout.id, widget.workout.lifts);
+                        DBService().updateWorkoutDraft(widget.workout);
 
                         Navigator.pop(context);
                       },
@@ -341,8 +359,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             ..isDumbbellLift = isDumbbellLift;
                         });
 
-                        DBService().updateWorkoutDraftLifts(
-                            widget.workout.id, widget.workout.lifts);
+                        DBService().updateWorkoutDraft(widget.workout);
 
                         Navigator.pop(context);
                       },
@@ -353,8 +370,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         setState(() {
                           widget.workout.lifts.removeAt(index);
                         });
-                        DBService().updateWorkoutDraftLifts(
-                            widget.workout.id, widget.workout.lifts);
+                        DBService().updateWorkoutDraft(widget.workout);
                         Navigator.pop(context);
                       },
                       child: const Text('Delete'),
@@ -381,7 +397,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             decoration: const InputDecoration(labelText: 'Workout name'),
             onChanged: (v) {
               widget.workout.name = v;
-              DBService().updateWorkoutDraftName(widget.workout.id, v);
+              DBService().updateWorkoutDraft(widget.workout);
             },
           ),
         ),
