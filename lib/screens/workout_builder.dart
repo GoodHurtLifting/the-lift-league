@@ -60,10 +60,10 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
       setState(() {
         widget.workout
           ..name = fetched.name
-          ..dayIndex = fetched.dayIndex
-          ..lifts
-            ..clear()
-            ..addAll(fetched.lifts);
+          ..dayIndex = fetched.dayIndex;
+        widget.workout.lifts
+          ..clear()
+          ..addAll(fetched.lifts);
       });
       _nameController.text = fetched.name;
     }
@@ -89,7 +89,10 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
         return Padding(
           padding: EdgeInsets.fromLTRB(
-            16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16,
+            16,
+            16,
+            16,
+            MediaQuery.of(ctx).viewInsets.bottom + 16,
           ),
           child: StatefulBuilder(
             builder: (ctx, setLocalState) {
@@ -100,16 +103,19 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     // Lift name
                     Autocomplete<String>(
                       optionsBuilder: (TextEditingValue text) {
-                        if (text.text.isEmpty) return const Iterable<String>.empty();
+                        if (text.text.isEmpty)
+                          return const Iterable<String>.empty();
                         return liftNames.where(
-                              (n) => n.toLowerCase().contains(text.text.toLowerCase()),
+                          (n) =>
+                              n.toLowerCase().contains(text.text.toLowerCase()),
                         );
                       },
                       fieldViewBuilder: (context, controller, focus, onSubmit) {
                         return TextField(
                           controller: controller,
                           focusNode: focus,
-                          decoration: const InputDecoration(labelText: 'Lift name'),
+                          decoration:
+                              const InputDecoration(labelText: 'Lift name'),
                           onChanged: (v) => nameController.text = v,
                         );
                       },
@@ -122,7 +128,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         Expanded(
                           child: TextField(
                             controller: setsCtrl,
-                            decoration: const InputDecoration(labelText: 'Sets'),
+                            decoration:
+                                const InputDecoration(labelText: 'Sets'),
                             keyboardType: TextInputType.number,
                           ),
                         ),
@@ -130,7 +137,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         Expanded(
                           child: TextField(
                             controller: repsCtrl,
-                            decoration: const InputDecoration(labelText: 'Reps'),
+                            decoration:
+                                const InputDecoration(labelText: 'Reps'),
                             keyboardType: TextInputType.number,
                           ),
                         ),
@@ -182,7 +190,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         final reps = int.tryParse(repsCtrl.text) ?? 10;
 
                         // Get multiplier (should be PURE; if it mutates inputs, we'll catch below)
-                        final multiplier = ScoreMultiplierService().getMultiplier(
+                        final multiplier =
+                            ScoreMultiplierService().getMultiplier(
                           sets: sets,
                           repsPerSet: reps,
                           isBodyweight: isBodyweight,
@@ -200,7 +209,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                         // Debug before add
                         // ignore: avoid_print
-                        print('[AddLift] BEFORE add → ${newLift.name}: ${newLift.sets}x${newLift.repsPerSet} (BW=$isBodyweight, DB=$isDumbbellLift)');
+                        print(
+                            '[AddLift] BEFORE add → ${newLift.name}: ${newLift.sets}x${newLift.repsPerSet} (BW=$isBodyweight, DB=$isDumbbellLift)');
 
                         setState(() {
                           final idx = widget.workout.lifts.length;
@@ -212,7 +222,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                           // Debug after add
                           // ignore: avoid_print
-                          print('[AddLift] AFTER add  → ${widget.workout.lifts[idx].name}: '
+                          print(
+                              '[AddLift] AFTER add  → ${widget.workout.lifts[idx].name}: '
                               '${widget.workout.lifts[idx].sets}x${widget.workout.lifts[idx].repsPerSet}');
                         });
                         DBService().updateWorkoutDraft(widget.workout);
@@ -252,7 +263,10 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
         return Padding(
           padding: EdgeInsets.fromLTRB(
-            16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16,
+            16,
+            16,
+            16,
+            MediaQuery.of(ctx).viewInsets.bottom + 16,
           ),
           child: StatefulBuilder(
             builder: (ctx, setLocalState) {
@@ -262,9 +276,11 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                   children: [
                     Autocomplete<String>(
                       optionsBuilder: (TextEditingValue text) {
-                        if (text.text.isEmpty) return const Iterable<String>.empty();
+                        if (text.text.isEmpty)
+                          return const Iterable<String>.empty();
                         return liftNames.where(
-                          (n) => n.toLowerCase().contains(text.text.toLowerCase()),
+                          (n) =>
+                              n.toLowerCase().contains(text.text.toLowerCase()),
                         );
                       },
                       fieldViewBuilder: (context, controller, focus, onSubmit) {
@@ -272,19 +288,20 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         return TextField(
                           controller: controller,
                           focusNode: focus,
-                          decoration: const InputDecoration(labelText: 'Lift name'),
+                          decoration:
+                              const InputDecoration(labelText: 'Lift name'),
                           onChanged: (v) => nameController.text = v,
                         );
                       },
                       onSelected: (v) => nameController.text = v,
                     ),
-
                     Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: setsCtrl,
-                            decoration: const InputDecoration(labelText: 'Sets'),
+                            decoration:
+                                const InputDecoration(labelText: 'Sets'),
                             keyboardType: TextInputType.number,
                           ),
                         ),
@@ -292,13 +309,13 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         Expanded(
                           child: TextField(
                             controller: repsCtrl,
-                            decoration: const InputDecoration(labelText: 'Reps'),
+                            decoration:
+                                const InputDecoration(labelText: 'Reps'),
                             keyboardType: TextInputType.number,
                           ),
                         ),
                       ],
                     ),
-
                     Row(
                       children: [
                         Expanded(
@@ -332,7 +349,6 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
                     ElevatedButton(
                       onPressed: () {
@@ -340,9 +356,11 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         if (name.isEmpty) return;
 
                         final sets = int.tryParse(setsCtrl.text) ?? lift.sets;
-                        final reps = int.tryParse(repsCtrl.text) ?? lift.repsPerSet;
+                        final reps =
+                            int.tryParse(repsCtrl.text) ?? lift.repsPerSet;
 
-                        final multiplier = ScoreMultiplierService().getMultiplier(
+                        final multiplier =
+                            ScoreMultiplierService().getMultiplier(
                           sets: sets,
                           repsPerSet: reps,
                           isBodyweight: isBodyweight,
