@@ -45,6 +45,7 @@ class CustomBlock {
               isDumbbellLift: l['isDumbbellLift'] ?? false,
             );
           }).toList(),
+          isPersisted: true,
         );
       }).toList(),
     );
@@ -56,11 +57,13 @@ class WorkoutDraft {
   int dayIndex;
   String name;
   List<LiftDraft> lifts;
+  bool isPersisted;
   WorkoutDraft({
     required this.id,
     required this.dayIndex,
     required this.name,
     required this.lifts,
+    this.isPersisted = true,
   });
 }
 
