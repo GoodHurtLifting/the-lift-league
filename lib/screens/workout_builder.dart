@@ -184,7 +184,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         final name = nameController.text.trim();
                         if (name.isEmpty) return;
 
@@ -228,9 +228,17 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                               '[AddLift] AFTER add  → ${widget.workout.lifts[idx].name}: '
                               '${widget.workout.lifts[idx].sets}x${widget.workout.lifts[idx].repsPerSet}');
                         });
-                        DBService().updateWorkoutDraft(widget.workout);
-
-                        Navigator.pop(context);
+                        try {
+                          await DBService().updateWorkoutDraft(widget.workout);
+                          if (mounted) Navigator.pop(context);
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to save lift'),
+                            ),
+                          );
+                        }
                       },
                       child: const Text('Save'),
                     ),
@@ -353,7 +361,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         final name = nameController.text.trim();
                         if (name.isEmpty) return;
 
@@ -379,19 +387,36 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             ..isDumbbellLift = isDumbbellLift;
                         });
 
-                        DBService().updateWorkoutDraft(widget.workout);
-
-                        Navigator.pop(context);
+                        try {
+                          await DBService().updateWorkoutDraft(widget.workout);
+                          if (mounted) Navigator.pop(context);
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to save lift'),
+                            ),
+                          );
+                        }
                       },
                       child: const Text('Save'),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
                         setState(() {
                           widget.workout.lifts.removeAt(index);
                         });
-                        DBService().updateWorkoutDraft(widget.workout);
-                        Navigator.pop(context);
+                        try {
+                          await DBService().updateWorkoutDraft(widget.workout);
+                          if (mounted) Navigator.pop(context);
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to delete lift'),
+                            ),
+                          );
+                        }
                       },
                       child: const Text('Delete'),
                     ),
@@ -415,9 +440,18 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
           child: TextField(
             controller: _nameController,
             decoration: const InputDecoration(labelText: 'Workout name'),
-            onChanged: (v) {
+            onChanged: (v) async {
               widget.workout.name = v;
-              DBService().updateWorkoutDraft(widget.workout);
+              try {
+                await DBService().updateWorkoutDraft(widget.workout);
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Failed to rename workout'),
+                  ),
+                );
+              }
             },
           ),
         ),
