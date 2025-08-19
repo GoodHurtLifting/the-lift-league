@@ -141,6 +141,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     } else {
       await DBService().insertCustomBlock(block);
     }
+
+    // If this block is currently active, refresh the instance so future
+    // workouts use the updated data.
+    await _applyEditsToActiveInstance(block);
     if (mounted) Navigator.pop(context);
   }
 
@@ -227,8 +231,31 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     } else {
       await DBService().insertCustomBlock(block);
     }
+    // Update any active instance before syncing to Firestore
+    await _applyEditsToActiveInstance(block);
     await _uploadBlockToFirestore(block);
     if (mounted) Navigator.pop(context);
+  }
+
+  /// Applies custom block edits to the user's active block instance (if any).
+  Future<void> _applyEditsToActiveInstance(CustomBlock block) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final activeIdStr = await DBService().getActiveBlockInstanceId(user.uid);
+    if (activeIdStr == null) return;
+    final int? blockInstanceId = int.tryParse(activeIdStr);
+    if (blockInstanceId == null) return;
+
+    final db = await DBService().database;
+    final inst = await db.query('block_instances',
+        where: 'blockInstanceId = ?', whereArgs: [blockInstanceId], limit: 1);
+    if (inst.isEmpty) return;
+
+    final activeName = inst.first['blockName']?.toString();
+    if (activeName != block.name) return;
+
+    await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
   }
 
   Future<void> _uploadBlockToFirestore(CustomBlock block) async {
