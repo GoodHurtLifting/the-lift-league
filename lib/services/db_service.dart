@@ -880,6 +880,41 @@ class DBService {
     return match.isNotEmpty ? match['liftId'] as int : null;
   }
 
+  Future<int> _getOrCreateLiftId(
+      DatabaseExecutor db, LiftDraft lift) async {
+    int? liftId = _findLiftIdByName(lift.name);
+    if (liftId != null) return liftId;
+
+    final existing = await db.query('lifts',
+        where: 'LOWER(liftName) = ?',
+        whereArgs: [lift.name.toLowerCase()],
+        limit: 1);
+    if (existing.isNotEmpty) {
+      return existing.first['liftId'] as int;
+    }
+
+    final maxIdResult =
+        await db.rawQuery('SELECT MAX(liftId) as maxId FROM lifts');
+    final maxId = (maxIdResult.first['maxId'] as num?)?.toInt() ?? 0;
+    final newId = maxId + 1;
+
+    await db.insert('lifts', {
+      'liftId': newId,
+      'liftName': lift.name,
+      'repScheme': '${lift.sets} sets x ${lift.repsPerSet} reps',
+      'numSets': lift.sets,
+      'scoreMultiplier': lift.multiplier,
+      'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+      'scoreType': lift.isBodyweight ? 'bodyweight' : 'multiplier',
+      'youtubeUrl': '',
+      'description': '',
+      'referenceLiftId': null,
+      'percentOfReference': null,
+    });
+
+    return newId;
+  }
+
   Future<List<Map<String, dynamic>>> getCustomBlocks(
       {bool includeDrafts = false}) async {
     final db = await database;
@@ -1061,18 +1096,16 @@ class DBService {
         });
 
         for (final lift in workout.lifts) {
-          final liftId = _findLiftIdByName(lift.name);
-          if (liftId != null) {
-            await txn.insert('lift_workouts', {
-              'workoutId': workoutId,
-              'liftId': liftId,
-              'numSets': lift.sets,
-              'repsPerSet': lift.repsPerSet,
-              'multiplier': lift.multiplier,
-              'isBodyweight': lift.isBodyweight ? 1 : 0,
-              'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
-            });
-          }
+          final liftId = await _getOrCreateLiftId(txn, lift);
+          await txn.insert('lift_workouts', {
+            'workoutId': workoutId,
+            'liftId': liftId,
+            'numSets': lift.sets,
+            'repsPerSet': lift.repsPerSet,
+            'multiplier': lift.multiplier,
+            'isBodyweight': lift.isBodyweight ? 1 : 0,
+            'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+          });
         }
       }
     });
@@ -1139,20 +1172,16 @@ class DBService {
       });
 
       for (final lift in workout.lifts) {
-        final liftId = _findLiftIdByName(lift.name);
-        if (liftId != null) {
-          await db.insert('lift_workouts', {
-            'workoutId': workoutId,
-            'liftId': liftId,
-            'numSets': lift.sets,
-            'repsPerSet': lift.repsPerSet,
-            'multiplier': lift.multiplier,
-            'isBodyweight': lift.isBodyweight ? 1 : 0,
-            'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
-          });
-        } else {
-          print('❌ Unknown lift name: ${lift.name}');
-        }
+        final liftId = await _getOrCreateLiftId(db, lift);
+        await db.insert('lift_workouts', {
+          'workoutId': workoutId,
+          'liftId': liftId,
+          'numSets': lift.sets,
+          'repsPerSet': lift.repsPerSet,
+          'multiplier': lift.multiplier,
+          'isBodyweight': lift.isBodyweight ? 1 : 0,
+          'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+        });
       }
     }
 
