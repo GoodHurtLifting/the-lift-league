@@ -1255,13 +1255,15 @@ class DBService {
 
     final int blockId = blockData.first['blockId'] as int;
     final String userId = blockData.first['userId']?.toString() ?? '';
+    final String blockName = blockData.first['blockName']?.toString() ?? '';
 
     // ✅ Fetch workouts linked to this block
     final workouts = await db.rawQuery('''
-    SELECT wb.workoutId, w.workoutName 
+    SELECT wb.workoutId, w.workoutName
     FROM workouts_blocks wb
     JOIN workouts w ON wb.workoutId = w.workoutId
     WHERE wb.blockId = ?
+    ORDER BY wb.workoutBlockId ASC
   ''', [blockId]);
 
     if (workouts.isEmpty) {
@@ -1271,7 +1273,16 @@ class DBService {
 
     print("✅ Workouts found for Block ID $blockId: ${workouts.length}");
 
-    // ✅ Get schedule type
+    // ✅ Determine if this block originated from custom_blocks
+    final customBlock = await db.query('custom_blocks',
+        where: 'name = ?', whereArgs: [blockName], limit: 1);
+    final bool isCustomBlock = customBlock.isNotEmpty;
+    final int? customDaysPerWeek =
+        isCustomBlock ? customBlock.first['daysPerWeek'] as int? : null;
+    final int? customNumWeeks =
+        isCustomBlock ? customBlock.first['numWeeks'] as int? : null;
+
+    // ✅ Get schedule type for legacy blocks
     final String scheduleType = await getScheduleType(blockId);
 
     int workoutsPerWeek;
@@ -1287,19 +1298,50 @@ class DBService {
         break;
     }
 
-    // ✅ Generate full distribution of workouts for the block
-    final List<Map<String, dynamic>> distribution =
-        await generateWorkoutDistribution(workouts, scheduleType);
+    // Expected total length for non-custom (legacy) blocks
+    int expectedLength;
+    if (scheduleType == 'ppl_plus') {
+      expectedLength = 21;
+    } else {
+      if (workouts.length == 4) {
+        expectedLength = 16;
+      } else if (workouts.length == 5) {
+        expectedLength = 20;
+      } else {
+        expectedLength = 12;
+      }
+    }
+
+    final int? customTotalLength = (customDaysPerWeek != null && customNumWeeks != null)
+        ? customDaysPerWeek * customNumWeeks
+        : null;
+    // Custom blocks are already expanded one workout per day. Skip
+    // generateWorkoutDistribution when either:
+    //   • the block originated from `custom_blocks`, or
+    //   • the workouts list already matches the total block length.
+    // Legacy blocks still rely on generateWorkoutDistribution to build
+    // their repeating patterns.
+    final bool skipDistribution =
+        isCustomBlock || workouts.length == (customTotalLength ?? expectedLength);
+
+    // ✅ Determine final workout order
+    final List<Map<String, dynamic>> distribution = skipDistribution
+        ? workouts
+        : await generateWorkoutDistribution(workouts, scheduleType);
 
     if (distribution.isEmpty) {
       print("❌ Distribution failed. No workouts to insert.");
       return;
     }
 
+    // ✅ Days per week for week calculation
+    final int daysPerWeek =
+        isCustomBlock ? (customDaysPerWeek ?? workoutsPerWeek) : workoutsPerWeek;
+
     // ✅ Insert workout instances (keep clean name)
     for (int i = 0; i < distribution.length; i++) {
       final workout = distribution[i];
-      final int week = (i / workoutsPerWeek).floor() + 1;
+      final int week = (i / daysPerWeek).floor() + 1;
 
       final int newWorkoutInstanceId = await db.insert(
         'workout_instances',
