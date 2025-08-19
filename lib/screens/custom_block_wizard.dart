@@ -45,8 +45,21 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       // Only include the first instance of each workout when editing.
       // This allows the user to edit one week and have the changes
       // applied across all repeated weeks when the block is saved.
-      final firstWeekWorkouts =
-          block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
+      final seenIds = <int>{};
+      final seenNames = <String>{};
+      final firstWeekWorkouts = block.workouts.where((w) {
+        final isFirstWeek = w.dayIndex < block.daysPerWeek;
+        final alreadySeen =
+            seenIds.contains(w.id) || seenNames.contains(w.name);
+        if (isFirstWeek && !alreadySeen) {
+          seenIds.add(w.id);
+          seenNames.add(w.name);
+          return true;
+        }
+        return false;
+      }).toList();
+
+      _uniqueCount = firstWeekWorkouts.length;
 
       workouts = firstWeekWorkouts
           .map((w) => WorkoutDraft(
