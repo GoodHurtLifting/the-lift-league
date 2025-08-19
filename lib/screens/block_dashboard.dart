@@ -94,6 +94,7 @@ class BlockDashboardState extends State<BlockDashboard> {
 
     // If no workouts exist yet, insert them first
     if (workoutData.isEmpty) {
+      if (!mounted) return;
       setState(() {
         isFirstLoad = true;
       });
@@ -102,6 +103,7 @@ class BlockDashboardState extends State<BlockDashboard> {
 
       workoutData = await db.getWorkoutInstancesByBlock(currentBlockInstanceId);
 
+      if (!mounted) return;
       setState(() {
         isFirstLoad = false;
       });
@@ -142,6 +144,7 @@ class BlockDashboardState extends State<BlockDashboard> {
       );
     }
 
+    if (!mounted) return;
     setState(() {
       workouts = loadedWorkouts;
       _bestScoresByType = bestScoresByType;
@@ -150,6 +153,7 @@ class BlockDashboardState extends State<BlockDashboard> {
 
     print("✅ Best scores by workout type: $_bestScoresByType");
 
+    if (!mounted) return;
     await _loadBlockTotals();
   }
 
@@ -253,6 +257,7 @@ class BlockDashboardState extends State<BlockDashboard> {
         ),
       ),
     );
+    if (!mounted) return;
     // ✅ Reload workouts to show updated scores
     await _loadWorkouts();
   }
