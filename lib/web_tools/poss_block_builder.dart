@@ -74,6 +74,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
             ),
           )
               .toList(),
+          isPersisted: true,
         ),
       )
           .toList();
@@ -99,13 +100,15 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
 
   void _initializeWorkouts() {
     final count = _uniqueCount ?? 0;
+    final baseId = DateTime.now().millisecondsSinceEpoch;
     _workouts = List.generate(
       count,
       (i) => CustomWorkout(
-        id: i,
+        id: baseId + i,
         name: 'Workout ${i + 1}',
         dayIndex: i,
         lifts: [],
+        isPersisted: false,
       ),
     );
   }
@@ -309,6 +312,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                 isDumbbellLift: l.isDumbbellLift,
               ),
           ],
+          isPersisted: false,
         )
     ];
 

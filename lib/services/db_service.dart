@@ -763,11 +763,16 @@ class DBService {
 
   Future<void> insertWorkoutDraft(WorkoutDraft w, int blockId) async {
     final db = await database;
-    final workoutId = await db.insert('workout_drafts', {
-      'blockId': blockId,
-      'dayIndex': w.dayIndex,
-      'name': w.name,
-    });
+    final workoutId = await db.insert(
+      'workout_drafts',
+      {
+        'id': w.id,
+        'blockId': blockId,
+        'dayIndex': w.dayIndex,
+        'name': w.name,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
     for (final lift in w.lifts) {
       await db.insert('lift_drafts', {
         'workoutId': workoutId,
@@ -808,6 +813,7 @@ class DBService {
       dayIndex: w['dayIndex'] as int,
       name: w['name'] as String? ?? '',
       lifts: lifts,
+      isPersisted: true,
     );
   }
 
@@ -942,6 +948,7 @@ class DBService {
                     isDumbbellLift: (l['isDumbbellLift'] as int) == 1,
                   ))
               .toList(),
+          isPersisted: true,
         ),
 
       );

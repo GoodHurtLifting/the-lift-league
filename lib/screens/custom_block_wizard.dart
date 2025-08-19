@@ -65,6 +65,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                       ),
                     )
                     .toList(),
+                isPersisted: true,
               ))
           .toList();
       _coverImagePath = block.coverImagePath;
@@ -80,10 +81,16 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
   void _initializeWorkouts() {
     final count = _uniqueCount ?? 0;
+    final baseId = DateTime.now().millisecondsSinceEpoch;
     workouts = List.generate(
       count,
-      (i) =>
-          WorkoutDraft(id: i, dayIndex: i, name: 'Workout ${i + 1}', lifts: []),
+      (i) => WorkoutDraft(
+        id: baseId + i,
+        dayIndex: i,
+        name: 'Workout ${i + 1}',
+        lifts: [],
+        isPersisted: false,
+      ),
     );
   }
 
@@ -194,10 +201,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
   Future<void> _finish() async {
     final int totalDays = numWeeks! * daysPerWeek!;
+    final baseId = DateTime.now().millisecondsSinceEpoch;
     final List<WorkoutDraft> allWorkouts = List.generate(totalDays, (i) {
       final template = workouts[i % workouts.length];
       return WorkoutDraft(
-        id: template.id,
+        id: baseId + i,
         dayIndex: i,
         name: template.name,
         lifts: [
@@ -211,6 +219,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               isDumbbellLift: l.isDumbbellLift,
             ),
         ],
+        isPersisted: false,
       );
     });
 

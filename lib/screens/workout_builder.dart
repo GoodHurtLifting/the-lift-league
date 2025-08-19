@@ -55,12 +55,14 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   }
 
   Future<void> _loadWorkoutFromDb() async {
+    if (!widget.workout.isPersisted) return;
     final fetched = await DBService().fetchWorkoutDraft(widget.workout.id);
     if (fetched != null && mounted) {
       setState(() {
         widget.workout
           ..name = fetched.name
-          ..dayIndex = fetched.dayIndex;
+          ..dayIndex = fetched.dayIndex
+          ..isPersisted = true;
         widget.workout.lifts
           ..clear()
           ..addAll(fetched.lifts);
