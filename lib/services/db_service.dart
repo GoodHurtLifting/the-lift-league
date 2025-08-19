@@ -752,7 +752,10 @@ class DBService {
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-    for (final workout in block.workouts) {
+    // Workouts are expected to already be expanded for the full block run.
+    final expanded = List<WorkoutDraft>.from(block.workouts)
+      ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
+    for (final workout in expanded) {
       await insertWorkoutDraft(workout, block.id);
     }
     return block.id;
@@ -887,7 +890,9 @@ class DBService {
     );
     await db
         .delete('workout_drafts', where: 'blockId = ?', whereArgs: [block.id]);
-    for (final w in block.workouts) {
+    final expanded = List<WorkoutDraft>.from(block.workouts)
+      ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
+    for (final w in expanded) {
       await insertWorkoutDraft(w, block.id);
     }
   }

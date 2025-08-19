@@ -189,25 +189,26 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   }
 
   Future<void> _finish() async {
-    final List<WorkoutDraft> allWorkouts = [
-      for (final w in workouts)
-        WorkoutDraft(
-          id: w.id,
-          dayIndex: w.dayIndex,
-          name: w.name,
-          lifts: [
-            for (final l in w.lifts)
-              LiftDraft(
-                name: l.name,
-                sets: l.sets,
-                repsPerSet: l.repsPerSet,
-                multiplier: l.multiplier,
-                isBodyweight: l.isBodyweight,
-                isDumbbellLift: l.isDumbbellLift,
-              ),
-          ],
-        )
-    ];
+    final int totalDays = numWeeks! * daysPerWeek!;
+    final List<WorkoutDraft> allWorkouts = List.generate(totalDays, (i) {
+      final template = workouts[i % workouts.length];
+      return WorkoutDraft(
+        id: template.id,
+        dayIndex: i,
+        name: template.name,
+        lifts: [
+          for (final l in template.lifts)
+            LiftDraft(
+              name: l.name,
+              sets: l.sets,
+              repsPerSet: l.repsPerSet,
+              multiplier: l.multiplier,
+              isBodyweight: l.isBodyweight,
+              isDumbbellLift: l.isDumbbellLift,
+            ),
+        ],
+      );
+    });
 
     final int id =
         widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
