@@ -781,6 +781,31 @@ class DBService {
     }
   }
 
+  /// Replaces all lift entries for a workout draft with [lifts]. This is used
+  /// when editing or reordering lifts within a custom block draft.
+  Future<void> updateWorkoutDraftLifts(int workoutId, List<LiftDraft> lifts) async {
+    final db = await database;
+    await db.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
+    for (final lift in lifts) {
+      await db.insert('lift_drafts', {
+        'workoutId': workoutId,
+        'name': lift.name,
+        'sets': lift.sets,
+        'repsPerSet': lift.repsPerSet,
+        'multiplier': lift.multiplier,
+        'isBodyweight': lift.isBodyweight ? 1 : 0,
+        'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+      });
+    }
+  }
+
+  /// Updates the name of a workout draft in the database.
+  Future<void> updateWorkoutDraftName(int workoutId, String name) async {
+    final db = await database;
+    await db.update('workout_drafts', {'name': name},
+        where: 'id = ?', whereArgs: [workoutId]);
+  }
+
   int? _findLiftIdByName(String name) {
     final match = liftDataList.firstWhere(
       (l) => (l['liftName'] as String).toLowerCase() == name.toLowerCase(),
