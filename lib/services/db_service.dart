@@ -986,6 +986,42 @@ class DBService {
     });
   }
 
+  /// Applies edits from a custom block to an existing block instance.
+  ///
+  /// 1. Refreshes the standard block definition from the custom block.
+  /// 2. Deletes any upcoming workout instances tied to [blockInstanceId].
+  /// 3. Recreates workout instances so future workouts reflect the edits.
+  Future<void> applyCustomBlockEdits(
+      int customBlockId, int blockInstanceId) async {
+    // 🔁 Update the base block/workout definitions
+    await replaceStandardBlockFromCustom(customBlockId);
+
+    final db = await database;
+
+    // 🧠 Fetch block name for this instance so we can relink the new blockId
+    final instance = await db.query('block_instances',
+        where: 'blockInstanceId = ?', whereArgs: [blockInstanceId], limit: 1);
+    if (instance.isEmpty) return;
+    final blockName = instance.first['blockName'] as String? ?? '';
+
+    // 🔗 Grab the refreshed blockId and update the instance
+    final blockRow = await db
+        .query('blocks', where: 'blockName = ?', whereArgs: [blockName], limit: 1);
+    if (blockRow.isNotEmpty) {
+      await db.update('block_instances', {
+        'blockId': blockRow.first['blockId'],
+      }, where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+    }
+
+    // ❌ Remove any upcoming workout instances (completed = 0)
+    await db.delete('workout_instances',
+        where: 'blockInstanceId = ? AND completed = 0',
+        whereArgs: [blockInstanceId]);
+
+    // ♻️ Recreate the future workout instances with updated data
+    await insertWorkoutInstancesForBlock(blockInstanceId);
+  }
+
   Future<int> createBlockFromCustomBlockId(int customId, String userId) async {
     final customBlock = await getCustomBlock(customId);
     if (customBlock == null) {
