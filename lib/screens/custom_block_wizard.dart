@@ -134,40 +134,6 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     });
   }
 
-  Future<void> _saveDraft() async {
-    if (blockName.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a block name')),
-      );
-      return;
-    }
-    if (workouts.isEmpty && (_uniqueCount ?? 0) > 0) {
-      _initializeWorkouts();
-    }
-    final int id =
-        widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
-    final block = CustomBlock(
-      id: id,
-      name: blockName,
-      numWeeks: numWeeks ?? 1,
-      daysPerWeek: daysPerWeek ?? 1,
-      coverImagePath: _coverImagePath ?? 'assets/logo25.jpg',
-      workouts: workouts,
-      isDraft: true,
-      scheduleType: _scheduleType,
-    );
-    if (widget.initialBlock != null) {
-      await DBService().updateCustomBlock(block);
-    } else {
-      await DBService().insertCustomBlock(block);
-    }
-
-    // If this block is currently active, refresh the instance so future
-    // workouts use the updated data.
-    await _applyEditsToActiveInstance(block);
-    if (mounted) Navigator.pop(context);
-  }
-
   Future<void> _previewSchedule() async {
     if (numWeeks == null || daysPerWeek == null || workouts.isEmpty) return;
 
@@ -287,8 +253,6 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (block.isDraft) return;
-
     String? imageUrl;
     if (block.coverImagePath != null &&
         !block.coverImagePath!.startsWith('assets/')) {
@@ -351,13 +315,6 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Custom Block'),
-        actions: [
-          if (_currentStep > 0)
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _saveDraft,
-            ),
-        ],
       ),
       body: Stepper(
         currentStep: _currentStep,
