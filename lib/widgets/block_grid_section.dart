@@ -47,9 +47,7 @@ class BlockGridSection extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         String blockName = blockNames[index];
-        final cleanName = blockName.replaceAll(' (draft)', '');
-        int? blockInstanceId =
-            blockInstances[blockName] ?? blockInstances[cleanName];
+        int? blockInstanceId = blockInstances[blockName];
         final path = workoutImages[index];
         final isAsset = path.startsWith('assets/');
         final isNetwork = path.startsWith('http');
@@ -67,7 +65,7 @@ class BlockGridSection extends StatelessWidget {
 
             if (blockInstanceId == null) {
               int newId = await db.insertNewBlockInstance(blockName, user.uid);
-              onNewBlockInstanceCreated(cleanName, newId);
+              onNewBlockInstanceCreated(blockName, newId);
               blockInstanceId = newId;
             }
 

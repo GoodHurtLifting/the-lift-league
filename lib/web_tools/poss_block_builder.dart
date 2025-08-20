@@ -113,49 +113,6 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     );
   }
 
-  Future<void> _saveDraft() async {
-    final blockName = _nameCtrl.text.trim();
-    if (blockName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a block name')),
-      );
-      return;
-    }
-    if (_workouts.isEmpty && (_daysPerWeek ?? 0) > 0) {
-      _initializeWorkouts();
-    }
-    final int id =
-        widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
-    final block = CustomBlock(
-      id: id,
-      name: blockName,
-      numWeeks: _numWeeks ?? 1,
-      daysPerWeek: _daysPerWeek ?? 1,
-      scheduleType: _scheduleType,
-      coverImagePath: _coverImageUrl,
-      workouts: _workouts,
-      isDraft: true,
-    );
-    try {
-      await WebCustomBlockService()
-          .saveCustomBlock(block, coverImageBytes: _coverImageBytes);
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Draft saved')));
-        Navigator.pop(context);
-      }
-      widget.onSaved?.call();
-    } on FirebaseException catch (e) {
-      final reauthed = await promptReAuthIfNeeded(context, e);
-      if (reauthed) {
-        await WebCustomBlockService()
-            .saveCustomBlock(block, coverImageBytes: _coverImageBytes);
-      } else {
-        return;
-      }
-    }
-  }
-
   Future<void> _saveBlockToFirestore(CustomBlock block) async {
     String? imageUrl;
     final user = FirebaseAuth.instance.currentUser;
@@ -409,13 +366,6 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
         appBar: AppBar(
           foregroundColor: _lightGrey,
           title: const Text('Training Block Builder'),
-          actions: [
-            if (_currentStep > 0)
-              IconButton(
-                icon: const Icon(Icons.save),
-                onPressed: _saveDraft,
-              ),
-          ],
         ),
         drawer: const POSSDrawer(),
         body: SingleChildScrollView(

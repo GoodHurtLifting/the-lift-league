@@ -67,13 +67,11 @@ class _UserDashboardState extends State<UserDashboard> {
   Future<void> _fetchCustomBlocks() async {
     final db = DBService();
     await db.syncCustomBlocksFromFirestore();
-    final blocks = await db.getCustomBlocks(includeDrafts: true);
+    final blocks = await db.getCustomBlocks();
     if (!mounted) return;
     setState(() {
-      customBlockNames = blocks
-          .map((b) =>
-              b['isDraft'] == 1 ? "${b['name']} (draft)" : b['name'].toString())
-          .toList();
+      customBlockNames =
+          blocks.map((b) => b['name'].toString()).toList();
       customBlockIds = blocks.map<int>((b) => b['id'] as int).toList();
       customBlockImages = blocks
           .map<String>(

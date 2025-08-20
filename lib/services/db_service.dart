@@ -915,12 +915,8 @@ class DBService {
     return newId;
   }
 
-  Future<List<Map<String, dynamic>>> getCustomBlocks(
-      {bool includeDrafts = false}) async {
+  Future<List<Map<String, dynamic>>> getCustomBlocks() async {
     final db = await database;
-    if (includeDrafts) {
-      return db.query('custom_blocks');
-    }
     return db.query('custom_blocks', where: 'isDraft = 0');
   }
 
@@ -1212,18 +1208,17 @@ class DBService {
   /// subsequent builds.
   Future<int> insertNewBlockInstance(String blockName, String userId) async {
     final db = await database;
-    final cleanName = blockName.replaceAll(' (draft)', '');
 
     // If there's a custom block with this name, refresh the standard block
     final custom = await db
-        .query('custom_blocks', where: 'name = ?', whereArgs: [cleanName], limit: 1);
+        .query('custom_blocks', where: 'name = ?', whereArgs: [blockName], limit: 1);
     if (custom.isNotEmpty) {
       await replaceStandardBlockFromCustom(custom.first['id'] as int);
     }
 
     // Fetch the (possibly refreshed) blockId from the standard blocks table
     final blockData = await db.query('blocks',
-        where: 'blockName = ?', whereArgs: [cleanName], limit: 1);
+        where: 'blockName = ?', whereArgs: [blockName], limit: 1);
     if (blockData.isEmpty) {
       throw Exception('❌ Block not found: $blockName');
     }
@@ -1232,7 +1227,7 @@ class DBService {
     // Insert new block instance with userId
     return await db.insert('block_instances', {
       'blockId': blockId,
-      'blockName': cleanName,
+      'blockName': blockName,
       'userId': userId,
       'startDate': null,
       'endDate': null,
