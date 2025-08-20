@@ -237,7 +237,7 @@ class BadgeService {
       }
     }
 
-    if (topCount < 12 || topUser.isEmpty) {
+    if (topCount < 9 || topUser.isEmpty) {
       return [];
     }
 

@@ -31,7 +31,7 @@ class MomentumService {
     final daysWorked = (countRes.first['daysWorked'] as int?) ?? 0;
 
     final increase = (daysWorked / 24) * 100;
-    final decrease = (min(daysAgo, 7) / 7) * 100;
+    final decrease = (min(daysAgo, 14) / 14) * 100;
 
     final momentum = increase - decrease;
     return momentum.clamp(0, 100);
