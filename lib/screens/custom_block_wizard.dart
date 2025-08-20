@@ -239,10 +239,22 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     final inst = await db.query('block_instances',
         where: 'blockInstanceId = ?', whereArgs: [blockInstanceId], limit: 1);
     if (inst.isEmpty) return;
-    final activeCustomId = inst.first['customBlockId'] as int?;
-    if (activeCustomId != block.id) return;
 
-    await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
+    final activeCustomId = inst.first['customBlockId'] as int?;
+    final activeBlockName = inst.first['blockName'] as String?;
+
+    if (activeCustomId == block.id) {
+      await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
+      return;
+    }
+
+    if (activeBlockName == block.name) {
+      await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
+      await db.update('block_instances', {
+        'customBlockId': block.id,
+      }, where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+      return;
+    }
   }
 
   Future<void> _uploadBlockToFirestore(CustomBlock block) async {
