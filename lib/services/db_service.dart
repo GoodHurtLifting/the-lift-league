@@ -1118,23 +1118,27 @@ class DBService {
   /// 3. Recreates workout instances so future workouts reflect the edits.
   Future<void> applyCustomBlockEdits(
       int customBlockId, int blockInstanceId) async {
+    final customBlock = await getCustomBlock(customBlockId);
+    if (customBlock == null) return;
+
     // 🔁 Update the base block/workout definitions
     await replaceStandardBlockFromCustom(customBlockId);
 
     final db = await database;
 
-    // 🧠 Fetch block name for this instance so we can relink the new blockId
+    // Ensure the block instance exists before proceeding
     final instance = await db.query('block_instances',
         where: 'blockInstanceId = ?', whereArgs: [blockInstanceId], limit: 1);
     if (instance.isEmpty) return;
-    final blockName = instance.first['blockName'] as String? ?? '';
 
-    // 🔗 Grab the refreshed blockId and update the instance
-    final blockRow = await db
-        .query('blocks', where: 'blockName = ?', whereArgs: [blockName], limit: 1);
+    // 🔗 Grab the refreshed blockId using the custom block's current name and
+    // update the instance to point to it (and reflect any renamed blocks).
+    final blockRow = await db.query('blocks',
+        where: 'blockName = ?', whereArgs: [customBlock.name], limit: 1);
     if (blockRow.isNotEmpty) {
       await db.update('block_instances', {
         'blockId': blockRow.first['blockId'],
+        'blockName': customBlock.name,
       }, where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
     }
 
