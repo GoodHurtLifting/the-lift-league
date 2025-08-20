@@ -239,12 +239,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     final inst = await db.query('block_instances',
         where: 'blockInstanceId = ?', whereArgs: [blockInstanceId], limit: 1);
     if (inst.isEmpty) return;
-
-    final activeName = inst.first['blockName']?.toString();
-    final initialName = widget.initialBlock?.name;
-    // Ensure we update the active instance if its name matches either the
-    // edited block's new name or the original name prior to editing.
-    if (activeName != block.name && activeName != initialName) return;
+    final activeCustomId = inst.first['customBlockId'] as int?;
+    if (activeCustomId != block.id) return;
 
     await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
   }

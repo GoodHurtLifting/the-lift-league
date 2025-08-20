@@ -28,9 +28,9 @@ class DBService {
   }
 
   // ──────────────────────────────────────────────────────────
-  // 🔄 DATABASE INIT (v17, cleaned up)
+  // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 17;   // bump any time the schema changes
+  static const _dbVersion = 18;   // bump any time the schema changes
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
@@ -90,6 +90,26 @@ class DBService {
           } catch (_) {}
 
         }
+        if (oldV < 18) {
+          await db.execute(
+            "ALTER TABLE block_instances ADD COLUMN customBlockId INTEGER;",
+          );
+
+          final instances = await db.query('block_instances');
+          for (final inst in instances) {
+            final name = inst['blockName']?.toString();
+            if (name == null) continue;
+            final custom = await db.query('custom_blocks',
+                where: 'name = ?', whereArgs: [name], limit: 1);
+            if (custom.isNotEmpty) {
+              await db.update('block_instances', {
+                'customBlockId': custom.first['id']
+              },
+                  where: 'blockInstanceId = ?',
+                  whereArgs: [inst['blockInstanceId']]);
+            }
+          }
+        }
       },
     );
   }
@@ -127,6 +147,7 @@ class DBService {
       CREATE TABLE block_instances (
         blockInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
         blockId INTEGER,
+        customBlockId INTEGER,
         userId Text,
         blockName TEXT, -- (optional, for UI)
         startDate TEXT,
@@ -1135,6 +1156,7 @@ class DBService {
       await db.update('block_instances', {
         'blockId': blockRow.first['blockId'],
         'blockName': customBlock.name,
+        'customBlockId': customBlockId,
       }, where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
     }
 
@@ -1187,6 +1209,7 @@ class DBService {
 
     final int blockInstanceId = await db.insert('block_instances', {
       'blockId': blockId,
+      'customBlockId': customBlock.id,
       'blockName': customBlock.name,
       'userId': userId,
       'startDate': null,
@@ -1212,8 +1235,10 @@ class DBService {
     // If there's a custom block with this name, refresh the standard block
     final custom = await db
         .query('custom_blocks', where: 'name = ?', whereArgs: [blockName], limit: 1);
+    int? customBlockId;
     if (custom.isNotEmpty) {
-      await replaceStandardBlockFromCustom(custom.first['id'] as int);
+      customBlockId = custom.first['id'] as int;
+      await replaceStandardBlockFromCustom(customBlockId);
     }
 
     // Fetch the (possibly refreshed) blockId from the standard blocks table
@@ -1227,6 +1252,7 @@ class DBService {
     // Insert new block instance with userId
     return await db.insert('block_instances', {
       'blockId': blockId,
+      'customBlockId': customBlockId,
       'blockName': blockName,
       'userId': userId,
       'startDate': null,
