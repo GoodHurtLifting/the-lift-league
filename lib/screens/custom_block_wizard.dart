@@ -10,6 +10,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/services/db_service.dart';
+import 'package:lift_league/screens/block_dashboard.dart';
 import 'package:lift_league/screens/workout_builder.dart';
 
 class CustomBlockWizard extends StatefulWidget {
@@ -222,7 +223,22 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     // Update any active instance before syncing to Firestore
     await _applyEditsToActiveInstance(block);
     await _uploadBlockToFirestore(block);
-    if (mounted) Navigator.pop(context);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final blockInstanceId =
+          await DBService().insertNewBlockInstance(block.name, user.uid);
+      await DBService().activateBlockInstanceIfNeeded(
+          blockInstanceId, user.uid, block.name);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BlockDashboard(blockInstanceId: blockInstanceId),
+        ),
+      );
+    } else {
+      if (mounted) Navigator.pop(context);
+    }
   }
 
   /// Applies custom block edits to the user's active block instance (if any).
