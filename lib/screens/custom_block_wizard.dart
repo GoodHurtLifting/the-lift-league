@@ -215,29 +215,51 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       isDraft: false,
       scheduleType: _scheduleType,
     );
+    final user = FirebaseAuth.instance.currentUser;
+
     if (widget.initialBlock != null) {
       await DBService().updateCustomBlock(block);
+      // Apply edits directly to the active block instance, if any.
+      await _applyEditsToActiveInstance(block);
+      await _uploadBlockToFirestore(block);
+
+      if (user != null) {
+        final activeIdStr =
+            await DBService().getActiveBlockInstanceId(user.uid);
+        if (activeIdStr != null) {
+          final blockInstanceId = int.parse(activeIdStr);
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  BlockDashboard(blockInstanceId: blockInstanceId),
+            ),
+          );
+          return;
+        }
+      }
+
+      if (mounted) Navigator.pop(context);
     } else {
       await DBService().insertCustomBlock(block);
-    }
-    // Update any active instance before syncing to Firestore
-    await _applyEditsToActiveInstance(block);
-    await _uploadBlockToFirestore(block);
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final blockInstanceId =
-          await DBService().insertNewBlockInstance(block.name, user.uid);
-      await DBService().activateBlockInstanceIfNeeded(
-          blockInstanceId, user.uid, block.name);
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BlockDashboard(blockInstanceId: blockInstanceId),
-        ),
-      );
-    } else {
-      if (mounted) Navigator.pop(context);
+      await _uploadBlockToFirestore(block);
+
+      if (user != null) {
+        final blockInstanceId =
+            await DBService().insertNewBlockInstance(block.name, user.uid);
+        await DBService().activateBlockInstanceIfNeeded(
+            blockInstanceId, user.uid, block.name);
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlockDashboard(blockInstanceId: blockInstanceId),
+          ),
+        );
+      } else {
+        if (mounted) Navigator.pop(context);
+      }
     }
   }
 
