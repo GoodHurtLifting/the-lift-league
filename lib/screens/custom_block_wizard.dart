@@ -221,14 +221,19 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       await DBService().insertCustomBlock(block);
     }
     // Update any active instance before syncing to Firestore
-    await _applyEditsToActiveInstance(block);
+    final existingInstanceId = await _applyEditsToActiveInstance(block);
     await _uploadBlockToFirestore(block);
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final blockInstanceId =
-          await DBService().insertNewBlockInstance(block.name, user.uid);
-      await DBService().activateBlockInstanceIfNeeded(
-          blockInstanceId, user.uid, block.name);
+      int blockInstanceId;
+      if (existingInstanceId != null) {
+        blockInstanceId = existingInstanceId;
+      } else {
+        blockInstanceId =
+            await DBService().insertNewBlockInstance(block.name, user.uid);
+        await DBService().activateBlockInstanceIfNeeded(
+            blockInstanceId, user.uid, block.name);
+      }
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
@@ -242,26 +247,27 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   }
 
   /// Applies custom block edits to the user's active block instance (if any).
-  Future<void> _applyEditsToActiveInstance(CustomBlock block) async {
+  /// Returns the blockInstanceId if edits were applied.
+  Future<int?> _applyEditsToActiveInstance(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) return null;
 
     final activeIdStr = await DBService().getActiveBlockInstanceId(user.uid);
-    if (activeIdStr == null) return;
+    if (activeIdStr == null) return null;
     final int? blockInstanceId = int.tryParse(activeIdStr);
-    if (blockInstanceId == null) return;
+    if (blockInstanceId == null) return null;
 
     final db = await DBService().database;
     final inst = await db.query('block_instances',
         where: 'blockInstanceId = ?', whereArgs: [blockInstanceId], limit: 1);
-    if (inst.isEmpty) return;
+    if (inst.isEmpty) return null;
 
     final activeCustomId = inst.first['customBlockId'] as int?;
     final activeBlockName = inst.first['blockName'] as String?;
 
     if (activeCustomId == block.id) {
       await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
-      return;
+      return blockInstanceId;
     }
 
     if (activeBlockName == block.name) {
@@ -269,8 +275,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       await db.update('block_instances', {
         'customBlockId': block.id,
       }, where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
-      return;
+      return blockInstanceId;
     }
+
+    return null;
   }
 
   Future<void> _uploadBlockToFirestore(CustomBlock block) async {
