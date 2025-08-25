@@ -225,24 +225,20 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     await _uploadBlockToFirestore(block);
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      int? blockInstanceId = existingInstanceId;
-      if (blockInstanceId == null) {
-        if (widget.initialBlock == null) {
-          blockInstanceId = await DBService()
-              .insertNewBlockInstance(block.name, user.uid);
-          await DBService().activateBlockInstanceIfNeeded(
-              blockInstanceId, user.uid, block.name);
-        } else {
-          if (mounted) Navigator.pop(context);
-          return;
-        }
+      int blockInstanceId;
+      if (existingInstanceId != null) {
+        blockInstanceId = existingInstanceId;
+      } else {
+        blockInstanceId =
+        await DBService().insertNewBlockInstance(block.name, user.uid);
+        await DBService().activateBlockInstanceIfNeeded(
+            blockInstanceId, user.uid, block.name);
       }
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              BlockDashboard(blockInstanceId: blockInstanceId!),
+          builder: (_) => BlockDashboard(blockInstanceId: blockInstanceId),
         ),
       );
     } else {
