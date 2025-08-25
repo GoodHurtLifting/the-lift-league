@@ -264,13 +264,18 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
     final activeCustomId = inst.first['customBlockId'] as int?;
     final activeBlockName = inst.first['blockName'] as String?;
+    final prevBlockName = widget.initialBlock?.name;
 
+    // If this block instance is already linked by id, apply edits directly.
     if (activeCustomId == block.id) {
       await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
       return blockInstanceId;
     }
 
-    if (activeBlockName == block.name) {
+    // Allow matching on either the new or previous name in case the block was
+    // renamed or the instance wasn't yet linked to a customBlockId.
+    if (activeBlockName == block.name ||
+        (prevBlockName != null && activeBlockName == prevBlockName)) {
       await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
       await db.update('block_instances', {
         'customBlockId': block.id,
