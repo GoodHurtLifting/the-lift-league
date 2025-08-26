@@ -160,7 +160,7 @@ class BadgeService {
   Future<List<Map<String, dynamic>>> checkAndAwardHypeManBadge(String userId) async {
     final userDoc = await _firestore.collection('users').doc(userId).get();
     final likesGiven = (userDoc.data()?['likesGiven'] ?? 0) as int;
-    final earnedBadges = likesGiven ~/ 100;
+    final earnedBadges = likesGiven ~/ 10;
 
     final badgeRef = _firestore.collection('users').doc(userId).collection('badges');
     List<Map<String, dynamic>> newlyEarned = [];
@@ -173,7 +173,7 @@ class BadgeService {
         final badgeData = {
           'badgeId': badgeId,
           'name': 'Hype Man',
-          'description': 'You liked ${i * 100} check-ins.',
+          'description': 'You liked ${i * 10} check-ins.',
           'image': 'hypeMan.png',
         };
 

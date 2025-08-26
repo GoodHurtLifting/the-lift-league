@@ -185,80 +185,80 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       ],
                     ),
 
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () async {
-                                final name = nameController.text.trim();
-                                if (name.isEmpty) return;
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () async {
+                        final name = nameController.text.trim();
+                        if (name.isEmpty) return;
 
-                                final sets = int.tryParse(setsCtrl.text) ?? 3;
-                                final reps = int.tryParse(repsCtrl.text) ?? 10;
+                        final sets = int.tryParse(setsCtrl.text) ?? 3;
+                        final reps = int.tryParse(repsCtrl.text) ?? 10;
 
-                                // Get multiplier (should be PURE; if it mutates inputs, we'll catch below)
-                                final multiplier =
-                                    ScoreMultiplierService().getMultiplier(
-                                  sets: sets,
-                                  repsPerSet: reps,
-                                  isBodyweight: isBodyweight,
-                                );
+                        // Get multiplier (should be PURE; if it mutates inputs, we'll catch below)
+                        final multiplier =
+                        ScoreMultiplierService().getMultiplier(
+                          sets: sets,
+                          repsPerSet: reps,
+                          isBodyweight: isBodyweight,
+                        );
 
-                                // Add lift using exactly what the user chose
-                                final newLift = LiftDraft(
-                                  name: name,
-                                  sets: sets,
-                                  repsPerSet: reps,
-                                  multiplier: multiplier,
-                                  isBodyweight: isBodyweight,
-                                  isDumbbellLift: isDumbbellLift,
-                                );
+                        // Add lift using exactly what the user chose
+                        final newLift = LiftDraft(
+                          name: name,
+                          sets: sets,
+                          repsPerSet: reps,
+                          multiplier: multiplier,
+                          isBodyweight: isBodyweight,
+                          isDumbbellLift: isDumbbellLift,
+                        );
 
-                                // Debug before add
-                                // ignore: avoid_print
-                                print(
-                                    '[AddLift] BEFORE add → ${newLift.name}: ${newLift.sets}x${newLift.repsPerSet} (BW=$isBodyweight, DB=$isDumbbellLift)');
+                        // Debug before add
+                        // ignore: avoid_print
+                        print(
+                            '[AddLift] BEFORE add → ${newLift.name}: ${newLift.sets}x${newLift.repsPerSet} (BW=$isBodyweight, DB=$isDumbbellLift)');
 
-                                // Build a workout object with the new lift but don't
-                                // mutate state yet. If the DB update succeeds we'll
-                                // add it to the in-memory list inside setState.
-                                final w = widget.workout;
-                                final updatedWorkout = WorkoutDraft(
-                                  id: w.id,
-                                  dayIndex: w.dayIndex,
-                                  name: w.name,
-                                  lifts: [...w.lifts, newLift],
-                                  isPersisted: w.isPersisted,
-                                );
+                        // Build a workout object with the new lift but don't
+                        // mutate state yet. If the DB update succeeds we'll
+                        // add it to the in-memory list inside setState.
+                        final w = widget.workout;
+                        final updatedWorkout = WorkoutDraft(
+                          id: w.id,
+                          dayIndex: w.dayIndex,
+                          name: w.name,
+                          lifts: [...w.lifts, newLift],
+                          isPersisted: w.isPersisted,
+                        );
 
-                                final sheetNav = Navigator.of(ctx);
-                                FocusScope.of(ctx).unfocus();
+                        final sheetNav = Navigator.of(ctx);
+                        FocusScope.of(ctx).unfocus();
 
-                                setLocalState(() => _isSaving = true);
-                                try {
-                                  await DBService().updateWorkoutDraft(updatedWorkout);
-                                  if (!mounted) return;
-                                  setState(() {
-                                    widget.workout.lifts.add(newLift);
-                                  });
-                                  setLocalState(() => _isSaving = false);
-                                  sheetNav.pop();
-                                } catch (e) {
-                                  if (!mounted) return;
-                                  setLocalState(() => _isSaving = false);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Failed to save lift')),
-                                  );
-                                }
-                              },
-                        child: _isSaving
-                            ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Save'),
-                      ),
+                        setLocalState(() => _isSaving = true);
+                        try {
+                          await DBService().updateWorkoutDraft(updatedWorkout);
+                          if (!mounted) return;
+                          setState(() {
+                            widget.workout.lifts.add(newLift);
+                          });
+                          setLocalState(() => _isSaving = false);
+                          sheetNav.pop();
+                        } catch (e) {
+                          if (!mounted) return;
+                          setLocalState(() => _isSaving = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to save lift')),
+                          );
+                        }
+                      },
+                      child: _isSaving
+                          ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                          : const Text('Save'),
+                    ),
                   ],
                 ),
               );
@@ -379,114 +379,114 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         ),
                       ],
                     ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () async {
-                                final name = nameController.text.trim();
-                                if (name.isEmpty) return;
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () async {
+                        final name = nameController.text.trim();
+                        if (name.isEmpty) return;
 
-                                final sets = int.tryParse(setsCtrl.text) ?? lift.sets;
-                                final reps =
-                                    int.tryParse(repsCtrl.text) ?? lift.repsPerSet;
+                        final sets = int.tryParse(setsCtrl.text) ?? lift.sets;
+                        final reps =
+                            int.tryParse(repsCtrl.text) ?? lift.repsPerSet;
 
-                                final multiplier =
-                                    ScoreMultiplierService().getMultiplier(
-                                  sets: sets,
-                                  repsPerSet: reps,
-                                  isBodyweight: isBodyweight,
-                                );
+                        final multiplier =
+                        ScoreMultiplierService().getMultiplier(
+                          sets: sets,
+                          repsPerSet: reps,
+                          isBodyweight: isBodyweight,
+                        );
 
-                                // Prepare updated workout with the edited lift but do
-                                // not update state yet. We'll apply the change only if
-                                // the DB update succeeds.
-                                final w = widget.workout;
-                                final updatedLift = LiftDraft(
-                                  name: name,
-                                  sets: sets,
-                                  repsPerSet: reps,
-                                  multiplier: multiplier,
-                                  isBodyweight: isBodyweight,
-                                  isDumbbellLift: isDumbbellLift,
-                                );
-                                final updatedWorkout = WorkoutDraft(
-                                  id: w.id,
-                                  dayIndex: w.dayIndex,
-                                  name: w.name,
-                                  lifts: [
-                                    ...w.lifts.sublist(0, index),
-                                    updatedLift,
-                                    ...w.lifts.sublist(index + 1),
-                                  ],
-                                  isPersisted: w.isPersisted,
-                                );
+                        // Prepare updated workout with the edited lift but do
+                        // not update state yet. We'll apply the change only if
+                        // the DB update succeeds.
+                        final w = widget.workout;
+                        final updatedLift = LiftDraft(
+                          name: name,
+                          sets: sets,
+                          repsPerSet: reps,
+                          multiplier: multiplier,
+                          isBodyweight: isBodyweight,
+                          isDumbbellLift: isDumbbellLift,
+                        );
+                        final updatedWorkout = WorkoutDraft(
+                          id: w.id,
+                          dayIndex: w.dayIndex,
+                          name: w.name,
+                          lifts: [
+                            ...w.lifts.sublist(0, index),
+                            updatedLift,
+                            ...w.lifts.sublist(index + 1),
+                          ],
+                          isPersisted: w.isPersisted,
+                        );
 
-                                final sheetNav = Navigator.of(ctx);
-                                FocusScope.of(ctx).unfocus();
+                        final sheetNav = Navigator.of(ctx);
+                        FocusScope.of(ctx).unfocus();
 
-                                setLocalState(() => _isSaving = true);
-                                try {
-                                  await DBService().updateWorkoutDraft(updatedWorkout);
-                                  if (!mounted) return;
-                                  setState(() {
-                                    widget.workout.lifts[index] = updatedLift;
-                                  });
-                                  setLocalState(() => _isSaving = false);
-                                  sheetNav.pop();
-                                } catch (e) {
-                                  if (!mounted) return;
-                                  setLocalState(() => _isSaving = false);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Failed to save lift')),
-                                  );
-                                }
-                              },
-                        child: _isSaving
-                            ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Save'),
-                      ),
-                      TextButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () async {
-                                final w = widget.workout;
-                                final updatedWorkout = WorkoutDraft(
-                                  id: w.id,
-                                  dayIndex: w.dayIndex,
-                                  name: w.name,
-                                  lifts: [
-                                    ...w.lifts.sublist(0, index),
-                                    ...w.lifts.sublist(index + 1),
-                                  ],
-                                  isPersisted: w.isPersisted,
-                                );
+                        setLocalState(() => _isSaving = true);
+                        try {
+                          await DBService().updateWorkoutDraft(updatedWorkout);
+                          if (!mounted) return;
+                          setState(() {
+                            widget.workout.lifts[index] = updatedLift;
+                          });
+                          setLocalState(() => _isSaving = false);
+                          sheetNav.pop();
+                        } catch (e) {
+                          if (!mounted) return;
+                          setLocalState(() => _isSaving = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to save lift')),
+                          );
+                        }
+                      },
+                      child: _isSaving
+                          ? const SizedBox(
+                        height: 16,
+                        width: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                          : const Text('Save'),
+                    ),
+                    TextButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () async {
+                        final w = widget.workout;
+                        final updatedWorkout = WorkoutDraft(
+                          id: w.id,
+                          dayIndex: w.dayIndex,
+                          name: w.name,
+                          lifts: [
+                            ...w.lifts.sublist(0, index),
+                            ...w.lifts.sublist(index + 1),
+                          ],
+                          isPersisted: w.isPersisted,
+                        );
 
-                                setLocalState(() => _isSaving = true);
-                                try {
-                                  await DBService().updateWorkoutDraft(updatedWorkout);
-                                  if (!mounted) return;
-                                  setState(() {
-                                    widget.workout.lifts.removeAt(index);
-                                  });
-                                  setLocalState(() => _isSaving = false);
-                                  if (ctx.mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
-                                } catch (e) {
-                                  if (!mounted) return;
-                                  setLocalState(() => _isSaving = false);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Failed to delete lift'),
-                                    ),
-                                  );
-                                }
-                              },
-                        child: const Text('Delete'),
-                      ),
+                        setLocalState(() => _isSaving = true);
+                        try {
+                          await DBService().updateWorkoutDraft(updatedWorkout);
+                          if (!mounted) return;
+                          setState(() {
+                            widget.workout.lifts.removeAt(index);
+                          });
+                          setLocalState(() => _isSaving = false);
+                          if (ctx.mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
+                        } catch (e) {
+                          if (!mounted) return;
+                          setLocalState(() => _isSaving = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Failed to delete lift'),
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text('Delete'),
+                    ),
                   ],
                 ),
               );

@@ -527,21 +527,14 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                             }
 
                             final nav = Navigator.of(context, rootNavigator: true);
-
-                            // last step → build/save, then navigate
-                            // Change _finish() to return the new blockInstanceId (int)
-                            final int? newBlockInstanceId = await _finish();
+                            final int? id = await _finish();
                             if (!mounted) return;
 
-                            if (newBlockInstanceId != null) {
-                              nav.pushReplacement(
-                                MaterialPageRoute(
-                                  builder: (_) => BlockDashboard(
-                                      blockInstanceId: newBlockInstanceId),
-                                ),
-                              );
+                            if (id != null) {
+                              nav.pushReplacement(MaterialPageRoute(
+                                builder: (_) => BlockDashboard(blockInstanceId: id),
+                              ));
                             } else {
-                              // Nothing to navigate to (e.g., edited a non-active existing block). Close wizard:
                               nav.pop();
                             }
                           },
