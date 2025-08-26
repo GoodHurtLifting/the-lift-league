@@ -215,28 +215,27 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         print(
                             '[AddLift] BEFORE add → ${newLift.name}: ${newLift.sets}x${newLift.repsPerSet} (BW=$isBodyweight, DB=$isDumbbellLift)');
 
-                        setState(() {
-                          final idx = widget.workout.lifts.length;
-                          widget.workout.lifts.add(newLift);
-
-                          // Post-add guard: force the chosen values back on, in case anything tried to normalize
-                          widget.workout.lifts[idx].sets = sets;
-                          widget.workout.lifts[idx].repsPerSet = reps;
-
-                          // Debug after add
-                          // ignore: avoid_print
-                          print(
-                              '[AddLift] AFTER add  → ${widget.workout.lifts[idx].name}: '
-                              '${widget.workout.lifts[idx].sets}x${widget.workout.lifts[idx].repsPerSet}');
-                        });
+                        // Build a workout object with the new lift but don't
+                        // mutate state yet. If the DB update succeeds we'll
+                        // add it to the in-memory list inside setState.
+                        final w = widget.workout;
+                        final updatedWorkout = WorkoutDraft(
+                          id: w.id,
+                          dayIndex: w.dayIndex,
+                          name: w.name,
+                          lifts: [...w.lifts, newLift],
+                          isPersisted: w.isPersisted,
+                        );
 
                         final sheetNav = Navigator.of(ctx);
                         FocusScope.of(ctx).unfocus();
 
                         try {
-                          final w = widget.workout;
-                          await DBService().updateWorkoutDraft(w);
+                          await DBService().updateWorkoutDraft(updatedWorkout);
                           if (!mounted) return;
+                          setState(() {
+                            widget.workout.lifts.add(newLift);
+                          });
                           sheetNav.pop();
                         } catch (e) {
                           if (!mounted) return;
@@ -382,23 +381,39 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           isBodyweight: isBodyweight,
                         );
 
-                        setState(() {
-                          final l = widget.workout.lifts[index];
-                          l
-                            ..name = name
-                            ..sets = sets
-                            ..repsPerSet = reps
-                            ..multiplier = multiplier
-                            ..isBodyweight = isBodyweight
-                            ..isDumbbellLift = isDumbbellLift;
-                        });
+                        // Prepare updated workout with the edited lift but do
+                        // not update state yet. We'll apply the change only if
+                        // the DB update succeeds.
+                        final w = widget.workout;
+                        final updatedLift = LiftDraft(
+                          name: name,
+                          sets: sets,
+                          repsPerSet: reps,
+                          multiplier: multiplier,
+                          isBodyweight: isBodyweight,
+                          isDumbbellLift: isDumbbellLift,
+                        );
+                        final updatedWorkout = WorkoutDraft(
+                          id: w.id,
+                          dayIndex: w.dayIndex,
+                          name: w.name,
+                          lifts: [
+                            ...w.lifts.sublist(0, index),
+                            updatedLift,
+                            ...w.lifts.sublist(index + 1),
+                          ],
+                          isPersisted: w.isPersisted,
+                        );
+
                         final sheetNav = Navigator.of(ctx);
                         FocusScope.of(ctx).unfocus();
 
                         try {
-                          final w = widget.workout;
-                          await DBService().updateWorkoutDraft(w);
+                          await DBService().updateWorkoutDraft(updatedWorkout);
                           if (!mounted) return;
+                          setState(() {
+                            widget.workout.lifts[index] = updatedLift;
+                          });
                           sheetNav.pop();
                         } catch (e) {
                           if (!mounted) return;
@@ -411,11 +426,24 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     ),
                     TextButton(
                       onPressed: () async {
-                        setState(() {
-                          widget.workout.lifts.removeAt(index);
-                        });
+                        final w = widget.workout;
+                        final updatedWorkout = WorkoutDraft(
+                          id: w.id,
+                          dayIndex: w.dayIndex,
+                          name: w.name,
+                          lifts: [
+                            ...w.lifts.sublist(0, index),
+                            ...w.lifts.sublist(index + 1),
+                          ],
+                          isPersisted: w.isPersisted,
+                        );
+
                         try {
-                          await DBService().updateWorkoutDraft(widget.workout);
+                          await DBService().updateWorkoutDraft(updatedWorkout);
+                          if (!mounted) return;
+                          setState(() {
+                            widget.workout.lifts.removeAt(index);
+                          });
                           if (ctx.mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
                         } catch (e) {
                           if (!mounted) return;
