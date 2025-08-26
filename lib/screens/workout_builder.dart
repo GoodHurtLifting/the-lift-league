@@ -403,7 +403,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         } catch (e) {
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Failed to delete lift')),
+                            const SnackBar(content: Text('Failed to save lift')),
                           );
                         }
                       },
