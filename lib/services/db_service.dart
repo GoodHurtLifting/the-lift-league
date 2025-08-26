@@ -30,7 +30,7 @@ class DBService {
   // ──────────────────────────────────────────────────────────
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 18;   // bump any time the schema changes
+  static const _dbVersion = 20;   // bump any time the schema changes
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
@@ -116,6 +116,32 @@ class DBService {
               "CREATE INDEX IF NOT EXISTS idx_wi_block_completed "
                   "ON workout_instances (blockInstanceId, completed);"
           );
+        }
+        if (oldV < 20) {
+          // Recreate workouts_blocks with correct FK to blocks(blockId).
+          await db.execute('PRAGMA foreign_keys = OFF;');
+
+          await db.execute('''
+    CREATE TABLE workouts_blocks_new (
+      workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
+      blockId INTEGER,
+      workoutId INTEGER,
+      FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
+      FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
+    );
+  ''');
+
+          // Copy data over
+          await db.execute('''
+    INSERT INTO workouts_blocks_new (workoutBlockId, blockId, workoutId)
+    SELECT workoutBlockId, blockId, workoutId FROM workouts_blocks;
+  ''');
+
+          await db.execute('DROP TABLE workouts_blocks;');
+          await db.execute('ALTER TABLE workouts_blocks_new RENAME TO workouts_blocks;');
+
+          // (Re)create any indexes you rely on here
+          await db.execute('PRAGMA foreign_keys = ON;');
         }
       },
     );
@@ -851,6 +877,16 @@ class DBService {
   Future<void> updateWorkoutDraft(WorkoutDraft workout) async {
     final db = await database;
     await db.transaction((txn) async {
+      // Upsert the workout row first so JOINs won’t miss it
+      await txn.insert(
+        'workout_drafts',
+        {
+          'id': workout.id,
+          'name': workout.name,
+          'dayIndex': workout.dayIndex,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
       await txn.update(
         'workout_drafts',
         {
@@ -860,8 +896,11 @@ class DBService {
         where: 'id = ?',
         whereArgs: [workout.id],
       );
-      await txn
-          .delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workout.id]);
+
+      // Replace all lifts
+      await txn.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workout.id]);
+      print('[updateWorkoutDraft] workoutId=${workout.id} lifts=${workout.lifts.length}');
+
       for (final lift in workout.lifts) {
         await txn.insert('lift_drafts', {
           'workoutId': workout.id,
@@ -876,22 +915,107 @@ class DBService {
     });
   }
 
+  Future<void> upsertWorkoutDraftRow({
+    required int id,
+    required String name,
+    required int dayIndex,
+  }) async {
+    final db = await database;
+    // 1) Try insert (ignore conflict)
+    await db.insert(
+      'workout_drafts',
+      {
+        'id': id,
+        'name': name,
+        'dayIndex': dayIndex,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+    // 2) Ensure fields are current
+    await db.update(
+      'workout_drafts',
+      {
+        'name': name,
+        'dayIndex': dayIndex,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  /// Safe for FIRST-TIME inserts. Ensures parent custom_blocks exists, then upserts workout_drafts.
+  Future<void> upsertWorkoutDraftRowWithBlock({
+    required int id,
+    required int blockId,
+    required String name,
+    required int dayIndex,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      // 1) Ensure parent custom_blocks row exists (FK requires it)
+      await txn.insert(
+        'custom_blocks',
+        {
+          'id': blockId,
+          'name': 'Untitled Block',
+          'numWeeks': 1,
+          'daysPerWeek': 1,
+          'isDraft': 1,
+          'coverImagePath': null,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+
+      // 2) Insert-or-ignore the workout_drafts parent row
+      await txn.insert(
+        'workout_drafts',
+        {
+          'id': id,
+          'blockId': blockId,
+          'name': name,
+          'dayIndex': dayIndex,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+
+      // 3) Keep name/dayIndex up to date
+      await txn.update(
+        'workout_drafts',
+        {
+          'name': name,
+          'dayIndex': dayIndex,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+  }
+
   /// Replaces all lift entries for a workout draft with [lifts]. This is used
   /// when editing or reordering lifts within a custom block draft.
   Future<void> updateWorkoutDraftLifts(int workoutId, List<LiftDraft> lifts) async {
     final db = await database;
-    await db.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
-    for (final lift in lifts) {
-      await db.insert('lift_drafts', {
-        'workoutId': workoutId,
-        'name': lift.name,
-        'sets': lift.sets,
-        'repsPerSet': lift.repsPerSet,
-        'multiplier': lift.multiplier,
-        'isBodyweight': lift.isBodyweight ? 1 : 0,
-        'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
-      });
-    }
+    await db.transaction((txn) async {
+      // Ensure parent exists (keeps things consistent if called early)
+      await txn.insert(
+        'workout_drafts',
+        {'id': workoutId, 'name': '', 'dayIndex': 0},
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+
+      await txn.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
+      for (final lift in lifts) {
+        await txn.insert('lift_drafts', {
+          'workoutId': workoutId,
+          'name': lift.name,
+          'sets': lift.sets,
+          'repsPerSet': lift.repsPerSet,
+          'multiplier': lift.multiplier,
+          'isBodyweight': lift.isBodyweight ? 1 : 0,
+          'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+        });
+      }
+    });
   }
 
   /// Updates the name of a workout draft in the database.
@@ -1026,6 +1150,19 @@ class DBService {
     );
   }
 
+  Future<int?> getCustomBlockIdForInstance(int blockInstanceId) async {
+    final db = await database;
+    final rows = await db.query(
+      'block_instances',
+      where: 'blockInstanceId = ?',
+      whereArgs: [blockInstanceId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final v = rows.first['customBlockId'];
+    return (v is int) ? v : (v is num ? v.toInt() : null);
+  }
+
   Future<void> updateCustomBlock(CustomBlock block) async {
     final db = await database;
     await db.update(
@@ -1133,6 +1270,7 @@ class DBService {
         where: 'blockInstanceId = ?',
         whereArgs: [blockInstanceId],
       );
+      print('[applyCustomBlockEdits] Repointing instance=$blockInstanceId to shadowBlock=$shadowBlockId for customBlock=$customBlockId');
 
       // 5) Purge ALL upcoming instances for this blockInstance (NULL or 0)
       //    With FK ON, lift_entries / lift_totals will cascade away.
@@ -1156,6 +1294,8 @@ class DBService {
 
     // 7) Recreate future instances from the new shadow definitions
     await insertWorkoutInstancesForBlock(blockInstanceId);
+    print('[applyCustomBlockEdits] Rebuilt future workout_instances for instance=$blockInstanceId');
+
   }
 
 
@@ -1369,24 +1509,23 @@ class DBService {
   Future<void> insertWorkoutInstancesForBlock(int blockInstanceId) async {
     final db = await database;
 
-    // ✅ Fetch blockId from block_instances
+    // 1) Block instance
     final blockData = await db.query(
       'block_instances',
       where: 'blockInstanceId = ?',
       whereArgs: [blockInstanceId],
       limit: 1,
     );
-
     if (blockData.isEmpty) {
       print("❌ Block instance not found: $blockInstanceId");
       return;
     }
 
-    final int blockId = blockData.first['blockId'] as int;
+    final int blockId   = blockData.first['blockId'] as int;
     final String userId = blockData.first['userId']?.toString() ?? '';
     final String blockName = blockData.first['blockName']?.toString() ?? '';
 
-    // ✅ Fetch workouts linked to this block
+    // 2) Workouts wired to this (shadow) block
     final workouts = await db.rawQuery('''
     SELECT wb.workoutId, w.workoutName
     FROM workouts_blocks wb
@@ -1399,21 +1538,24 @@ class DBService {
       print("❌ No workouts found for Block ID: $blockId");
       return;
     }
-
     print("✅ Workouts found for Block ID $blockId: ${workouts.length}");
 
-    // ✅ Determine if this block originated from custom_blocks
-    final customBlock = await db.query('custom_blocks',
-        where: 'name = ?', whereArgs: [blockName], limit: 1);
+    // 3) Is this a custom block? (lookup by display name)
+    final customBlock = await db.query(
+      'custom_blocks',
+      where: 'name = ?',
+      whereArgs: [blockName],
+      limit: 1,
+    );
     final bool isCustomBlock = customBlock.isNotEmpty;
-    final int? customDaysPerWeek =
-        isCustomBlock ? customBlock.first['daysPerWeek'] as int? : null;
-    final int? customNumWeeks =
-        isCustomBlock ? customBlock.first['numWeeks'] as int? : null;
+    final int? customDaysPerWeek = isCustomBlock ? (customBlock.first['daysPerWeek'] as int?) : null;
+    final int? customNumWeeks    = isCustomBlock ? (customBlock.first['numWeeks'] as int?)    : null;
+    final int? customTotalLength = (customDaysPerWeek != null && customNumWeeks != null)
+        ? customDaysPerWeek * customNumWeeks
+        : null;
 
-    // ✅ Get schedule type for legacy blocks
+    // 4) Legacy schedule fallback
     final String scheduleType = await getScheduleType(blockId);
-
     int workoutsPerWeek;
     switch (scheduleType) {
       case 'ab_alternate':
@@ -1427,50 +1569,39 @@ class DBService {
         break;
     }
 
-    // Expected total length for non-custom (legacy) blocks
     int expectedLength;
     if (scheduleType == 'ppl_plus') {
       expectedLength = 21;
     } else {
-      if (workouts.length == 4) {
-        expectedLength = 16;
-      } else if (workouts.length == 5) {
-        expectedLength = 20;
-      } else {
-        expectedLength = 12;
-      }
+      expectedLength = (workouts.length == 5) ? 20 : (workouts.length == 4) ? 16 : 12;
     }
 
-    final int? customTotalLength = (customDaysPerWeek != null && customNumWeeks != null)
-        ? customDaysPerWeek * customNumWeeks
-        : null;
-    // Custom blocks are already expanded one workout per day. Skip
-    // generateWorkoutDistribution when either:
-    //   • the block originated from `custom_blocks`, or
-    //   • the workouts list already matches the total block length.
-    // Legacy blocks still rely on generateWorkoutDistribution to build
-    // their repeating patterns.
-    final bool skipDistribution =
-        isCustomBlock || workouts.length == (customTotalLength ?? expectedLength);
+    // 5) Build distribution
+    // If this is a custom block but the shadow only contains the unique workouts (e.g. 3),
+    // expand to the full length (daysPerWeek * numWeeks).
+    final bool hasCustomLength = customTotalLength != null && customTotalLength > 0;
+    final bool shadowLooksCollapsed = isCustomBlock && hasCustomLength && workouts.length != customTotalLength;
 
-    // ✅ Determine final workout order
-    final List<Map<String, dynamic>> distribution = skipDistribution
+    final List<Map<String, dynamic>> base = (isCustomBlock || workouts.length == (customTotalLength ?? expectedLength))
         ? workouts
         : await generateWorkoutDistribution(workouts, scheduleType);
+
+    final List<Map<String, dynamic>> distribution = shadowLooksCollapsed
+        ? List.generate(customTotalLength!, (i) => base[i % base.length])
+        : base;
 
     if (distribution.isEmpty) {
       print("❌ Distribution failed. No workouts to insert.");
       return;
     }
 
-    // ✅ Days per week for week calculation
-    final int daysPerWeek =
-        isCustomBlock ? (customDaysPerWeek ?? workoutsPerWeek) : workoutsPerWeek;
+    final int dPerWeek = isCustomBlock ? (customDaysPerWeek ?? workoutsPerWeek) : workoutsPerWeek;
 
-    // ✅ Insert workout instances (keep clean name)
+    // 6) Insert instances; never abort the whole loop on lift seeding errors
+    int inserted = 0;
     for (int i = 0; i < distribution.length; i++) {
       final workout = distribution[i];
-      final int week = (i / daysPerWeek).floor() + 1;
+      final int week = (i ~/ dPerWeek) + 1;
 
       final int newWorkoutInstanceId = await db.insert(
         'workout_instances',
@@ -1479,7 +1610,7 @@ class DBService {
           'userId': userId,
           'workoutId': workout['workoutId'],
           'workoutName': workout['workoutName'],
-          'blockName': blockData.first['blockName'], // make sure this exists
+          'blockName': blockName,
           'week': week,
           'startTime': null,
           'endTime': null,
@@ -1488,15 +1619,29 @@ class DBService {
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      print(
-          "✅ Inserted ${workout['workoutName']} (Week $week, Instance ID: $newWorkoutInstanceId)");
+      if (newWorkoutInstanceId == 0) {
+        // ignore: avoid_print
+        print("⚠️ Insert ignored for workout '${workout['workoutName']}' (duplicate?)");
+        continue;
+      }
 
-      await insertLiftsForWorkoutInstance(newWorkoutInstanceId);
+      inserted++;
+      // ignore: avoid_print
+      print("✅ Inserted ${workout['workoutName']} (Week $week, Instance ID: $newWorkoutInstanceId)");
+
+      try {
+        await insertLiftsForWorkoutInstance(newWorkoutInstanceId);
+      } catch (e, st) {
+        // ignore: avoid_print
+        print("⚠️ Failed to seed lifts for WI=$newWorkoutInstanceId (workoutId=${workout['workoutId']}): $e\n$st");
+        // keep going; instances should still appear in the dashboard
+      }
     }
 
-    print(
-        "✅ All workout instances inserted for blockInstanceId $blockInstanceId");
+    // ignore: avoid_print
+    print("✅ Inserted $inserted/${distribution.length} workout instances for blockInstanceId $blockInstanceId");
   }
+
 
   Future<void> deleteBlockInstance(int blockInstanceId) async {
     final db = await database;
@@ -1766,71 +1911,86 @@ class DBService {
 
   Future<void> insertLiftsForWorkoutInstance(int workoutInstanceId) async {
     final db = await database;
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null || userId.isEmpty) {
-      throw Exception("No valid userId available");
-    }
 
-    // ✅ Fetch the associated workoutId
-    List<Map<String, dynamic>> workoutInstanceData = await db.query(
+    // 1) Find the instance → get workoutId + userId
+    final wi = await db.query(
       'workout_instances',
       where: 'workoutInstanceId = ?',
       whereArgs: [workoutInstanceId],
       limit: 1,
     );
-
-    if (workoutInstanceData.isEmpty) {
-      throw Exception("❌ Workout instance not found: $workoutInstanceId");
+    if (wi.isEmpty) {
+      // ignore: avoid_print
+      print('❌ insertLiftsForWorkoutInstance: WI $workoutInstanceId not found');
+      return;
     }
+    final int workoutId = (wi.first['workoutId'] as num).toInt();
+    final String userId = wi.first['userId']?.toString() ?? '';
 
-    int workoutId = workoutInstanceData.first['workoutId'];
-
-    // ✅ Fetch lifts associated with this workout
-    List<Map<String, dynamic>> lifts = await db.query(
+    // 2) Get the lifts configured for THIS workout (the authoritative mapping)
+    final liftRows = await db.query(
       'lift_workouts',
-      columns: ['liftId', 'numSets'],
+      columns: ['liftId', 'numSets', 'repsPerSet'],
       where: 'workoutId = ?',
       whereArgs: [workoutId],
+      orderBy: 'liftWorkoutId ASC',
+    );
+    if (liftRows.isEmpty) {
+      // ignore: avoid_print
+      print('⚠️ No lift_workouts for workoutId=$workoutId (WI=$workoutInstanceId)');
+      return;
+    }
+
+    // 3) Clear any earlier seeds for this instance (avoid dupes on rebuild)
+    await db.delete(
+      'lift_entries',
+      where: 'workoutInstanceId = ?',
+      whereArgs: [workoutInstanceId],
     );
 
-    if (lifts.isEmpty) {
-      throw Exception("❌ No lifts found for Workout ID: $workoutId");
-    }
+    // 4) Seed one row per set for each lift, guarding FKs
+    for (final lw in liftRows) {
+      final int liftId = (lw['liftId'] as num).toInt();
 
-    for (var lift in lifts) {
-      final int liftId = lift['liftId'];
-      final int numSets = lift['numSets'];
-
-      // 🔄 Insert lift_entries for each set
-      for (int setIndex = 1; setIndex <= numSets; setIndex++) {
-        await db.insert('lift_entries', {
-          'workoutInstanceId': workoutInstanceId,
-          'liftId': liftId,
-          'setIndex': setIndex,
-          'reps': 0,
-          'weight': 0.0,
-          'userId': userId,
-        });
+      // If your schema enforces lift_entries.liftId → lifts(liftId), skip missing lifts.
+      final liftExists = await db.query(
+        'lifts',
+        columns: ['liftId'],
+        where: 'liftId = ?',
+        whereArgs: [liftId],
+        limit: 1,
+      );
+      if (liftExists.isEmpty) {
+        // ignore: avoid_print
+        print('⚠️ liftId=$liftId missing in lifts; skip (WI=$workoutInstanceId)');
+        continue;
       }
 
-      // ✅ Insert baseline lift_totals entry (one per liftId per workoutInstance)
-      await db.insert(
-        'lift_totals',
-        {
-          'userId': userId, // Include the userId here
-          'workoutInstanceId': workoutInstanceId,
-          'liftId': liftId,
-          'liftReps': 0,
-          'liftWorkload': 0.0,
-          'liftScore': 0.0,
-        },
-        conflictAlgorithm: ConflictAlgorithm.ignore,
-      );
+      final int numSets    = (lw['numSets']    as num?)?.toInt() ?? 3;
+      final int repsPerSet = (lw['repsPerSet'] as num?)?.toInt() ?? 0;
+
+      for (int s = 0; s < numSets; s++) {
+        await db.insert(
+          'lift_entries',
+          {
+            'workoutInstanceId': workoutInstanceId,
+            'liftId': liftId,
+            'setIndex': s,
+            'reps': 0,
+            'weight': 0.0,
+            'userId': userId,
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      }
     }
 
-    print(
-        "✅ Lifts and Lift Totals inserted for Workout Instance: $workoutInstanceId");
+    // Optional: recompute totals here if you rely on them immediately
+    // await recomputeTotalsForWorkoutInstance(workoutInstanceId, userId);
   }
+
+
+
 
   Future<void> writeLiftTotalsDirectly({
     required int workoutInstanceId,

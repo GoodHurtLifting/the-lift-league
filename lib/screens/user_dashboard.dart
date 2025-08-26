@@ -91,7 +91,11 @@ class _UserDashboardState extends State<UserDashboard> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CustomBlockWizard(initialBlock: block),
+        builder: (_) => CustomBlockWizard(
+          initialBlock: block,
+          customBlockId: block.id,     // ✅ required
+          blockInstanceId: null,       // ✅ or pass a real instanceId if editing a live run
+        ),
       ),
     );
     await _fetchCustomBlocks();

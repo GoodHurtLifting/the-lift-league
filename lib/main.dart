@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:lift_league/web_tools/poss_home_page.dart';
+import 'package:lift_league/web_tools/web_home_page.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -12,6 +12,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart';
+import 'models/custom_block_models.dart';
 import 'web_tools/web_block_page.dart';
 
 import 'package:lift_league/screens/user_dashboard.dart';
@@ -185,34 +186,60 @@ class LiftLeagueApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'The Lift League',
       theme: ThemeData.dark().copyWith(
-        pageTransitionsTheme: PageTransitionsTheme(
+        pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: const FadePageTransitionsBuilder(),
-            TargetPlatform.iOS: const FadePageTransitionsBuilder(),
+            TargetPlatform.android: FadePageTransitionsBuilder(),
+            TargetPlatform.iOS: FadePageTransitionsBuilder(),
           },
         ),
       ),
       builder: (context, child) {
-        return SafeArea(
-          top: false,
-          child: child ?? const SizedBox.shrink(),
-        );
+        return SafeArea(top: false, child: child ?? const SizedBox.shrink());
       },
-      navigatorObservers: [
-        FirebaseAnalyticsObserver(analytics: analytics),
-      ],
+      navigatorObservers: [FirebaseAnalyticsObserver(analytics: analytics)],
       routes: {
         '/addCheckIn': (context) => const AddCheckInScreen(),
-        '/customBlock': (ctx) => const CustomBlockWizard(),
         '/publicProfile': (context) => PublicProfileScreen(
           userId: (ModalRoute.of(context)?.settings.arguments as Map?)?['userId'] ?? '',
         ),
         '/poss': (context) => const POSSHomePage(),
+      },
+      // ✅ handle /customBlock with args
+      onGenerateRoute: (settings) {
+        if (settings.name == '/customBlock') {
+          final args = (settings.arguments as Map?) ?? const {};
+          final CustomBlock? initialBlock = args['initialBlock'] as CustomBlock?;
+          final int? customBlockId = args['customBlockId'] as int?;
+          final int? blockInstanceId = args['blockInstanceId'] as int?;
 
+          // Fallback: create a fresh draft if caller didn’t supply one
+          final int id = customBlockId ?? DateTime.now().millisecondsSinceEpoch;
+          final draft = initialBlock ??
+              CustomBlock(
+                id: id,
+                name: 'Untitled Block',
+                numWeeks: 4,
+                daysPerWeek: 3,
+                workouts: const [],
+                isDraft: true,
+                coverImagePath: null,
+                scheduleType: 'standard',
+              );
+
+          return MaterialPageRoute(
+            builder: (_) => CustomBlockWizard(
+              initialBlock: draft,
+              customBlockId: id,
+              blockInstanceId: blockInstanceId,
+            ),
+          );
+        }
+        return null; // fall through to unknown routes
       },
       home: const AuthGate(),
     );
   }
+
 }
 
 class AuthGate extends StatelessWidget {

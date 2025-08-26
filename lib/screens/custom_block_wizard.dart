@@ -15,7 +15,13 @@ import 'package:lift_league/screens/workout_builder.dart';
 
 class CustomBlockWizard extends StatefulWidget {
   final CustomBlock? initialBlock;
-  const CustomBlockWizard({super.key, this.initialBlock});
+  final int customBlockId;
+  final int? blockInstanceId;
+  const CustomBlockWizard(
+      {super.key,
+      required this.customBlockId,
+      this.blockInstanceId,
+      this.initialBlock});
 
   @override
   State<CustomBlockWizard> createState() => _CustomBlockWizardState();
@@ -37,21 +43,20 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   @override
   void initState() {
     super.initState();
+
     if (widget.initialBlock != null) {
       final block = widget.initialBlock!;
       blockName = block.name;
       numWeeks = block.numWeeks;
       daysPerWeek = block.daysPerWeek;
       _scheduleType = block.scheduleType;
+
       // Only include the first instance of each workout when editing.
-      // This allows the user to edit one week and have the changes
-      // applied across all repeated weeks when the block is saved.
       final seenIds = <int>{};
       final seenNames = <String>{};
       final firstWeekWorkouts = block.workouts.where((w) {
         final isFirstWeek = w.dayIndex < block.daysPerWeek;
-        final alreadySeen =
-            seenIds.contains(w.id) || seenNames.contains(w.name);
+        final alreadySeen = seenIds.contains(w.id) || seenNames.contains(w.name);
         if (isFirstWeek && !alreadySeen) {
           seenIds.add(w.id);
           seenNames.add(w.name);
@@ -62,35 +67,57 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
       _uniqueCount = firstWeekWorkouts.length;
 
-      workouts = firstWeekWorkouts
-          .map((w) => WorkoutDraft(
-                id: w.id,
-                dayIndex: w.dayIndex,
-                name: w.name,
-                lifts: w.lifts
-                    .map(
-                      (l) => LiftDraft(
-                        name: l.name,
-                        sets: l.sets,
-                        repsPerSet: l.repsPerSet,
-                        multiplier: l.multiplier,
-                        isBodyweight: l.isBodyweight,
-                        isDumbbellLift: l.isDumbbellLift,
-                      ),
-                    )
-                    .toList(),
-                isPersisted: true,
-              ))
-          .toList();
-      _coverImagePath = block.coverImagePath;
-      if (_coverImagePath != null && File(_coverImagePath!).existsSync()) {
-        _coverImageBytes = File(_coverImagePath!).readAsBytesSync();
+      if (block.workouts.isNotEmpty && firstWeekWorkouts.isNotEmpty) {
+        // Existing, populated block → open directly on the workout editor
+        workouts = firstWeekWorkouts
+            .map((w) => WorkoutDraft(
+          id: w.id,
+          dayIndex: w.dayIndex,
+          name: w.name,
+          lifts: w.lifts
+              .map((l) => LiftDraft(
+            name: l.name,
+            sets: l.sets,
+            repsPerSet: l.repsPerSet,
+            multiplier: l.multiplier,
+            isBodyweight: l.isBodyweight,
+            isDumbbellLift: l.isDumbbellLift,
+          ))
+              .toList(),
+          isPersisted: true,
+        ))
+            .toList();
+
+        _coverImagePath = block.coverImagePath;
+        if (_coverImagePath != null && File(_coverImagePath!).existsSync()) {
+          _coverImageBytes = File(_coverImagePath!).readAsBytesSync();
+        }
+
+        _nameCtrl.text = block.name;
+        _currentStep = 5; // jump to workout step
+      } else {
+        // New/empty draft → start at step 0 (Block name)
+        workouts = [];
+        _nameCtrl.text = block.name; // keep name visible in step 0
+        _currentStep = 0;
       }
-      _nameCtrl.text = block.name;
-      _currentStep = 5;
     } else {
+      // No initial block → new flow
       workouts = [];
+      _nameCtrl.text = '';
+      _currentStep = 0;
     }
+
+    // Keep blockName in sync with the field so step 0 can advance
+    _nameCtrl.addListener(() {
+      blockName = _nameCtrl.text;
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
   }
 
   void _initializeWorkouts() {
@@ -423,6 +450,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             title: const Text('Block name'),
             content: TextField(
               controller: _nameCtrl,
+              autofocus: true,
               decoration: const InputDecoration(labelText: 'Name'),
               onChanged: (v) => blockName = v,
               maxLength: 14,
@@ -475,7 +503,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) => setState(() => _uniqueCount = v),
             ),
-            isActive: _currentStep >= 4,
+            isActive: _currentStep >= 2,
           ),
           Step(
             title: const Text('Days per week?'),
@@ -499,7 +527,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) => setState(() => numWeeks = v),
             ),
-            isActive: _currentStep >= 2,
+            isActive: _currentStep >= 4,
           ),
           Step(
             title: Text('Workout ${_workoutIndex + 1}'),
@@ -526,19 +554,23 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                               return;
                             }
 
-                            final nav = Navigator.of(context, rootNavigator: true);
+                            final nav =
+                                Navigator.of(context, rootNavigator: true);
                             final int? id = await _finish();
                             if (!mounted) return;
 
                             if (id != null) {
                               nav.pushReplacement(MaterialPageRoute(
-                                builder: (_) => BlockDashboard(blockInstanceId: id),
+                                builder: (_) =>
+                                    BlockDashboard(blockInstanceId: id),
                               ));
                             } else {
                               nav.pop();
                             }
                           },
                           showDumbbellOption: true,
+                          customBlockId: widget.customBlockId,
+                          activeBlockInstanceId: widget.blockInstanceId,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -548,7 +580,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                       ),
                     ],
                   ),
-            isActive: _currentStep >= 4,
+            isActive: _currentStep >= 5,
           )
         ],
       ),

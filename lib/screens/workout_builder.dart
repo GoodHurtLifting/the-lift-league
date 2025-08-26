@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/data/lift_data.dart';
@@ -12,6 +14,8 @@ class WorkoutBuilder extends StatefulWidget {
   final Future<void> Function() onComplete; // instead of VoidCallback
   final bool isLast;
   final bool showDumbbellOption;
+  final int customBlockId;
+  final int? activeBlockInstanceId;
   const WorkoutBuilder({
     super.key,
     required this.workout,
@@ -19,6 +23,8 @@ class WorkoutBuilder extends StatefulWidget {
     required this.currentIndex,
     required this.onSelectWorkout,
     required this.onComplete,
+    required this.customBlockId,
+    this.activeBlockInstanceId,
     this.isLast = false,
     this.showDumbbellOption = false,
   });
@@ -29,6 +35,36 @@ class WorkoutBuilder extends StatefulWidget {
 
 class _WorkoutBuilderState extends State<WorkoutBuilder> {
   late TextEditingController _nameController;
+
+  Timer? _applyDebounce;
+
+  void _applyEditsSoon() {
+    final instanceId = widget.activeBlockInstanceId;
+    if (instanceId == null) return;
+    _applyDebounce?.cancel();
+    _applyDebounce = Timer(const Duration(milliseconds: 400), () async {
+      await DBService()
+          .applyCustomBlockEdits(widget.customBlockId, instanceId);
+      // Optional: log
+      // print('[WorkoutBuilder] Applied edits to instance=$instanceId');
+    });
+  }
+
+  Future<void> _ensureDraftParentRowExists() async {
+    // Only needed if the draft row might not exist yet
+    if (!widget.workout.isPersisted) {
+      // requires the upsert helper you added in db_service.dart
+      await DBService().upsertWorkoutDraftRowWithBlock(
+        id: widget.workout.id,
+        blockId: widget.customBlockId,
+        name: widget.workout.name,
+        dayIndex: widget.workout.dayIndex,
+      );
+      setState(() {
+        widget.workout.isPersisted = true;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -236,11 +272,14 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                         setLocalState(() => _isSaving = true);
                         try {
+                          await _ensureDraftParentRowExists();
                           await DBService().updateWorkoutDraft(updatedWorkout);
                           if (!mounted) return;
                           setState(() {
                             widget.workout.lifts.add(newLift);
+                            widget.workout.isPersisted = true;
                           });
+                          _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           sheetNav.pop();
                         } catch (e) {
@@ -427,11 +466,14 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                         setLocalState(() => _isSaving = true);
                         try {
+                          await _ensureDraftParentRowExists();
                           await DBService().updateWorkoutDraft(updatedWorkout);
                           if (!mounted) return;
                           setState(() {
                             widget.workout.lifts[index] = updatedLift;
+                            widget.workout.isPersisted = true;
                           });
+                          _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           sheetNav.pop();
                         } catch (e) {
@@ -468,11 +510,13 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                         setLocalState(() => _isSaving = true);
                         try {
+                          await _ensureDraftParentRowExists();
                           await DBService().updateWorkoutDraft(updatedWorkout);
                           if (!mounted) return;
                           setState(() {
                             widget.workout.lifts.removeAt(index);
                           });
+                          _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           if (ctx.mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
                         } catch (e) {
@@ -510,7 +554,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             onChanged: (v) async {
               widget.workout.name = v;
               try {
+                await _ensureDraftParentRowExists();
                 await DBService().updateWorkoutDraft(widget.workout);
+                _applyEditsSoon();
               } catch (e) {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -572,10 +618,11 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                   if (widget.workout.name != _nameController.text) {
                     widget.workout.name = _nameController.text;
                     try {
+                      await _ensureDraftParentRowExists();
                       await DBService().updateWorkoutDraft(widget.workout);
                     } catch (_) {}
                   }
-
+                  _applyEditsSoon();
                   await widget.onComplete();  // <-- await async handler
                 },
                 child: Text(widget.isLast ? 'Build Block' : 'Next Workout'),

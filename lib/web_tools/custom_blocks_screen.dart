@@ -2,7 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'web_custom_block_service.dart';
 import 'auth_utils.dart';
-import 'poss_block_builder.dart';
+import 'POSS_block_builder.dart';
 import '../models/custom_block_models.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -45,17 +45,21 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
   Future<void> _editBlock(String id) async {
     try {
       final CustomBlock? block =
-          await WebCustomBlockService().getCustomBlockById(id);
+      await WebCustomBlockService().getCustomBlockById(id);
       if (block == null) return;
+
       await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => POSSBlockBuilder(
+            customBlockId: block.id,     // ✅ required arg
+            blockInstanceId: null,       // ✅ editing draft, not a live run here
             initialBlock: block,
             onSaved: _loadBlocks,
           ),
         ),
       );
+
       await _loadBlocks();
     } on FirebaseException catch (e) {
       final reauthed = await promptReAuthIfNeeded(context, e);
@@ -64,6 +68,7 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
       }
     }
   }
+
 
   Future<void> _deleteBlock(String id) async {
     try {
@@ -79,16 +84,35 @@ class _CustomBlocksScreenState extends State<CustomBlocksScreen> {
 
   // Opens the block builder and refreshes the list when a new block is created.
   Future<void> _createBlock() async {
+    // Create a fresh draft so the builder has a real customBlockId
+    final int draftId = DateTime.now().millisecondsSinceEpoch;
+
+    final draft = CustomBlock(
+      id: draftId,
+      name: 'Untitled Block',
+      numWeeks: 4,
+      daysPerWeek: 3,
+      workouts: const [],
+      isDraft: true,
+      coverImagePath: null,
+      scheduleType: 'standard',
+    );
+
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => POSSBlockBuilder(
+          customBlockId: draftId,   // required
+          blockInstanceId: null,    // not editing a live run in "create" flow
+          initialBlock: draft,      // prefill the builder
           onSaved: _loadBlocks,
         ),
       ),
     );
+
     await _loadBlocks();
   }
+
 
   @override
   Widget build(BuildContext context) {

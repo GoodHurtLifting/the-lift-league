@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/screens/block_dashboard.dart';
 
+import '../screens/custom_block_wizard.dart';
+
 class BlockGridSection extends StatelessWidget {
   final List<String> workoutImages;
   final List<String> blockNames;
@@ -78,59 +80,72 @@ class BlockGridSection extends StatelessWidget {
             );
           },
           onLongPress: customBlockIds != null &&
-                  (onDeleteCustomBlock != null || onEditCustomBlock != null)
+              (onDeleteCustomBlock != null || onEditCustomBlock != null)
               ? () async {
-                  final id = customBlockIds![index];
-                  final action = await showModalBottomSheet<String>(
-                    context: context,
-                    builder: (ctx) => SafeArea(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (onEditCustomBlock != null)
-                            ListTile(
-                              leading: const Icon(Icons.edit),
-                              title: const Text('Edit'),
-                              onTap: () => Navigator.pop(ctx, 'edit'),
-                            ),
-                          if (onDeleteCustomBlock != null)
-                            ListTile(
-                              leading: const Icon(Icons.delete),
-                              title: const Text('Delete'),
-                              onTap: () => Navigator.pop(ctx, 'delete'),
-                            ),
-                        ],
-                      ),
+            final id = customBlockIds![index];
+            final action = await showModalBottomSheet<String>(
+              context: context,
+              builder: (ctx) => SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Always show Edit here; we handle navigation locally.
+                    ListTile(
+                      leading: const Icon(Icons.edit),
+                      title: const Text('Edit'),
+                      onTap: () => Navigator.pop(ctx, 'edit'),
                     ),
-                  );
-                  if (action == 'edit' && onEditCustomBlock != null) {
-                    onEditCustomBlock!(id);
-                  } else if (action == 'delete' &&
-                      onDeleteCustomBlock != null) {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Delete block?'),
-                        content: const Text(
-                            'Are you sure you want to delete this block?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text('Delete'),
-                          ),
-                        ],
+                    if (onDeleteCustomBlock != null)
+                      ListTile(
+                        leading: const Icon(Icons.delete),
+                        title: const Text('Delete'),
+                        onTap: () => Navigator.pop(ctx, 'delete'),
                       ),
-                    );
-                    if (confirm == true) {
-                      onDeleteCustomBlock!(id);
-                    }
-                  }
-                }
+                  ],
+                ),
+              ),
+            );
+
+            if (action == 'edit') {
+              // Load the custom block and open the wizard, passing the active instance if present.
+              final initial = await DBService().getCustomBlock(id);
+              if (initial != null && context.mounted) {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CustomBlockWizard(
+                      initialBlock: initial,
+                      customBlockId: id,
+                      blockInstanceId: blockInstanceId, // ← may be null; when non-null, edits apply to the current run
+                    ),
+                  ),
+                );
+              }
+            } else if (action == 'delete' && onDeleteCustomBlock != null) {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Delete block?'),
+                  content: const Text('Are you sure you want to delete this block?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                onDeleteCustomBlock!(id);
+              }
+            }
+          }
               : null,
+
           child: ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: Stack(

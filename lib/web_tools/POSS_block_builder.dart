@@ -1,12 +1,14 @@
-import 'dart:typed_data';
+// TODO Implement this library.import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'poss_drawer.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
+import 'package:lift_league/web_tools/poss_drawer.dart';
+
 import 'web_sign_in_dialog.dart';
 import 'auth_utils.dart';
 
@@ -20,9 +22,18 @@ import 'web_custom_block_service.dart';
 const Color _lightGrey = Color(0xFFD0D0D0);
 
 class POSSBlockBuilder extends StatefulWidget {
+  final int customBlockId;
+  final int? blockInstanceId;
   final VoidCallback? onSaved;
   final CustomBlock? initialBlock;
-  const POSSBlockBuilder({super.key, this.onSaved, this.initialBlock});
+
+  const POSSBlockBuilder({
+    super.key,
+    required this.customBlockId,
+    this.blockInstanceId,
+    this.onSaved,
+    this.initialBlock
+  });
 
   @override
   State<POSSBlockBuilder> createState() => _POSSBlockBuilderState();
@@ -43,40 +54,39 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   Uint8List? _coverImageBytes;
   String? _coverImageUrl;
 
-
   @override
   void initState() {
     super.initState();
     _nameCtrl.addListener(_onNameChanged);
     if (widget.initialBlock != null) {
       final block = widget.initialBlock!;
-      _nameCtrl.text = block.name;  // Only use the controller now
+      _nameCtrl.text = block.name; // Only use the controller now
       _numWeeks = block.numWeeks;
       _daysPerWeek = block.daysPerWeek;
       _scheduleType = block.scheduleType;
       final firstWeekWorkouts =
-      block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
+          block.workouts.where((w) => w.dayIndex < block.daysPerWeek).toList();
       _workouts = firstWeekWorkouts
           .map(
             (w) => WorkoutDraft(
-          id: w.id,
-          dayIndex: w.dayIndex,
-          name: w.name,
-          lifts: w.lifts
-              .map(
-                (l) => LiftDraft(
-              name: l.name,
-              sets: l.sets,
-              repsPerSet: l.repsPerSet,
-              multiplier: l.multiplier,
-              isBodyweight: l.isBodyweight,
-              isDumbbellLift: l.isDumbbellLift,
+              id: w.id,
+              dayIndex: w.dayIndex,
+              name: w.name,
+              lifts: w.lifts
+                  .map(
+                    (l) => LiftDraft(
+                      name: l.name,
+                      sets: l.sets,
+                      repsPerSet: l.repsPerSet,
+                      multiplier: l.multiplier,
+                      isBodyweight: l.isBodyweight,
+                      isDumbbellLift: l.isDumbbellLift,
+                    ),
+                  )
+                  .toList(),
+              isPersisted: true,
             ),
           )
-              .toList(),
-          isPersisted: true,
-        ),
-      )
           .toList();
       _uniqueCount = _workouts.length;
       _coverImageUrl = block.coverImagePath;
@@ -86,7 +96,6 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
       _workouts = [];
     }
   }
-
 
   Future<void> _pickCoverImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -181,9 +190,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
   }
 
   Future<void> _previewSchedule() async {
-    if (_numWeeks == null ||
-        _daysPerWeek == null ||
-        _workouts.isEmpty) {
+    if (_numWeeks == null || _daysPerWeek == null || _workouts.isEmpty) {
       return;
     }
     final dist = WebCustomBlockService().previewDistribution(
@@ -299,8 +306,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  WebBlockDashboard(block: block, runId: runId),
+              builder: (_) => WebBlockDashboard(block: block, runId: runId),
             ),
           );
         }
@@ -314,8 +320,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (_) =>
-                    WebBlockDashboard(block: block, runId: runId),
+                builder: (_) => WebBlockDashboard(block: block, runId: runId),
               ),
             );
           }
@@ -435,114 +440,119 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                     ),
                     isActive: _currentStep >= 0,
                   ),
-            Step(
-              title: const Text('Cover image'),
-              content: Column(
-                children: [
-                  if (_coverImageBytes != null)
-                    Image.memory(
-                      _coverImageBytes!,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    )
-                  else if (_coverImageUrl != null)
-                    Image.network(
-                      _coverImageUrl!,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    )
-                  else
-                    const Placeholder(fallbackHeight: 120),
-                  ElevatedButton(
-                    onPressed: _pickCoverImage,
-                    child: Text(
-                      _coverImageBytes == null
-                          ? 'Select Image'
-                          : 'Change Image',
+                  Step(
+                    title: const Text('Cover image'),
+                    content: Column(
+                      children: [
+                        if (_coverImageBytes != null)
+                          Image.memory(
+                            _coverImageBytes!,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          )
+                        else if (_coverImageUrl != null)
+                          Image.network(
+                            _coverImageUrl!,
+                            height: 120,
+                            fit: BoxFit.cover,
+                          )
+                        else
+                          const Placeholder(fallbackHeight: 120),
+                        ElevatedButton(
+                          onPressed: _pickCoverImage,
+                          child: Text(
+                            _coverImageBytes == null
+                                ? 'Select Image'
+                                : 'Change Image',
+                          ),
+                        ),
+                      ],
                     ),
+                    isActive: _currentStep >= 1,
+                  ),
+                  Step(
+                    title: const Text('# Unique Workouts'),
+                    content: DropdownButton<int>(
+                      value: _uniqueCount,
+                      hint: const Text('Select Count'),
+                      items: List.generate(5, (i) => i + 2)
+                          .map((e) =>
+                              DropdownMenuItem(value: e, child: Text('$e')))
+                          .toList(),
+                      onChanged: (v) => setState(() => _uniqueCount = v),
+                    ),
+                    isActive: _currentStep >= 2,
+                  ),
+                  Step(
+                    title: const Text('Days per Week'),
+                    content: DropdownButton<int>(
+                      value: _daysPerWeek,
+                      hint: const Text('Select Days'),
+                      items: List.generate(5, (i) => i + 2)
+                          .map((e) =>
+                              DropdownMenuItem(value: e, child: Text('$e')))
+                          .toList(),
+                      onChanged: (v) => setState(() => _daysPerWeek = v),
+                    ),
+                    isActive: _currentStep >= 3,
+                  ),
+                  Step(
+                    title: const Text('Block length (weeks)'),
+                    content: DropdownButton<int>(
+                      value: _numWeeks,
+                      hint: const Text('Select Weeks'),
+                      items: List.generate(4, (i) => i + 3)
+                          .map((e) =>
+                              DropdownMenuItem(value: e, child: Text('$e')))
+                          .toList(),
+                      onChanged: (v) => setState(() => _numWeeks = v),
+                    ),
+                    isActive: _currentStep >= 4,
+                  ),
+                  Step(
+                    title: Text('Workout ${_workoutIndex + 1}'),
+                    content: Column(
+                      children: [
+                        if (_workouts.isNotEmpty)
+                          SizedBox(
+                            height: 400,
+                            child: WorkoutBuilder(
+                              workout: _workouts[_workoutIndex],
+                              allWorkouts: _workouts,
+                              currentIndex: _workoutIndex,
+                              onSelectWorkout: (i) =>
+                                  setState(() => _workoutIndex = i),
+                              isLast: _workoutIndex == _workouts.length - 1,
+                              showDumbbellOption: true,
+                              onComplete: () async {
+                                if (_workoutIndex < _workouts.length - 1) {
+                                  setState(() => _workoutIndex++);
+                                } else {
+                                  await _finish();
+                                }
+                              },
+                                customBlockId: widget.customBlockId,          // <-- must exist on this widget
+                                activeBlockInstanceId: widget.blockInstanceId // <-- null if just drafting
+                            ),
+                          )
+                        else
+                          const SizedBox.shrink(),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: _previewSchedule,
+                          child: const Text('Preview Schedule'),
+                        ),
+                      ],
+                    ),
+                    isActive: _currentStep >= 5,
                   ),
                 ],
               ),
-              isActive: _currentStep >= 1,
             ),
-            Step(
-              title: const Text('# Unique Workouts'),
-              content: DropdownButton<int>(
-                value: _uniqueCount,
-                hint: const Text('Select Count'),
-                items: List.generate(5, (i) => i + 2)
-                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                    .toList(),
-                onChanged: (v) => setState(() => _uniqueCount = v),
-              ),
-              isActive: _currentStep >= 2,
-            ),
-            Step(
-              title: const Text('Days per Week'),
-              content: DropdownButton<int>(
-                value: _daysPerWeek,
-                hint: const Text('Select Days'),
-                items: List.generate(5, (i) => i + 2)
-                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                    .toList(),
-                onChanged: (v) => setState(() => _daysPerWeek = v),
-              ),
-              isActive: _currentStep >= 3,
-            ),
-            Step(
-              title: const Text('Block length (weeks)'),
-              content: DropdownButton<int>(
-                value: _numWeeks,
-                hint: const Text('Select Weeks'),
-                items: List.generate(4, (i) => i + 3)
-                    .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
-                    .toList(),
-                onChanged: (v) => setState(() => _numWeeks = v),
-              ),
-              isActive: _currentStep >= 4,
-            ),
-            Step(
-              title: Text('Workout ${_workoutIndex + 1}'),
-              content: Column(
-                children: [
-                  if (_workouts.isNotEmpty)
-                    SizedBox(
-                      height: 400,
-                      child: WorkoutBuilder(
-                        workout: _workouts[_workoutIndex],
-                        allWorkouts: _workouts,
-                        currentIndex: _workoutIndex,
-                        onSelectWorkout: (i) =>
-                            setState(() => _workoutIndex = i),
-                        isLast: _workoutIndex == _workouts.length - 1,
-                        showDumbbellOption: true,
-                        onComplete: () async {
-                          if (_workoutIndex < _workouts.length - 1) {
-                            setState(() => _workoutIndex++);
-                          } else {
-                            await _finish();
-                          }
-                        },
-                      ),
-                    )
-                  else
-                    const SizedBox.shrink(),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _previewSchedule,
-                    child: const Text('Preview Schedule'),
-                  ),
-                ],
-              ),
-              isActive: _currentStep >= 5,
-            ),
-          ],
-        ),
+          ),
         ),
       ),
-    ),
-  ),
-);
+    );
   }
 
   @override

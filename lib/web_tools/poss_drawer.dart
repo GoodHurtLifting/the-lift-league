@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../models/custom_block_models.dart';
+import 'POSS_block_builder.dart';
 import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
-import 'poss_block_builder.dart';
 import 'terms_of_service_screen.dart';
 import 'download_app_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../screens/login_screen.dart';
 import 'web_sign_in_dialog.dart';
 
 class POSSDrawer extends StatelessWidget {
@@ -48,16 +48,40 @@ class POSSDrawer extends StatelessWidget {
             title: const Text('Block Builder'),
             onTap: () {
               Navigator.pop(context);
+
               if (onOpenBuilder != null) {
-                onOpenBuilder!(); // lets page supply onSaved version
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const POSSBlockBuilder()),
-                );
+                onOpenBuilder!(); // lets page supply its own onSaved flow
+                return;
               }
+
+              // Create a fresh draft so we have a real, non-null customBlockId
+              final int draftId = DateTime.now().millisecondsSinceEpoch;
+
+              final draft = CustomBlock(
+                id: draftId,
+                name: 'Untitled Block',
+                numWeeks: 4,
+                daysPerWeek: 3,
+                workouts: const [],   // empty to start
+                isDraft: true,
+                coverImagePath: null,
+                scheduleType: 'standard',
+              );
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => POSSBlockBuilder(
+                    customBlockId: draftId,        // required, non-null
+                    blockInstanceId: null,         // not editing a live run from the drawer
+                    initialBlock: draft,           // lets the builder prefill the UI
+                    onSaved: null,                 // supply if you want a callback
+                  ),
+                ),
+              );
             },
           ),
+
           ListTile(
             leading: const Icon(Icons.info),
             title: const Text('About'),

@@ -2,9 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:lift_league/web_tools/poss_drawer.dart';
+import '../models/custom_block_models.dart';
+import 'poss_drawer.dart';
 import 'custom_blocks_screen.dart';
-import 'poss_block_builder.dart';
+import 'POSS_block_builder.dart';
 import 'web_custom_block_service.dart';
 import '../services/promo_popup_service.dart';
 import 'web_sign_in_dialog.dart';
@@ -89,11 +90,33 @@ class _POSSHomeViewState extends State<_POSSHomeView> with TickerProviderStateMi
   }
 
   void _openBuilder() {
+    // Create a fresh draft so the builder has a non-null customBlockId
+    final int draftId = DateTime.now().millisecondsSinceEpoch;
+
+    final draft = CustomBlock(
+      id: draftId,
+      name: 'Untitled Block',
+      numWeeks: 4,
+      daysPerWeek: 3,
+      workouts: const [],
+      isDraft: true,
+      coverImagePath: null,
+      scheduleType: 'standard',
+    );
+
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => POSSBlockBuilder(onSaved: _onSaved)),
+      MaterialPageRoute(
+        builder: (_) => POSSBlockBuilder(
+          customBlockId: draftId,     // required
+          blockInstanceId: null,      // not editing a live run from here
+          initialBlock: draft,        // lets the builder prefill
+          onSaved: _onSaved,
+        ),
+      ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {

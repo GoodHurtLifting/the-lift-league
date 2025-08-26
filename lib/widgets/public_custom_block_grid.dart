@@ -14,11 +14,19 @@ class PublicCustomBlockGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (images.isEmpty) return const SizedBox.shrink();
+    if (images.isEmpty || names.isEmpty) return const SizedBox.shrink();
+
+    // Guard against list length mismatch to avoid range errors.
+    assert(
+    images.length == names.length,
+    'PublicCustomBlockGrid: images and names must be same length',
+    );
+    final count = images.length;
+
     return GridView.builder(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: images.length,
+      itemCount: count,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 10,
@@ -26,27 +34,47 @@ class PublicCustomBlockGrid extends StatelessWidget {
         childAspectRatio: 1.7,
       ),
       itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () => onAdd(index),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+        final img = images[index];
+        final name = names[index];
+
+        Widget imageWidget;
+        if (img.startsWith('http')) {
+          imageWidget = Image.network(
+            img,
+            fit: BoxFit.cover,
+            // Smooth loading & a safe fallback if the URL fails
+            loadingBuilder: (ctx, child, progress) =>
+            progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            errorBuilder: (ctx, error, stack) =>
+                Image.asset('assets/logo25.jpg', fit: BoxFit.cover),
+          );
+        } else {
+          imageWidget = Image.asset(img, fit: BoxFit.cover);
+        }
+
+        return Material(
+          borderRadius: BorderRadius.circular(6),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => onAdd(index),
             child: Stack(
               children: [
-                Positioned.fill(
-                  child: images[index].startsWith('http')
-                      ? Image.network(images[index], fit: BoxFit.cover)
-                      : Image.asset(images[index], fit: BoxFit.cover),
-                ),
+                Positioned.fill(child: imageWidget),
+                // Name bar with ellipsis
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Container(
                     width: double.infinity,
-                    color: Colors.black54,
-                    padding: const EdgeInsets.all(2),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                    ),
                     child: Text(
-                      names[index],
-                      style: const TextStyle(fontSize: 12),
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ),
