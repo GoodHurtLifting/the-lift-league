@@ -105,8 +105,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     // Lift name
                     Autocomplete<String>(
                       optionsBuilder: (TextEditingValue text) {
-                        if (text.text.isEmpty)
+                        if (text.text.isEmpty) {
                           return const Iterable<String>.empty();
+                        }
                         return liftNames.where(
                           (n) =>
                               n.toLowerCase().contains(text.text.toLowerCase()),
@@ -228,15 +229,19 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                               '[AddLift] AFTER add  → ${widget.workout.lifts[idx].name}: '
                               '${widget.workout.lifts[idx].sets}x${widget.workout.lifts[idx].repsPerSet}');
                         });
+
+                        final sheetNav = Navigator.of(ctx);
+                        FocusScope.of(ctx).unfocus();
+
                         try {
-                          await DBService().updateWorkoutDraft(widget.workout);
-                          if (mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
+                          final w = widget.workout;
+                          await DBService().updateWorkoutDraft(w);
+                          if (!mounted) return;
+                          sheetNav.pop();
                         } catch (e) {
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Failed to save lift'),
-                            ),
+                            const SnackBar(content: Text('Failed to save lift')),
                           );
                         }
                       },
@@ -286,8 +291,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                   children: [
                     Autocomplete<String>(
                       optionsBuilder: (TextEditingValue text) {
-                        if (text.text.isEmpty)
+                        if (text.text.isEmpty) {
                           return const Iterable<String>.empty();
+                        }
                         return liftNames.where(
                           (n) =>
                               n.toLowerCase().contains(text.text.toLowerCase()),
@@ -386,16 +392,18 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             ..isBodyweight = isBodyweight
                             ..isDumbbellLift = isDumbbellLift;
                         });
+                        final sheetNav = Navigator.of(ctx);
+                        FocusScope.of(ctx).unfocus();
 
                         try {
-                          await DBService().updateWorkoutDraft(widget.workout);
-                          if (mounted) Navigator.pop(context);
+                          final w = widget.workout;
+                          await DBService().updateWorkoutDraft(w);
+                          if (!mounted) return;
+                          sheetNav.pop();
                         } catch (e) {
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Failed to save lift'),
-                            ),
+                            const SnackBar(content: Text('Failed to delete lift')),
                           );
                         }
                       },
@@ -408,7 +416,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         });
                         try {
                           await DBService().updateWorkoutDraft(widget.workout);
-                          if (mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
+                          if (ctx.mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
                         } catch (e) {
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
