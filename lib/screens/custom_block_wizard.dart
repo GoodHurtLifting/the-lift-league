@@ -179,9 +179,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     );
   }
 
-  Future<void> _finish() async {
+  Future<int?> _finish() async {
+    // 1) Expand the template across the full run
     final int totalDays = numWeeks! * daysPerWeek!;
     final baseId = DateTime.now().millisecondsSinceEpoch;
+
     final List<WorkoutDraft> allWorkouts = List.generate(totalDays, (i) {
       final template = workouts[i % workouts.length];
       return WorkoutDraft(
@@ -203,8 +205,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       );
     });
 
-    final int id =
-        widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
+    // 2) Build/save the CustomBlock
+    final int id = widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
     final block = CustomBlock(
       id: id,
       name: blockName,
@@ -215,36 +217,45 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       isDraft: false,
       scheduleType: _scheduleType,
     );
+
     if (widget.initialBlock != null) {
       await DBService().updateCustomBlock(block);
     } else {
       await DBService().insertCustomBlock(block);
     }
-    // Update any active instance before syncing to Firestore
-    final existingInstanceId = await _applyEditsToActiveInstance(block);
+
+    // 3) If the user has an active instance of this block, apply edits in-place
+    final int? editedActiveInstanceId = await _applyEditsToActiveInstance(block);
+
+    // 4) Sync to Firestore (optional, if you need it here)
     await _uploadBlockToFirestore(block);
+
+    // 5) Decide what to return (which instance to navigate to), but do not navigate here
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      int blockInstanceId;
-      if (existingInstanceId != null) {
-        blockInstanceId = existingInstanceId;
-      } else {
-        blockInstanceId =
-        await DBService().insertNewBlockInstance(block.name, user.uid);
-        await DBService().activateBlockInstanceIfNeeded(
-            blockInstanceId, user.uid, block.name);
-      }
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BlockDashboard(blockInstanceId: blockInstanceId),
-        ),
-      );
-    } else {
-      if (mounted) Navigator.pop(context);
+    if (user == null) return null;
+
+    // If we edited an active instance, use that one
+    if (editedActiveInstanceId != null) {
+      return editedActiveInstanceId;
     }
+
+    // If this is a brand-new block (not editing an existing one), create a fresh instance
+    if (widget.initialBlock == null) {
+      final newInstanceId =
+      await DBService().insertNewBlockInstance(block.name, user.uid);
+
+      // Make sure it’s active so downstream screens behave as expected
+      await DBService()
+          .activateBlockInstanceIfNeeded(newInstanceId, user.uid, block.name);
+
+      return newInstanceId;
+    }
+
+    // We edited an existing custom block that isn’t the active one — no auto-build/redirect
+    // Return null so the caller can just close the wizard or stay put.
+    return null;
   }
+
 
   /// Applies custom block edits to the user's active block instance (if any).
   /// Returns the blockInstanceId if edits were applied.
@@ -490,36 +501,54 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             content: workouts.isEmpty
                 ? const SizedBox.shrink()
                 : Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        height: 400,
-                        child: WorkoutBuilder(
-                          workout: workouts[_workoutIndex],
-                          allWorkouts: workouts,
-                          currentIndex: _workoutIndex,
-                          onSelectWorkout: (i) =>
-                              setState(() => _workoutIndex = i),
-                          isLast: _workoutIndex == workouts.length - 1,
-                          onComplete: () async {
-                            if (_workoutIndex < workouts.length - 1) {
-                              setState(() => _workoutIndex++);
-                            } else {
-                              await _finish();
-                            }
-                          },
-                          showDumbbellOption: true,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _previewSchedule,
-                        child: const Text('Preview Schedule'),
-                      ),
-                    ],
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: 400,
+                  child: WorkoutBuilder(
+                    key: ValueKey<int>(workouts[_workoutIndex].id), // 👈 force rebuild on index change
+                    workout: workouts[_workoutIndex],
+                    allWorkouts: workouts,
+                    currentIndex: _workoutIndex,
+                    onSelectWorkout: (i) => setState(() => _workoutIndex = i),
+                    isLast: _workoutIndex == workouts.length - 1,
+                    onComplete: () async {
+                      // if not last, advance the wizard
+                      if (_workoutIndex < workouts.length - 1) {
+                        setState(() => _workoutIndex++);
+                        return;
+                      }
+
+                      // last step → build/save, then navigate
+                      // Change _finish() to return the new blockInstanceId (int)
+                      final int? newBlockInstanceId = await _finish();
+                      if (!context.mounted) return;
+
+                      if (newBlockInstanceId != null) {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlockDashboard(blockInstanceId: newBlockInstanceId),
+                          ),
+                        );
+                      } else {
+                        // Nothing to navigate to (e.g., edited a non-active existing block). Close wizard:
+                        Navigator.pop(context);
+                      }
+                    },
+                    showDumbbellOption: true,
                   ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _previewSchedule,
+                  child: const Text('Preview Schedule'),
+                ),
+              ],
+            ),
             isActive: _currentStep >= 4,
-          ),
+          )
+
         ],
       ),
     );

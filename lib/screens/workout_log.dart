@@ -95,9 +95,10 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
 
     _startingBig3Prs = await getBig3PRs(currentUser.uid);
 
-    final workoutInstance = await db.getWorkoutInstanceById(
-        widget.workoutInstanceId);
+    // Load instance rows
+    final workoutInstance = await db.getWorkoutInstanceById(widget.workoutInstanceId);
     if (workoutInstance == null) {
+      if (!mounted) return;
       setState(() {
         workout = null;
         isLoading = false;
@@ -107,6 +108,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
 
     final blockInstance = await db.getBlockInstanceById(widget.blockInstanceId);
     if (blockInstance == null) {
+      if (!mounted) return;
       setState(() {
         workout = null;
         isLoading = false;
@@ -115,110 +117,82 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
     }
 
     final int workoutId = (workoutInstance['workoutId'] as num).toInt();
-    Map<String, dynamic>? workoutDefinition;
-    try {
-      workoutDefinition = workoutDataList
-          .firstWhere((w) => w['workoutId'] == workoutId);
-    } catch (_) {
-      workoutDefinition = null;
+
+    // Always load lifts from DB for THIS workout instance
+    // (reflects custom/shadow edits immediately).
+    List<Map<String, dynamic>> liftsFromDb =
+    await db.getWorkoutLifts(widget.workoutInstanceId);
+
+    // If edits purged & rebuilt instances but lifts weren't seeded yet, seed now.
+    if (liftsFromDb.isEmpty) {
+      await db.insertLiftsForWorkoutInstance(widget.workoutInstanceId);
+      liftsFromDb = await db.getWorkoutLifts(widget.workoutInstanceId);
     }
 
-    // Prepare lifts
     final List<Liftinfo> orderedLifts = [];
-    if (workoutDefinition != null) {
-      final List<int> liftIds = List<int>.from(
-          workoutDefinition['liftIds'] ?? []);
-      for (final id in liftIds) {
-        final liftData = await db.getLiftById(id);
-        if (liftData != null) {
-          orderedLifts.add(
-            Liftinfo(
-              liftId: id,
-              workoutInstanceId: widget.workoutInstanceId,
-              liftName: liftData['liftName'] ?? 'Unknown',
-              repScheme: liftData['repScheme'] ?? '',
-              numSets: liftData['numSets'] ?? 3,
-              scoreMultiplier: (liftData['scoreMultiplier'] ?? 1.0).toDouble(),
-              isDumbbellLift: liftData['isDumbbellLift'] == 1,
-              scoreType: liftData['scoreType'] ?? 'multiplier',
-              youtubeUrl: liftData['youtubeUrl'],
-              description: liftData['description'] ?? '',
-              referenceLiftId: liftData['referenceLiftId'],
-              percentOfReference:
-              (liftData['percentOfReference'] as num?)?.toDouble(),
-            ),
-          );
-        }
-      }
-    } else {
-      final liftsFromDb = await db.getWorkoutLifts(widget.workoutInstanceId);
-      for (final lift in liftsFromDb) {
-        final int sets = (lift['sets'] as int?) ?? 3;
-        final int? repsPerSet = lift['repsPerSet'] as int?;
-        final repScheme = repsPerSet != null
-            ? '$sets sets x $repsPerSet reps'
-            : (lift['repScheme'] ?? '');
-        orderedLifts.add(
-          Liftinfo(
-            liftId: lift['liftId'] as int,
-            workoutInstanceId: widget.workoutInstanceId,
-            liftName: lift['liftName'] ?? 'Unknown',
-            repScheme: repScheme,
-            numSets: sets,
-            scoreMultiplier: (lift['multiplier'] ?? 1.0).toDouble(),
-            isDumbbellLift: (lift['isDumbbellLift'] ?? 0) == 1,
-            scoreType: lift['scoreType'] ?? 'multiplier',
-            youtubeUrl: lift['youtubeUrl'],
-            description: lift['description'] ?? '',
-            referenceLiftId: lift['referenceLiftId'],
-            percentOfReference:
-                (lift['percentOfReference'] as num?)?.toDouble(),
-          ),
-        );
-      }
-      workoutDefinition = {
-        'workoutId': workoutId,
-        'workoutName': workoutInstance['workoutName'] ?? 'Workout',
-      };
+    for (final lift in liftsFromDb) {
+      final int sets = (lift['sets'] as int?) ?? 3;
+      final int? repsPerSet = lift['repsPerSet'] as int?;
+      final repScheme = repsPerSet != null
+          ? '$sets sets x $repsPerSet reps'
+          : (lift['repScheme'] ?? '');
+
+      orderedLifts.add(
+        Liftinfo(
+          liftId: lift['liftId'] as int,
+          workoutInstanceId: widget.workoutInstanceId,
+          liftName: (lift['liftName'] as String?) ?? 'Unknown',
+          repScheme: repScheme,
+          numSets: sets,
+          scoreMultiplier: (lift['multiplier'] ?? 1.0).toDouble(),
+          isDumbbellLift: (lift['isDumbbellLift'] ?? 0) == 1,
+          scoreType: (lift['scoreType'] as String?) ?? 'multiplier',
+          youtubeUrl: lift['youtubeUrl'],
+          description: (lift['description'] as String?) ?? '',
+          referenceLiftId: lift['referenceLiftId'],
+          percentOfReference: (lift['percentOfReference'] as num?)?.toDouble(),
+        ),
+      );
     }
 
-    final block = blockDataList.firstWhere(
-          (b) => b['blockId'] == blockInstance['blockId'],
-      orElse: () => {'blockName': blockInstance['blockName']},
-    );
+    final blockDisplayName = (blockInstance['blockName'] as String?) ?? 'Block Name';
+    final workoutDisplayName = (workoutInstance['workoutName'] as String?) ?? 'Workout';
 
-    // Construct the workout object
+    // Build the screen model from INSTANCE data (not templates)
     workout = Workout(
       workoutInstanceId: widget.workoutInstanceId,
       blockInstanceId: blockInstance['blockInstanceId'],
-      blockName: block['blockName'] ?? 'Block Name',
-      name: workoutDefinition['workoutName'] ?? 'Workout Name',
+      blockName: blockDisplayName,
+      name: workoutDisplayName,
       lifts: orderedLifts,
       workoutScore: 0.0,
-      // Can be 0.0 or removed if unused
-      workoutId: workoutDefinition['workoutId'],
+      workoutId: workoutId,
     );
 
-// Get workout totals and previous score from DB
-    final workoutTotalsFromDb = await db.getWorkoutTotals(
-        widget.workoutInstanceId, currentUser.uid);
+    // Totals & previous score
+    final workoutTotalsFromDb =
+    await db.getWorkoutTotals(widget.workoutInstanceId, currentUser.uid);
     final previousScore = await db.getPreviousWorkoutScore(
-        widget.workoutInstanceId, workout!.workoutId, currentUser.uid);
+      widget.workoutInstanceId,
+      workout!.workoutId,
+      currentUser.uid,
+    );
     _cachedPreviousScore = previousScore;
 
-// Update ValueNotifier (footer)
     workoutTotals.value = WorkoutInstanceTotals(
-      workoutScore: workoutTotalsFromDb?['workoutScore'] as double? ?? 0.0,
-      workoutWorkload: workoutTotalsFromDb?['workoutWorkload'] as double? ?? 0.0,
+      workoutScore: (workoutTotalsFromDb?['workoutScore'] as double?) ?? 0.0,
+      workoutWorkload: (workoutTotalsFromDb?['workoutWorkload'] as double?) ?? 0.0,
       previousWorkoutScore: previousScore,
     );
 
+    if (!mounted) return;
     setState(() {
       isLoading = false;
     });
   }
 
-    void _showInlineNumpad(String fieldKey) {
+
+  void _showInlineNumpad(String fieldKey) {
     setState(() {
       isNumpadOpen = true;
       _activeFieldKey = fieldKey;

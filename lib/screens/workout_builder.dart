@@ -9,7 +9,7 @@ class WorkoutBuilder extends StatefulWidget {
   final List<WorkoutDraft> allWorkouts;
   final int currentIndex;
   final ValueChanged<int> onSelectWorkout;
-  final VoidCallback onComplete;
+  final Future<void> Function() onComplete; // instead of VoidCallback
   final bool isLast;
   final bool showDumbbellOption;
   const WorkoutBuilder({
@@ -230,7 +230,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         });
                         try {
                           await DBService().updateWorkoutDraft(widget.workout);
-                          if (mounted) Navigator.pop(context);
+                          if (mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
                         } catch (e) {
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -408,7 +408,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         });
                         try {
                           await DBService().updateWorkoutDraft(widget.workout);
-                          if (mounted) Navigator.pop(context);
+                          if (mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
                         } catch (e) {
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -500,10 +500,18 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: widget.onComplete,
-                child: Text(
-                  widget.isLast ? 'Build Block' : 'Next Workout',
-                ),
+                onPressed: () async {
+                  // optional: persist latest name before moving on
+                  if (widget.workout.name != _nameController.text) {
+                    widget.workout.name = _nameController.text;
+                    try {
+                      await DBService().updateWorkoutDraft(widget.workout);
+                    } catch (_) {}
+                  }
+
+                  await widget.onComplete();  // <-- await async handler
+                },
+                child: Text(widget.isLast ? 'Build Block' : 'Next Workout'),
               ),
             ),
           ],

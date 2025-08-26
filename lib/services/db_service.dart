@@ -40,79 +40,87 @@ class DBService {
       path,
       version: _dbVersion,
       onCreate: (db, v) async {
+        // Ensure FK cascades for the initial connection
         await db.execute('PRAGMA foreign_keys = ON;');
         await _createTables(db);
         await _insertDefaultData(db);
       },
-      // One-shot upgrade: run only when pre-v16 DB is opened
+      onOpen: (db) async {
+        // Ensure FK cascades are ON for every new connection
+        await db.execute('PRAGMA foreign_keys = ON;');
+      },
       onUpgrade: (db, oldV, newV) async {
         if (oldV < 16) {
           // add scheduledDate so we can credit make-up workouts
           await db.execute(
-            "ALTER TABLE workout_instances ADD COLUMN scheduledDate TEXT;"
+              "ALTER TABLE workout_instances ADD COLUMN scheduledDate TEXT;"
           );
           // helpful indexes
           await db.execute(
-            "CREATE INDEX IF NOT EXISTS idx_wi_user_block "
-            "ON workout_instances (userId, blockInstanceId);"
+              "CREATE INDEX IF NOT EXISTS idx_wi_user_block "
+                  "ON workout_instances (userId, blockInstanceId);"
           );
           await db.execute(
-            "CREATE INDEX IF NOT EXISTS idx_wi_sched "
-            "ON workout_instances (scheduledDate);"
+              "CREATE INDEX IF NOT EXISTS idx_wi_sched "
+                  "ON workout_instances (scheduledDate);"
           );
         }
+
         if (oldV < 17) {
-
           await db.execute(
-            "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;"
+              "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;"
           );
 
-          // add custom lift fields
-          try {
-            await db.execute(
-                "ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;");
-          } catch (_) {}
-          try {
-            await db.execute(
-                "ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;");
-          } catch (_) {}
-          try {
-            await db.execute(
-                "ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;");
-          } catch (_) {}
-          try {
-            await db.execute(
-                "ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;");
-          } catch (_) {}
-          try {
-            await db.execute(
-                "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER;");
-          } catch (_) {}
-
+          // add custom lift fields (best-effort, ignore if exist)
+          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_drafts   ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
         }
+
         if (oldV < 18) {
           await db.execute(
-            "ALTER TABLE block_instances ADD COLUMN customBlockId INTEGER;",
+              "ALTER TABLE block_instances ADD COLUMN customBlockId INTEGER;"
           );
 
+          // backfill customBlockId by name
           final instances = await db.query('block_instances');
           for (final inst in instances) {
             final name = inst['blockName']?.toString();
             if (name == null) continue;
-            final custom = await db.query('custom_blocks',
-                where: 'name = ?', whereArgs: [name], limit: 1);
+            final custom = await db.query(
+              'custom_blocks',
+              where: 'name = ?',
+              whereArgs: [name],
+              limit: 1,
+            );
             if (custom.isNotEmpty) {
-              await db.update('block_instances', {
-                'customBlockId': custom.first['id']
-              },
-                  where: 'blockInstanceId = ?',
-                  whereArgs: [inst['blockInstanceId']]);
+              await db.update(
+                'block_instances',
+                {'customBlockId': custom.first['id']},
+                where: 'blockInstanceId = ?',
+                whereArgs: [inst['blockInstanceId']],
+              );
             }
           }
+        }
+
+        // ⬇️ This must NOT be nested under the <18 block
+        if (oldV < 19) {
+          // Normalize completed flag so deletes catch stale future instances
+          await db.execute(
+              "UPDATE workout_instances SET completed = 0 WHERE completed IS NULL;"
+          );
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_wi_block_completed "
+                  "ON workout_instances (blockInstanceId, completed);"
+          );
         }
       },
     );
   }
+
 
   // ──────────────────────────────────────────────
   // 🚀 DATABASE TABLE CREATION
@@ -1061,54 +1069,42 @@ class DBService {
     }
   }
 
-  /// Replaces the standard block definition with the latest data from a
-  /// custom block. Any existing block, workouts, and associated lifts are
-  /// deleted before recreating them from the custom block.
-  Future<void> replaceStandardBlockFromCustom(int customId) async {
-    final customBlock = await getCustomBlock(customId);
-    if (customBlock == null) return;
-
+  /// Applies edits from a custom block to an existing block instance.
+  ///
+  /// 1. Refreshes the standard block definition from the custom block.
+  /// 2. Deletes any upcoming workout instances tied to [blockInstanceId].
+  /// 3. Recreates workout instances so future workouts reflect the edits.
+  Future<void> applyCustomBlockEdits(int customBlockId, int blockInstanceId) async {
     final db = await database;
 
+    // 1) Load the latest custom draft
+    final customBlock = await getCustomBlock(customBlockId);
+    if (customBlock == null) return;
+
     await db.transaction((txn) async {
-      // Remove existing standard block (if any)
-      final existing = await txn.query('blocks',
-          where: 'blockName = ?', whereArgs: [customBlock.name], limit: 1);
-      if (existing.isNotEmpty) {
-        final int oldBlockId = existing.first['blockId'] as int;
+      // 2) Ensure the instance exists
+      final instance = await txn.query(
+        'block_instances',
+        where: 'blockInstanceId = ?',
+        whereArgs: [blockInstanceId],
+        limit: 1,
+      );
+      if (instance.isEmpty) return;
 
-        // Fetch workouts tied to this block so we can cascade manually
-        final workouts = await txn.query('workouts_blocks',
-            where: 'blockId = ?', whereArgs: [oldBlockId]);
-        final workoutIds =
-            workouts.map((w) => w['workoutId'] as int).toList();
-
-        if (workoutIds.isNotEmpty) {
-          final placeholders = List.filled(workoutIds.length, '?').join(',');
-          await txn.delete('lift_workouts',
-              where: 'workoutId IN ($placeholders)', whereArgs: workoutIds);
-          await txn.delete('workouts',
-              where: 'workoutId IN ($placeholders)', whereArgs: workoutIds);
-        }
-
-        await txn
-            .delete('workouts_blocks', where: 'blockId = ?', whereArgs: [oldBlockId]);
-        await txn.delete('blocks', where: 'blockId = ?', whereArgs: [oldBlockId]);
-      }
-
-      // Insert fresh standard block from the custom block data
-      final int newBlockId = await txn.insert('blocks', {
-        'blockName': customBlock.name,
+      // 3) Build a fresh shadow block just for THIS instance
+      final int shadowBlockId = await txn.insert('blocks', {
+        'blockName': '${customBlock.name}__shadow__${DateTime.now().millisecondsSinceEpoch}',
         'scheduleType': 'standard',
         'numWorkouts': customBlock.workouts.length,
       });
 
       for (final workout in customBlock.workouts) {
-        final int workoutId =
-            await txn.insert('workouts', {'workoutName': workout.name});
+        final int workoutId = await txn.insert('workouts', {
+          'workoutName': workout.name,
+        });
 
         await txn.insert('workouts_blocks', {
-          'blockId': newBlockId,
+          'blockId': shadowBlockId,
           'workoutId': workoutId,
         });
 
@@ -1125,49 +1121,45 @@ class DBService {
           });
         }
       }
+
+      // 4) Point only this instance to the shadow block and lock in the link
+      await txn.update(
+        'block_instances',
+        {
+          'blockId': shadowBlockId,
+          'customBlockId': customBlockId,
+          'blockName': customBlock.name,
+        },
+        where: 'blockInstanceId = ?',
+        whereArgs: [blockInstanceId],
+      );
+
+      // 5) Purge ALL upcoming instances for this blockInstance (NULL or 0)
+      //    With FK ON, lift_entries / lift_totals will cascade away.
+      await txn.delete(
+        'workout_instances',
+        where: 'blockInstanceId = ? AND (completed IS NULL OR completed != 1)',
+        whereArgs: [blockInstanceId],
+      );
     });
-  }
 
-  /// Applies edits from a custom block to an existing block instance.
-  ///
-  /// 1. Refreshes the standard block definition from the custom block.
-  /// 2. Deletes any upcoming workout instances tied to [blockInstanceId].
-  /// 3. Recreates workout instances so future workouts reflect the edits.
-  Future<void> applyCustomBlockEdits(
-      int customBlockId, int blockInstanceId) async {
-    final customBlock = await getCustomBlock(customBlockId);
-    if (customBlock == null) return;
-
-    // 🔁 Update the base block/workout definitions
-    await replaceStandardBlockFromCustom(customBlockId);
-
-    final db = await database;
-
-    // Ensure the block instance exists before proceeding
-    final instance = await db.query('block_instances',
-        where: 'blockInstanceId = ?', whereArgs: [blockInstanceId], limit: 1);
-    if (instance.isEmpty) return;
-
-    // 🔗 Grab the refreshed blockId using the custom block's current name and
-    // update the instance to point to it (and reflect any renamed blocks).
-    final blockRow = await db.query('blocks',
-        where: 'blockName = ?', whereArgs: [customBlock.name], limit: 1);
-    if (blockRow.isNotEmpty) {
-      await db.update('block_instances', {
-        'blockId': blockRow.first['blockId'],
-        'blockName': customBlock.name,
-        'customBlockId': customBlockId,
-      }, where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+    // 6) Safety: If anything somehow slipped through (defensive), wipe and rebuild
+    final leftovers = await db.query(
+      'workout_instances',
+      where: 'blockInstanceId = ? AND (completed IS NULL OR completed != 1)',
+      whereArgs: [blockInstanceId],
+      limit: 1,
+    );
+    if (leftovers.isNotEmpty) {
+      await db.delete('workout_instances', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
     }
 
-    // ❌ Remove any upcoming workout instances (completed = 0)
-    await db.delete('workout_instances',
-        where: 'blockInstanceId = ? AND completed = 0',
-        whereArgs: [blockInstanceId]);
-
-    // ♻️ Recreate the future workout instances with updated data
+    // 7) Recreate future instances from the new shadow definitions
     await insertWorkoutInstancesForBlock(blockInstanceId);
   }
+
+
+
 
   Future<int> createBlockFromCustomBlockId(int customId, String userId) async {
     final customBlock = await getCustomBlock(customId);
@@ -1222,6 +1214,65 @@ class DBService {
     return blockInstanceId;
   }
 
+  Future<int> createShadowBlockForInstanceFromCustom(
+      int customBlockId,
+      int blockInstanceId,
+      ) async {
+    final customBlock = await getCustomBlock(customBlockId);
+    if (customBlock == null) {
+      throw Exception('Custom block not found: $customBlockId');
+    }
+
+    final db = await database;
+
+    // Give the shadow block a unique name (kept same display name on instance)
+    final int shadowBlockId = await db.insert('blocks', {
+      'blockName': '${customBlock.name}__shadow__${DateTime.now().millisecondsSinceEpoch}',
+      'scheduleType': 'standard',
+      'numWorkouts': customBlock.workouts.length,
+    });
+
+    // Build workouts + lift_workouts for the shadow block
+    for (final workout in customBlock.workouts) {
+      final int workoutId = await db.insert('workouts', {
+        'workoutName': workout.name,
+      });
+
+      await db.insert('workouts_blocks', {
+        'blockId': shadowBlockId,
+        'workoutId': workoutId,
+      });
+
+      for (final lift in workout.lifts) {
+        final liftId = await _getOrCreateLiftId(db, lift);
+        await db.insert('lift_workouts', {
+          'workoutId': workoutId,
+          'liftId': liftId,
+          'numSets': lift.sets,
+          'repsPerSet': lift.repsPerSet,
+          'multiplier': lift.multiplier,
+          'isBodyweight': lift.isBodyweight ? 1 : 0,
+          'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+        });
+      }
+    }
+
+    // Point ONLY this instance at the shadow blockId; keep display name
+    await db.update(
+      'block_instances',
+      {
+        'blockId': shadowBlockId,
+        'customBlockId': customBlockId,
+        // blockName left as-is for UI
+      },
+      where: 'blockInstanceId = ?',
+      whereArgs: [blockInstanceId],
+    );
+
+    return shadowBlockId;
+  }
+
+
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
 // ──────────────────────────────────────────────
@@ -1232,34 +1283,51 @@ class DBService {
   Future<int> insertNewBlockInstance(String blockName, String userId) async {
     final db = await database;
 
-    // If there's a custom block with this name, refresh the standard block
-    final custom = await db
-        .query('custom_blocks', where: 'name = ?', whereArgs: [blockName], limit: 1);
-    int? customBlockId;
+    // 1) If there’s a custom block with this name, build a fresh block + instance
+    //    from that custom draft (no global overwrite).
+    final custom = await db.query(
+      'custom_blocks',
+      where: 'name = ?',
+      whereArgs: [blockName],
+      limit: 1,
+    );
+
     if (custom.isNotEmpty) {
-      customBlockId = custom.first['id'] as int;
-      await replaceStandardBlockFromCustom(customBlockId);
+      final int customBlockId = custom.first['id'] as int;
+      // This creates a brand-new block (shadow-like) + a block_instance
+      // and calls insertWorkoutInstancesForBlock(...) for you.
+      return await createBlockFromCustomBlockId(customBlockId, userId);
     }
 
-    // Fetch the (possibly refreshed) blockId from the standard blocks table
-    final blockData = await db.query('blocks',
-        where: 'blockName = ?', whereArgs: [blockName], limit: 1);
+    // 2) Legacy / standard block path (no custom draft found)
+    final blockData = await db.query(
+      'blocks',
+      where: 'blockName = ?',
+      whereArgs: [blockName],
+      limit: 1,
+    );
     if (blockData.isEmpty) {
       throw Exception('❌ Block not found: $blockName');
     }
     final int blockId = blockData.first['blockId'] as int;
 
-    // Insert new block instance with userId
-    return await db.insert('block_instances', {
+    // Create the instance pointing at the existing standard block
+    final int blockInstanceId = await db.insert('block_instances', {
       'blockId': blockId,
-      'customBlockId': customBlockId,
+      'customBlockId': null,
       'blockName': blockName,
       'userId': userId,
       'startDate': null,
       'endDate': null,
       'status': "inactive",
     });
+
+    // Keep behavior consistent with custom path: precreate workout instances now.
+    await insertWorkoutInstancesForBlock(blockInstanceId);
+
+    return blockInstanceId;
   }
+
 
   Future<void> activateBlockInstanceIfNeeded(
       int blockInstanceId, String userId, String blockName) async {
@@ -1415,6 +1483,7 @@ class DBService {
           'week': week,
           'startTime': null,
           'endTime': null,
+          'completed': 0,
         },
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
