@@ -9,7 +9,9 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'dart:async';
+import '../services/badge_service.dart';
 import '../services/db_service.dart';
+import '../widgets/badge_carousel.dart';
 
 class AddCheckInScreen extends StatefulWidget {
   const AddCheckInScreen({super.key});
@@ -80,6 +82,16 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
     }
   }
 
+  Future<int> _incrementAndGetCheckinsCount(String userId) async {
+    final usersDoc = FirebaseFirestore.instance.collection('users').doc(userId);
+    return FirebaseFirestore.instance.runTransaction<int>((tx) async {
+      final snap = await tx.get(usersDoc);
+      final current = (snap.data()?['checkinsCount'] ?? 0) as int;
+      final next = current + 1;
+      tx.update(usersDoc, {'checkinsCount': next});
+      return next;
+    });
+  }
 
   Future<void> _submit() async {
     setState(() => _isUploading = true);
@@ -156,7 +168,42 @@ class _AddCheckInScreenState extends State<AddCheckInScreen> {
       "public": isPublic,
     });
 
-    Navigator.pop(context, true); // Done!
+// 🔢 increment counter & 🏅 award badge
+    final total = await _incrementAndGetCheckinsCount(userId);
+    final newlyEarned = await BadgeService()
+        .checkAndAwardCheckinHeadBadge(userId, totalCheckinsOverride: total);
+
+
+
+// 🎉 If any badges were earned, show the carousel; otherwise, just pop
+    if (newlyEarned.isNotEmpty) {
+      // Optional: stop the spinner so the user can interact with the overlay
+      if (mounted) setState(() => _isUploading = false);
+
+      await showGeneralDialog(
+        context: context,
+        barrierLabel: 'Badges',
+        barrierDismissible: true,
+        barrierColor: Colors.black.withOpacity(0.85),
+        transitionDuration: const Duration(milliseconds: 250),
+        pageBuilder: (_, __, ___) {
+          return BadgeCarousel(
+            earnedBadges: newlyEarned,
+            onComplete: () {
+              if (Navigator.of(context).canPop()) {
+                Navigator.of(context).pop(); // closes the overlay
+              }
+            },
+          );
+        },
+      );
+
+      if (mounted) Navigator.pop(context, true); // return to previous screen
+    } else {
+      if (mounted) Navigator.pop(context, true); // Done!
+    }
+
+    // Done!
   }
 
   @override

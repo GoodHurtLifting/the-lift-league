@@ -69,7 +69,13 @@ class _BlockSummaryScreenState extends State<BlockSummaryScreen> {
       workoutsCompleted = completed;
       daysTaken = days;
       totalCalendarDays = calendarDays;
-      badgeAssetPaths = badges.map((b) => b['imagePath'] as String).toList();
+      badgeAssetPaths = badges.map((b) {
+        final path = b['imagePath'] as String?;
+        if (path != null && path.isNotEmpty) return path;
+
+        final file = (b['image'] as String?) ?? '';
+        return 'assets/images/badges/$file';
+      }).toList();
       feedbackMessage = feedback;
       newBig3Prs = prs;
       isLoading = false;

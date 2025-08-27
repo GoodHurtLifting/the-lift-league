@@ -275,6 +275,63 @@ class BadgeService {
   }
 
   // ─────────────────────────────────────────────────────────────────────
+// ✅ Check-In Head – every 5 check-ins
+// ─────────────────────────────────────────────────────────────────────
+  Future<List<Map<String, dynamic>>> checkAndAwardCheckinHeadBadge(
+      String userId, {
+        int? totalCheckinsOverride, // if you maintain a counter on user doc
+      }) async {
+    // 1) Determine total check-ins
+    int totalCheckins;
+    if (totalCheckinsOverride != null) {
+      totalCheckins = totalCheckinsOverride;
+    } else {
+      // Aggregate count on timeline_entries where type == 'checkin'
+      final agg = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('timeline_entries')
+          .where('type', isEqualTo: 'checkin')
+          .count()
+          .get();
+      totalCheckins = agg.count ?? 0;
+    }
+
+    // 2) One badge each time total is a multiple of 5
+    final earnedBadges = totalCheckins ~/ 5;
+    if (earnedBadges <= 0) return [];
+
+    final badgeRef = _firestore.collection('users').doc(userId).collection('badges');
+    List<Map<String, dynamic>> newlyEarned = [];
+
+    for (int i = 1; i <= earnedBadges; i++) {
+      final badgeId = 'checkin_head_$i';
+      final exists = await badgeRef.doc(badgeId).get();
+      if (exists.exists) continue;
+
+      final countSoFar = i * 5;
+      final badgeData = {
+        'badgeId': badgeId,
+        'name': 'Checkin Head',
+        'description': 'Posted $countSoFar check-ins.',
+        'image': 'checkinHead_01.png',
+      };
+
+      await badgeRef.doc(badgeId).set({
+        ...badgeData,
+        'iconPath': 'assets/images/badges/checkinHead_01.png',
+        'imagePath': 'assets/images/badges/checkinHead_01.png',
+        'unlockDate': Timestamp.now(),
+      });
+
+      newlyEarned.add(badgeData);
+    }
+
+    return newlyEarned;
+  }
+
+
+  // ─────────────────────────────────────────────────────────────────────
   // 🔢 Helper – Get ISO Week Key
   // ─────────────────────────────────────────────────────────────────────
   String isoWeekAndYear(DateTime date) {

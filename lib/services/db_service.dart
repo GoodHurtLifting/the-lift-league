@@ -2540,6 +2540,41 @@ class DBService {
     return null;
   }
 
+// Convert your existing String? API to int?
+  Future<int?> getActiveBlockInstanceIdInt(String userId) async {
+    final idStr = await getActiveBlockInstanceId(userId);
+    return int.tryParse(idStr ?? '');
+  }
+
+// Insert into earned_badges if not already present for this block
+  Future<void> upsertEarnedBadge({
+    required String userId,
+    required int blockInstanceId,
+    required String badgeId,
+    required String name,
+    required String imagePath,
+  }) async {
+    final db = await database;
+
+    final exists = await db.rawQuery('''
+    SELECT 1 FROM earned_badges
+    WHERE userId = ? AND blockInstanceId = ? AND badgeId = ?
+    LIMIT 1
+  ''', [userId, blockInstanceId, badgeId]);
+
+    if (exists.isEmpty) {
+      await db.insert('earned_badges', {
+        'badgeId': badgeId,
+        'userId': userId,
+        'blockInstanceId': blockInstanceId,
+        'name': name,
+        'imagePath': imagePath,
+      });
+    }
+  }
+
+
+
   Future<void> upsertBlockTotals({
     required int blockInstanceId,
     required String userId,

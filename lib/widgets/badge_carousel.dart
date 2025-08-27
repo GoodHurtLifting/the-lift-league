@@ -1,5 +1,8 @@
 // badge_carousel.dart
 import 'package:flutter/material.dart';
+import '../services/badge_service.dart';
+import '../widgets/badge_carousel.dart'; // adjust path if different
+
 
 class BadgeCarousel extends StatefulWidget {
   final List<Map<String, dynamic>> earnedBadges;

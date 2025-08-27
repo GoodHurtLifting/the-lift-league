@@ -29,14 +29,20 @@ class BadgeDisplay extends StatelessWidget {
         {
           'name': 'Hype Man',
           'icon': 'assets/images/badges/hypeMan.png',
-          'description': 'Like 50 check-ins'
+          'description': 'Like 10 check-ins'
         },
         {
           'name': 'Daily Driver',
           'icon': 'assets/images/badges/dailyDriver.png',
           'description': 'Most workouts in circle'
         },
-      ];
+        {
+          'name': 'Check-In Head',
+          'icon': 'assets/images/badges/checkinHead_01.png',
+          'description': 'Every 5 check-ins'
+        },
+
+  ];
 
   // Helper to compute ISO week string (yyyy-Wweek)
   String _isoWeekKey(DateTime date) {
@@ -123,6 +129,13 @@ class BadgeDisplay extends StatelessWidget {
         .get();
     final monthWorkouts = monthSnap.docs.length;
 
+    final checkinsCount = (userData['checkinsCount'] ?? 0) as int;
+// If you ever need a fallback without the counter, you could aggregate count:
+// final agg = await firestore.collection('users').doc(userId)
+//   .collection('timeline_entries').where('type', isEqualTo: 'checkin')
+//   .count().get();
+// final checkinsCount = agg.count ?? 0;
+
     return {
       'counts': counts,
       'totalLbs': totalLbs,
@@ -130,6 +143,7 @@ class BadgeDisplay extends StatelessWidget {
       'maxPr': maxPr,
       'punchProgress': punchProgress,
       'monthWorkouts': monthWorkouts,
+      'checkinsCount': checkinsCount,
     };
   }
 
@@ -151,6 +165,8 @@ class BadgeDisplay extends StatelessWidget {
         final maxPr = data['maxPr'] as double;
         final punchProgress = data['punchProgress'] as int;
         final monthWorkouts = data['monthWorkouts'] as int;
+        final checkinsCount = data['checkinsCount'] as int;
+
 
         // Build display list with progress values
         final List<Map<String, dynamic>> badges = [];
@@ -169,11 +185,16 @@ class BadgeDisplay extends StatelessWidget {
               progress = (punchProgress / 12).clamp(0.0, 1.0);
               break;
             case 'Hype Man':
-              progress = ((likesGiven % 100) / 100).clamp(0.0, 1.0);
+              progress = ((likesGiven % 10) / 10).clamp(0.0, 1.0);
               break;
             case 'Daily Driver':
-              progress = (monthWorkouts / 12).clamp(0.0, 1.0);
+              progress = (monthWorkouts / 9).clamp(0.0, 1.0);
               break;
+            case 'Check-In Head':
+            // progress toward the next multiple of 5
+              progress = ((checkinsCount % 5) / 5).clamp(0.0, 1.0);
+              break;
+
           }
           badges.add({
             'name': name,
