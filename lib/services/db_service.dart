@@ -30,11 +30,11 @@ class DBService {
   // ──────────────────────────────────────────────────────────
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 21; // bump any time the schema changes
+  static const _dbVersion = 20;   // bump any time the schema changes
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'lift_league.db');
+    final path   = join(dbPath, 'lift_league.db');
 
     return openDatabase(
       path,
@@ -53,44 +53,36 @@ class DBService {
         if (oldV < 16) {
           // add scheduledDate so we can credit make-up workouts
           await db.execute(
-              "ALTER TABLE workout_instances ADD COLUMN scheduledDate TEXT;");
+              "ALTER TABLE workout_instances ADD COLUMN scheduledDate TEXT;"
+          );
           // helpful indexes
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_wi_user_block "
-              "ON workout_instances (userId, blockInstanceId);");
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_wi_sched "
-              "ON workout_instances (scheduledDate);");
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_wi_user_block "
+                  "ON workout_instances (userId, blockInstanceId);"
+          );
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_wi_sched "
+                  "ON workout_instances (scheduledDate);"
+          );
         }
 
         if (oldV < 17) {
           await db.execute(
-              "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;");
+              "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;"
+          );
 
           // add custom lift fields (best-effort, ignore if exist)
-          try {
-            await db.execute(
-                "ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;");
-          } catch (_) {}
-          try {
-            await db.execute(
-                "ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;");
-          } catch (_) {}
-          try {
-            await db.execute(
-                "ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;");
-          } catch (_) {}
-          try {
-            await db.execute(
-                "ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;");
-          } catch (_) {}
-          try {
-            await db.execute(
-                "ALTER TABLE lift_drafts   ADD COLUMN isDumbbellLift INTEGER;");
-          } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_drafts   ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
         }
 
         if (oldV < 18) {
           await db.execute(
-              "ALTER TABLE block_instances ADD COLUMN customBlockId INTEGER;");
+              "ALTER TABLE block_instances ADD COLUMN customBlockId INTEGER;"
+          );
 
           // backfill customBlockId by name
           final instances = await db.query('block_instances');
@@ -118,9 +110,12 @@ class DBService {
         if (oldV < 19) {
           // Normalize completed flag so deletes catch stale future instances
           await db.execute(
-              "UPDATE workout_instances SET completed = 0 WHERE completed IS NULL;");
-          await db.execute("CREATE INDEX IF NOT EXISTS idx_wi_block_completed "
-              "ON workout_instances (blockInstanceId, completed);");
+              "UPDATE workout_instances SET completed = 0 WHERE completed IS NULL;"
+          );
+          await db.execute(
+              "CREATE INDEX IF NOT EXISTS idx_wi_block_completed "
+                  "ON workout_instances (blockInstanceId, completed);"
+          );
         }
         if (oldV < 20) {
           // Recreate workouts_blocks with correct FK to blocks(blockId).
@@ -143,8 +138,7 @@ class DBService {
   ''');
 
           await db.execute('DROP TABLE workouts_blocks;');
-          await db.execute(
-              'ALTER TABLE workouts_blocks_new RENAME TO workouts_blocks;');
+          await db.execute('ALTER TABLE workouts_blocks_new RENAME TO workouts_blocks;');
 
           // (Re)create any indexes you rely on here
           await db.execute('PRAGMA foreign_keys = ON;');
@@ -152,6 +146,7 @@ class DBService {
       },
     );
   }
+
 
   // ──────────────────────────────────────────────
   // 🚀 DATABASE TABLE CREATION
@@ -208,7 +203,7 @@ class DBService {
         workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
         blockId INTEGER,
         workoutId INTEGER,
-        FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
+        FOREIGN KEY (blockId) REFERENCES block_instances(blockId) ON DELETE CASCADE,
         FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
       )
     ''');
@@ -434,7 +429,7 @@ class DBService {
     await deleteDatabase(path);
 
     // Reinitialize (will now trigger onCreate and create all tables)
-    _database = await _initDatabase();
+    await _initDatabase();
   }
 
   // ──────────────────────────────────────────────
@@ -736,9 +731,8 @@ class DBService {
           final double? multiplier = liftRow.isNotEmpty
               ? (liftRow.first['scoreMultiplier'] as num?)?.toDouble()
               : null;
-          final int? isDumbbell = liftRow.isNotEmpty
-              ? liftRow.first['isDumbbellLift'] as int?
-              : null;
+          final int? isDumbbell =
+              liftRow.isNotEmpty ? liftRow.first['isDumbbellLift'] as int? : null;
 
           await db.insert(
               'lift_workouts',
@@ -854,8 +848,8 @@ class DBService {
         where: 'id = ?', whereArgs: [workoutId], limit: 1);
     if (workoutRows.isEmpty) return null;
     final w = workoutRows.first;
-    final liftRows = await db
-        .query('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
+    final liftRows =
+        await db.query('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
     final lifts = liftRows
         .map(
           (l) => LiftDraft(
@@ -904,10 +898,8 @@ class DBService {
       );
 
       // Replace all lifts
-      await txn.delete('lift_drafts',
-          where: 'workoutId = ?', whereArgs: [workout.id]);
-      print(
-          '[updateWorkoutDraft] workoutId=${workout.id} lifts=${workout.lifts.length}');
+      await txn.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workout.id]);
+      print('[updateWorkoutDraft] workoutId=${workout.id} lifts=${workout.lifts.length}');
 
       for (final lift in workout.lifts) {
         await txn.insert('lift_drafts', {
@@ -1001,8 +993,7 @@ class DBService {
 
   /// Replaces all lift entries for a workout draft with [lifts]. This is used
   /// when editing or reordering lifts within a custom block draft.
-  Future<void> updateWorkoutDraftLifts(
-      int workoutId, List<LiftDraft> lifts) async {
+  Future<void> updateWorkoutDraftLifts(int workoutId, List<LiftDraft> lifts) async {
     final db = await database;
     await db.transaction((txn) async {
       // Ensure parent exists (keeps things consistent if called early)
@@ -1012,8 +1003,7 @@ class DBService {
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      await txn.delete('lift_drafts',
-          where: 'workoutId = ?', whereArgs: [workoutId]);
+      await txn.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
       for (final lift in lifts) {
         await txn.insert('lift_drafts', {
           'workoutId': workoutId,
@@ -1043,7 +1033,8 @@ class DBService {
     return match.isNotEmpty ? match['liftId'] as int : null;
   }
 
-  Future<int> _getOrCreateLiftId(DatabaseExecutor db, LiftDraft lift) async {
+  Future<int> _getOrCreateLiftId(
+      DatabaseExecutor db, LiftDraft lift) async {
     int? liftId = _findLiftIdByName(lift.name);
     if (liftId != null) return liftId;
 
@@ -1143,6 +1134,7 @@ class DBService {
               .toList(),
           isPersisted: true,
         ),
+
       );
     }
 
@@ -1203,16 +1195,10 @@ class DBService {
         .collection('custom_blocks')
         .get();
     for (final doc in snap.docs) {
-      final id = int.tryParse(doc.id);
-      if (id == null) {
-        print(
-          '[syncCustomBlocksFromFirestore] Skipping custom block with invalid ID: ${doc.id}',
-        );
-        continue;
-      }
+      final id = int.tryParse(doc.id) ?? 0;
       final db = await database;
       final existing =
-          await db.query('custom_blocks', where: 'id = ?', whereArgs: [id]);
+      await db.query('custom_blocks', where: 'id = ?', whereArgs: [id]);
       if (existing.isNotEmpty) continue;
       final data = doc.data();
       data['id'] = id;
@@ -1225,8 +1211,7 @@ class DBService {
   /// 1. Refreshes the standard block definition from the custom block.
   /// 2. Deletes any upcoming workout instances tied to [blockInstanceId].
   /// 3. Recreates workout instances so future workouts reflect the edits.
-  Future<void> applyCustomBlockEdits(
-      int customBlockId, int blockInstanceId) async {
+  Future<void> applyCustomBlockEdits(int customBlockId, int blockInstanceId) async {
     final db = await database;
 
     // 1) Load the latest custom draft
@@ -1245,8 +1230,7 @@ class DBService {
 
       // 3) Build a fresh shadow block just for THIS instance
       final int shadowBlockId = await txn.insert('blocks', {
-        'blockName':
-            '${customBlock.name}__shadow__${DateTime.now().millisecondsSinceEpoch}',
+        'blockName': '${customBlock.name}__shadow__${DateTime.now().millisecondsSinceEpoch}',
         'scheduleType': 'standard',
         'numWorkouts': customBlock.workouts.length,
       });
@@ -1286,8 +1270,7 @@ class DBService {
         where: 'blockInstanceId = ?',
         whereArgs: [blockInstanceId],
       );
-      print(
-          '[applyCustomBlockEdits] Repointing instance=$blockInstanceId to shadowBlock=$shadowBlockId for customBlock=$customBlockId');
+      print('[applyCustomBlockEdits] Repointing instance=$blockInstanceId to shadowBlock=$shadowBlockId for customBlock=$customBlockId');
 
       // 5) Purge ALL upcoming instances for this blockInstance (NULL or 0)
       //    With FK ON, lift_entries / lift_totals will cascade away.
@@ -1298,7 +1281,7 @@ class DBService {
       );
     });
 
-    // 6) Safety: If anything slipped through, remove remaining incomplete instances
+    // 6) Safety: If anything somehow slipped through (defensive), wipe and rebuild
     final leftovers = await db.query(
       'workout_instances',
       where: 'blockInstanceId = ? AND (completed IS NULL OR completed != 1)',
@@ -1306,18 +1289,17 @@ class DBService {
       limit: 1,
     );
     if (leftovers.isNotEmpty) {
-      await db.delete(
-        'workout_instances',
-        where: 'blockInstanceId = ? AND (completed IS NULL OR completed != 1)',
-        whereArgs: [blockInstanceId],
-      );
+      await db.delete('workout_instances', where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
     }
 
     // 7) Recreate future instances from the new shadow definitions
     await insertWorkoutInstancesForBlock(blockInstanceId);
-    print(
-        '[applyCustomBlockEdits] Rebuilt future workout_instances for instance=$blockInstanceId');
+    print('[applyCustomBlockEdits] Rebuilt future workout_instances for instance=$blockInstanceId');
+
   }
+
+
+
 
   Future<int> createBlockFromCustomBlockId(int customId, String userId) async {
     final customBlock = await getCustomBlock(customId);
@@ -1373,9 +1355,9 @@ class DBService {
   }
 
   Future<int> createShadowBlockForInstanceFromCustom(
-    int customBlockId,
-    int blockInstanceId,
-  ) async {
+      int customBlockId,
+      int blockInstanceId,
+      ) async {
     final customBlock = await getCustomBlock(customBlockId);
     if (customBlock == null) {
       throw Exception('Custom block not found: $customBlockId');
@@ -1385,8 +1367,7 @@ class DBService {
 
     // Give the shadow block a unique name (kept same display name on instance)
     final int shadowBlockId = await db.insert('blocks', {
-      'blockName':
-          '${customBlock.name}__shadow__${DateTime.now().millisecondsSinceEpoch}',
+      'blockName': '${customBlock.name}__shadow__${DateTime.now().millisecondsSinceEpoch}',
       'scheduleType': 'standard',
       'numWorkouts': customBlock.workouts.length,
     });
@@ -1430,6 +1411,7 @@ class DBService {
 
     return shadowBlockId;
   }
+
 
 // ──────────────────────────────────────────────
 // 🔄 CREATE NEW BLOCK INSTANCE & INSERT WORKOUTS
@@ -1486,6 +1468,7 @@ class DBService {
     return blockInstanceId;
   }
 
+
   Future<void> activateBlockInstanceIfNeeded(
       int blockInstanceId, String userId, String blockName) async {
     final db = await database;
@@ -1538,7 +1521,7 @@ class DBService {
       return;
     }
 
-    final int blockId = blockData.first['blockId'] as int;
+    final int blockId   = blockData.first['blockId'] as int;
     final String userId = blockData.first['userId']?.toString() ?? '';
     final String blockName = blockData.first['blockName']?.toString() ?? '';
 
@@ -1565,14 +1548,11 @@ class DBService {
       limit: 1,
     );
     final bool isCustomBlock = customBlock.isNotEmpty;
-    final int? customDaysPerWeek =
-        isCustomBlock ? (customBlock.first['daysPerWeek'] as int?) : null;
-    final int? customNumWeeks =
-        isCustomBlock ? (customBlock.first['numWeeks'] as int?) : null;
-    final int? customTotalLength =
-        (customDaysPerWeek != null && customNumWeeks != null)
-            ? customDaysPerWeek * customNumWeeks
-            : null;
+    final int? customDaysPerWeek = isCustomBlock ? (customBlock.first['daysPerWeek'] as int?) : null;
+    final int? customNumWeeks    = isCustomBlock ? (customBlock.first['numWeeks'] as int?)    : null;
+    final int? customTotalLength = (customDaysPerWeek != null && customNumWeeks != null)
+        ? customDaysPerWeek * customNumWeeks
+        : null;
 
     // 4) Legacy schedule fallback
     final String scheduleType = await getScheduleType(blockId);
@@ -1593,24 +1573,16 @@ class DBService {
     if (scheduleType == 'ppl_plus') {
       expectedLength = 21;
     } else {
-      expectedLength = (workouts.length == 5)
-          ? 20
-          : (workouts.length == 4)
-              ? 16
-              : 12;
+      expectedLength = (workouts.length == 5) ? 20 : (workouts.length == 4) ? 16 : 12;
     }
 
     // 5) Build distribution
     // If this is a custom block but the shadow only contains the unique workouts (e.g. 3),
     // expand to the full length (daysPerWeek * numWeeks).
-    final bool hasCustomLength =
-        customTotalLength != null && customTotalLength > 0;
-    final bool shadowLooksCollapsed = isCustomBlock &&
-        hasCustomLength &&
-        workouts.length != customTotalLength;
+    final bool hasCustomLength = customTotalLength != null && customTotalLength > 0;
+    final bool shadowLooksCollapsed = isCustomBlock && hasCustomLength && workouts.length != customTotalLength;
 
-    final List<Map<String, dynamic>> base = (isCustomBlock ||
-            workouts.length == (customTotalLength ?? expectedLength))
+    final List<Map<String, dynamic>> base = (isCustomBlock || workouts.length == (customTotalLength ?? expectedLength))
         ? workouts
         : await generateWorkoutDistribution(workouts, scheduleType);
 
@@ -1623,9 +1595,7 @@ class DBService {
       return;
     }
 
-    final int dPerWeek = isCustomBlock
-        ? (customDaysPerWeek ?? workoutsPerWeek)
-        : workoutsPerWeek;
+    final int dPerWeek = isCustomBlock ? (customDaysPerWeek ?? workoutsPerWeek) : workoutsPerWeek;
 
     // 6) Insert instances; never abort the whole loop on lift seeding errors
     int inserted = 0;
@@ -1651,30 +1621,27 @@ class DBService {
 
       if (newWorkoutInstanceId == 0) {
         // ignore: avoid_print
-        print(
-            "⚠️ Insert ignored for workout '${workout['workoutName']}' (duplicate?)");
+        print("⚠️ Insert ignored for workout '${workout['workoutName']}' (duplicate?)");
         continue;
       }
 
       inserted++;
       // ignore: avoid_print
-      print(
-          "✅ Inserted ${workout['workoutName']} (Week $week, Instance ID: $newWorkoutInstanceId)");
+      print("✅ Inserted ${workout['workoutName']} (Week $week, Instance ID: $newWorkoutInstanceId)");
 
       try {
         await insertLiftsForWorkoutInstance(newWorkoutInstanceId);
       } catch (e, st) {
         // ignore: avoid_print
-        print(
-            "⚠️ Failed to seed lifts for WI=$newWorkoutInstanceId (workoutId=${workout['workoutId']}): $e\n$st");
+        print("⚠️ Failed to seed lifts for WI=$newWorkoutInstanceId (workoutId=${workout['workoutId']}): $e\n$st");
         // keep going; instances should still appear in the dashboard
       }
     }
 
     // ignore: avoid_print
-    print(
-        "✅ Inserted $inserted/${distribution.length} workout instances for blockInstanceId $blockInstanceId");
+    print("✅ Inserted $inserted/${distribution.length} workout instances for blockInstanceId $blockInstanceId");
   }
+
 
   Future<void> deleteBlockInstance(int blockInstanceId) async {
     final db = await database;
@@ -1970,8 +1937,7 @@ class DBService {
     );
     if (liftRows.isEmpty) {
       // ignore: avoid_print
-      print(
-          '⚠️ No lift_workouts for workoutId=$workoutId (WI=$workoutInstanceId)');
+      print('⚠️ No lift_workouts for workoutId=$workoutId (WI=$workoutInstanceId)');
       return;
     }
 
@@ -1996,12 +1962,11 @@ class DBService {
       );
       if (liftExists.isEmpty) {
         // ignore: avoid_print
-        print(
-            '⚠️ liftId=$liftId missing in lifts; skip (WI=$workoutInstanceId)');
+        print('⚠️ liftId=$liftId missing in lifts; skip (WI=$workoutInstanceId)');
         continue;
       }
 
-      final int numSets = (lw['numSets'] as num?)?.toInt() ?? 3;
+      final int numSets    = (lw['numSets']    as num?)?.toInt() ?? 3;
       final int repsPerSet = (lw['repsPerSet'] as num?)?.toInt() ?? 0;
 
       for (int s = 0; s < numSets; s++) {
@@ -2023,6 +1988,9 @@ class DBService {
     // Optional: recompute totals here if you rely on them immediately
     // await recomputeTotalsForWorkoutInstance(workoutInstanceId, userId);
   }
+
+
+
 
   Future<void> writeLiftTotalsDirectly({
     required int workoutInstanceId,
@@ -2083,26 +2051,8 @@ class DBService {
     required String userId,
     required double workoutWorkload,
     required double workoutScore,
-    int? blockInstanceId,
   }) async {
     final dbInstance = await database;
-    int? resolvedBlockInstanceId = blockInstanceId;
-    // Fetch blockInstanceId if not provided.
-    if (resolvedBlockInstanceId == null) {
-      final blockInstance = await dbInstance.query(
-        'workout_instances',
-        columns: ['blockInstanceId'],
-        where: 'workoutInstanceId = ?',
-        whereArgs: [workoutInstanceId],
-        limit: 1,
-      );
-
-      if (blockInstance.isNotEmpty) {
-        resolvedBlockInstanceId =
-            blockInstance.first['blockInstanceId'] as int?;
-      }
-    }
-
     // Attempt to update first.
     final result = await dbInstance.update(
       'workout_totals',
@@ -2123,7 +2073,6 @@ class DBService {
           'workoutWorkload': workoutWorkload,
           'workoutScore': workoutScore,
           'userId': userId,
-          'blockInstanceId': resolvedBlockInstanceId,
         },
       );
     }
@@ -2169,8 +2118,9 @@ class DBService {
         whereArgs: [workoutId],
       );
 
-      liftIds =
-          liftWorkouts.map((row) => (row['liftId'] as num).toInt()).toList();
+      liftIds = liftWorkouts
+          .map((row) => (row['liftId'] as num).toInt())
+          .toList();
 
       // If still empty, aggregate directly from lift_totals for this instance
       if (liftIds.isEmpty) {
@@ -2182,8 +2132,7 @@ class DBService {
       ''', [workoutInstanceId, userId]);
 
         if (totals.isEmpty) {
-          print(
-              "⚠️ No lifts found for workoutId $workoutId (instance $workoutInstanceId)");
+          print("⚠️ No lifts found for workoutId $workoutId (instance $workoutInstanceId)");
           return;
         }
 
@@ -2233,8 +2182,7 @@ class DBService {
       }
     }
 
-    final averageScore =
-        liftIds.isNotEmpty ? (totalScore / liftIds.length) : 0.0;
+    final averageScore = liftIds.isNotEmpty ? (totalScore / liftIds.length) : 0.0;
 
     // 🧠 Step 3: Write to workout_totals
     await upsertWorkoutTotals(
@@ -2391,7 +2339,7 @@ class DBService {
     final result = await db.rawQuery('''
     SELECT COUNT(*) as remaining
     FROM workout_instances
-    WHERE blockInstanceId = ? AND (completed IS NULL OR completed != 1)
+    WHERE blockInstanceId = ? AND completed != 1
   ''', [blockInstanceId]);
 
     return result.first['remaining'] != null
@@ -2625,6 +2573,8 @@ class DBService {
     }
   }
 
+
+
   Future<void> upsertBlockTotals({
     required int blockInstanceId,
     required String userId,
@@ -2736,23 +2686,14 @@ class DBService {
       return [];
     }
 
-    // Step 4: Batch fetch user profiles (whereIn <=10 per query)
-    final List<List<String>> userIdBatches = [];
-    for (var i = 0; i < userIds.length; i += 10) {
-      userIdBatches.add(userIds.sublist(
-          i, i + 10 > userIds.length ? userIds.length : i + 10));
-    }
-
-    final querySnapshots = await Future.wait(userIdBatches.map((batch) {
-      return FirebaseFirestore.instance
-          .collection('users')
-          .where(FieldPath.documentId, whereIn: batch)
-          .get();
-    }));
+    // Step 4: Batch fetch all user profiles at once
+    final userDocs = await FirebaseFirestore.instance
+        .collection('users')
+        .where(FieldPath.documentId, whereIn: userIds)
+        .get();
 
     final Map<String, Map<String, dynamic>> userProfiles = {
-      for (var qs in querySnapshots)
-        for (var doc in qs.docs) doc.id: doc.data()
+      for (var doc in userDocs.docs) doc.id: doc.data()
     };
 
     List<Map<String, dynamic>> finalData = [];
@@ -2844,8 +2785,8 @@ class DBService {
     final result = await db.rawQuery('''
     SELECT blockName, workoutName, week
       FROM workout_instances
-      WHERE userId = ? AND (completed IS NULL OR completed = 0)
-  ORDER BY scheduledDate ASC, workoutInstanceId ASC
+     WHERE userId = ? AND completed = 0
+  ORDER BY startTime ASC
      LIMIT 1
   ''', [userId]);
 
@@ -3143,4 +3084,5 @@ class DBService {
       'source': source,
     });
   }
+
 }

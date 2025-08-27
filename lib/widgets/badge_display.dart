@@ -190,7 +190,7 @@ class BadgeDisplay extends StatelessWidget {
             case 'Daily Driver':
               progress = (monthWorkouts / 9).clamp(0.0, 1.0);
               break;
-            case 'Check-In Head':
+            case 'Checkin Head':
             // progress toward the next multiple of 5
               progress = ((checkinsCount % 5) / 5).clamp(0.0, 1.0);
               break;
