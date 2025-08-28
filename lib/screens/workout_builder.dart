@@ -16,6 +16,7 @@ class WorkoutBuilder extends StatefulWidget {
   final bool showDumbbellOption;
   final int customBlockId;
   final int? activeBlockInstanceId;
+  final VoidCallback? onPreviewSchedule;
   const WorkoutBuilder({
     super.key,
     required this.workout,
@@ -27,6 +28,7 @@ class WorkoutBuilder extends StatefulWidget {
     this.activeBlockInstanceId,
     this.isLast = false,
     this.showDumbbellOption = false,
+    this.onPreviewSchedule,
   });
 
   @override
@@ -575,7 +577,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
               children: List.generate(widget.allWorkouts.length, (i) {
                 final name = widget.allWorkouts[i].name.isNotEmpty
                     ? widget.allWorkouts[i].name
-                    : 'Workout ${i + 1}';
+                    : 'Assemble Workout ${i + 1}';
                 final selected = i == widget.currentIndex;
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -589,47 +591,90 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             ),
           ),
         Expanded(
-          child: ListView.builder(
-            itemCount: widget.workout.lifts.length,
-            itemBuilder: (context, index) {
-              final lift = widget.workout.lifts[index];
-              return ListTile(
-                title: Text('Lift ${index + 1}: ${lift.name}'),
-                subtitle: Text('${lift.sets} x ${lift.repsPerSet}'),
-                trailing: Text(lift.multiplier.toStringAsFixed(3)),
-                onLongPress: () => _showEditLiftSheet(index),
-              );
-            },
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // LEFT: vertical icon rail
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // Add Lift (plus)
+                    IconButton(
+                      tooltip: 'Add lift',
+                      icon: const Icon(Icons.add),
+                      onPressed: _showAddLiftSheet,
+                      iconSize: 28,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Preview Schedule (eyeball)
+                    IconButton(
+                      tooltip: 'Preview schedule',
+                      icon: const Icon(Icons.visibility),
+                      onPressed: widget.onPreviewSchedule, // <- from wizard
+                      iconSize: 26,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Next Workout OR Build Block (icon-only)
+                    IconButton(
+                      tooltip: widget.isLast ? 'Build block' : 'Next workout',
+                      icon: Icon(widget.isLast ? Icons.construction : Icons.arrow_forward),
+                      onPressed: () async {
+                        if (widget.workout.name != _nameController.text) {
+                          widget.workout.name = _nameController.text;
+                          try {
+                            await _ensureDraftParentRowExists();
+                            await DBService().updateWorkoutDraft(widget.workout);
+                          } catch (_) {}
+                        }
+                        _applyEditsSoon();
+                        await widget.onComplete();
+                      },
+                      iconSize: 28,
+                    ),
+                  ],
+                ),
+              ),
+
+              // RIGHT: centered list, multiplier removed
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      itemCount: widget.workout.lifts.length,
+                      itemBuilder: (context, index) {
+                        final lift = widget.workout.lifts[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            title: Text(
+                              'Lift ${index + 1}: ${lift.name}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              '${lift.sets} x ${lift.repsPerSet}',
+                              textAlign: TextAlign.center,
+                            ),
+                            // ⛔️ trailing removed to hide multiplier
+                            onLongPress: () => _showEditLiftSheet(index),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _showAddLiftSheet,
-                child: const Text('Add Lift'),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () async {
-                  // optional: persist latest name before moving on
-                  if (widget.workout.name != _nameController.text) {
-                    widget.workout.name = _nameController.text;
-                    try {
-                      await _ensureDraftParentRowExists();
-                      await DBService().updateWorkoutDraft(widget.workout);
-                    } catch (_) {}
-                  }
-                  _applyEditsSoon();
-                  await widget.onComplete();  // <-- await async handler
-                },
-                child: Text(widget.isLast ? 'Build Block' : 'Next Workout'),
-              ),
-            ),
-          ],
-        ),
+        )
       ],
     );
   }

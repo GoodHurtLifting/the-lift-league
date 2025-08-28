@@ -6,8 +6,6 @@ import 'package:lift_league/screens/block_dashboard.dart';
 import 'package:lift_league/screens/user_dashboard.dart';
 import 'package:lift_league/services/notifications_service.dart';
 import 'package:lift_league/screens/lift_entry.dart';
-import 'package:lift_league/data/block_data.dart';
-import 'package:lift_league/data/workout_data.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/widgets/workout_footer.dart';
 import 'package:lift_league/widgets/workout_header.dart';
@@ -44,6 +42,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
   String? _activeFieldKey;
   double _cachedPreviousScore = 0.0;
   Map<String, double> _startingBig3Prs = {};
+  bool _isCustomBlock = false;
 
 // You no longer need separate state values for score/workload/previousScore
 // Remove buildWorkoutInstanceTotals()
@@ -115,6 +114,8 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
       });
       return;
     }
+
+    _isCustomBlock = blockInstance['customBlockId'] != null;
 
     final int workoutId = (workoutInstance['workoutId'] as num).toInt();
 
@@ -587,6 +588,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
                     );
                   }
                 },
+                hideDescription: _isCustomBlock,
               );
             },
           );

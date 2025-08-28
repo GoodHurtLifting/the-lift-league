@@ -20,7 +20,7 @@ class LiftEntry extends StatefulWidget {
   final Function(String fieldKey) openNumpad;
   final Function(double score, double workload, List<String> reps, List<String> weights)? onLiftDataChanged;
   final Function(Liftinfo lift, List<String> reps, List<String> weights)? onUpdateStoredDataDirect;
-
+  final bool hideDescription;
 
   const LiftEntry({
     super.key,
@@ -35,6 +35,7 @@ class LiftEntry extends StatefulWidget {
     required this.openNumpad,
     this.onUpdateStoredDataDirect,
     required this.onLiftDataChanged,
+    this.hideDescription = false,
   });
 
   @override
@@ -336,7 +337,12 @@ class _LiftEntryState extends State<LiftEntry> with AutomaticKeepAliveClientMixi
           child: Text(liftName, textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue, decoration: TextDecoration.underline, decorationColor: Colors.blue)),
         ),
         Text(repScheme, style: const TextStyle(color: Colors.white, fontSize: 18)),
-        Text(description, style: const TextStyle(color: Colors.white70, fontSize: 14), textAlign: TextAlign.left),
+        if (!widget.hideDescription)
+          Text(
+            description,
+            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            textAlign: TextAlign.left,
+          ),
 
         SizedBox(height: 10),
         Table(

@@ -39,6 +39,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   int _workoutIndex = 0;
   Uint8List? _coverImageBytes;
   String? _coverImagePath;
+  bool _openedEditorOnce = false;
 
   @override
   void initState() {
@@ -56,7 +57,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       final seenNames = <String>{};
       final firstWeekWorkouts = block.workouts.where((w) {
         final isFirstWeek = w.dayIndex < block.daysPerWeek;
-        final alreadySeen = seenIds.contains(w.id) || seenNames.contains(w.name);
+        final alreadySeen =
+            seenIds.contains(w.id) || seenNames.contains(w.name);
         if (isFirstWeek && !alreadySeen) {
           seenIds.add(w.id);
           seenNames.add(w.name);
@@ -71,21 +73,21 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         // Existing, populated block → open directly on the workout editor
         workouts = firstWeekWorkouts
             .map((w) => WorkoutDraft(
-          id: w.id,
-          dayIndex: w.dayIndex,
-          name: w.name,
-          lifts: w.lifts
-              .map((l) => LiftDraft(
-            name: l.name,
-            sets: l.sets,
-            repsPerSet: l.repsPerSet,
-            multiplier: l.multiplier,
-            isBodyweight: l.isBodyweight,
-            isDumbbellLift: l.isDumbbellLift,
-          ))
-              .toList(),
-          isPersisted: true,
-        ))
+                  id: w.id,
+                  dayIndex: w.dayIndex,
+                  name: w.name,
+                  lifts: w.lifts
+                      .map((l) => LiftDraft(
+                            name: l.name,
+                            sets: l.sets,
+                            repsPerSet: l.repsPerSet,
+                            multiplier: l.multiplier,
+                            isBodyweight: l.isBodyweight,
+                            isDumbbellLift: l.isDumbbellLift,
+                          ))
+                      .toList(),
+                  isPersisted: true,
+                ))
             .toList();
 
         _coverImagePath = block.coverImagePath;
@@ -112,7 +114,17 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     _nameCtrl.addListener(() {
       blockName = _nameCtrl.text;
     });
+
+    // Auto-open the full-screen editor if we land on Step 5 on load (e.g., editing existing block)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_currentStep == 5 && workouts.isNotEmpty && !_openedEditorOnce) {
+        _openedEditorOnce = true;
+        _openWorkoutEditorFullscreen();
+      }
+    });
   }
+
+
 
   @override
   void dispose() {
@@ -203,6 +215,76 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
         ],
       ),
+    );
+  }
+
+  Future<void> _openWorkoutEditorFullscreen() async {
+    await showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      pageBuilder: (ctx, __, ___) {
+        int localIndex = _workoutIndex; // dialog-local index
+
+        return StatefulBuilder(
+          builder: (overlayCtx, setOverlayState) {
+            void _setIndex(int i) {
+              setOverlayState(() => localIndex = i);   // update dialog UI
+              setState(() => _workoutIndex = i);       // keep wizard in sync
+            }
+
+            return Scaffold(
+              backgroundColor: Colors.black,
+              appBar: AppBar(
+                title: Text('Edit Workouts (${localIndex + 1}/${workouts.length})'),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(ctx).pop(),
+                  ),
+                ],
+              ),
+              body: SafeArea(
+                child: workouts.isEmpty
+                    ? const SizedBox.shrink()
+                    : WorkoutBuilder(
+                  key: ValueKey<int>(workouts[localIndex].id),
+                  workout: workouts[localIndex],
+                  allWorkouts: workouts,
+                  currentIndex: localIndex,
+                  onSelectWorkout: _setIndex, // reactive chip switching
+                  isLast: localIndex == workouts.length - 1,
+                  onComplete: () async {
+                    if (localIndex < workouts.length - 1) {
+                      _setIndex(localIndex + 1);
+                      return;
+                    }
+
+                    final nav = Navigator.of(context, rootNavigator: true);
+                    final int? id = await _finish();
+                    if (!mounted) return;
+
+                    Navigator.of(ctx).pop(); // close full-screen editor
+
+                    if (id != null) {
+                      nav.pushReplacement(MaterialPageRoute(
+                        builder: (_) => BlockDashboard(blockInstanceId: id),
+                      ));
+                    } else {
+                      nav.pop();
+                    }
+                  },
+                  showDumbbellOption: true,
+                  customBlockId: widget.customBlockId,
+                  activeBlockInstanceId: widget.blockInstanceId,
+                  onPreviewSchedule: _previewSchedule,
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -417,6 +499,14 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           } else if (_currentStep == 4) {
             if (numWeeks != null) {
               setState(() => _currentStep = 5);
+
+              // 👇 open the editor full-screen once
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!_openedEditorOnce) {
+                  _openedEditorOnce = true;
+                  _openWorkoutEditorFullscreen();
+                }
+              });
             }
           }
         },
@@ -531,57 +621,12 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           ),
           Step(
             title: Text('Workout ${_workoutIndex + 1}'),
-            content: workouts.isEmpty
-                ? const SizedBox.shrink()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        height: 400,
-                        child: WorkoutBuilder(
-                          key: ValueKey<int>(workouts[_workoutIndex]
-                              .id), // 👈 force rebuild on index change
-                          workout: workouts[_workoutIndex],
-                          allWorkouts: workouts,
-                          currentIndex: _workoutIndex,
-                          onSelectWorkout: (i) =>
-                              setState(() => _workoutIndex = i),
-                          isLast: _workoutIndex == workouts.length - 1,
-                          onComplete: () async {
-                            // if not last, advance the wizard
-                            if (_workoutIndex < workouts.length - 1) {
-                              setState(() => _workoutIndex++);
-                              return;
-                            }
-
-                            final nav =
-                                Navigator.of(context, rootNavigator: true);
-                            final int? id = await _finish();
-                            if (!mounted) return;
-
-                            if (id != null) {
-                              nav.pushReplacement(MaterialPageRoute(
-                                builder: (_) =>
-                                    BlockDashboard(blockInstanceId: id),
-                              ));
-                            } else {
-                              nav.pop();
-                            }
-                          },
-                          showDumbbellOption: true,
-                          customBlockId: widget.customBlockId,
-                          activeBlockInstanceId: widget.blockInstanceId,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _previewSchedule,
-                        child: const Text('Preview Schedule'),
-                      ),
-                    ],
-                  ),
+            content: const Text(
+              'Opening full-screen workout editor… (Close it to return here.)',
+              style: TextStyle(fontSize: 12),
+            ),
             isActive: _currentStep >= 5,
-          )
+          ),
         ],
       ),
     );
