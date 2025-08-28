@@ -17,11 +17,12 @@ class CustomBlockWizard extends StatefulWidget {
   final CustomBlock? initialBlock;
   final int customBlockId;
   final int? blockInstanceId;
-  const CustomBlockWizard(
-      {super.key,
-      required this.customBlockId,
-      this.blockInstanceId,
-      this.initialBlock});
+  const CustomBlockWizard({
+    super.key,
+    required this.customBlockId,
+    this.blockInstanceId,
+    this.initialBlock,
+  });
 
   @override
   State<CustomBlockWizard> createState() => _CustomBlockWizardState();
@@ -47,47 +48,33 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
     if (widget.initialBlock != null) {
       final block = widget.initialBlock!;
-      blockName = block.name;
-      numWeeks = block.numWeeks;
-      daysPerWeek = block.daysPerWeek;
+
+      blockName     = block.name;
+      numWeeks      = block.numWeeks;
+      daysPerWeek   = block.daysPerWeek;
       _scheduleType = block.scheduleType;
 
-      // Only include the first instance of each workout when editing.
-      final seenIds = <int>{};
-      final seenNames = <String>{};
-      final firstWeekWorkouts = block.workouts.where((w) {
-        final isFirstWeek = w.dayIndex < block.daysPerWeek;
-        final alreadySeen =
-            seenIds.contains(w.id) || seenNames.contains(w.name);
-        if (isFirstWeek && !alreadySeen) {
-          seenIds.add(w.id);
-          seenNames.add(w.name);
-          return true;
-        }
-        return false;
-      }).toList();
-
+      final firstWeekWorkouts = _firstWeekTemplateFromBlock(block);
       _uniqueCount = firstWeekWorkouts.length;
 
       if (block.workouts.isNotEmpty && firstWeekWorkouts.isNotEmpty) {
-        // Existing, populated block → open directly on the workout editor
         workouts = firstWeekWorkouts
             .map((w) => WorkoutDraft(
-                  id: w.id,
-                  dayIndex: w.dayIndex,
-                  name: w.name,
-                  lifts: w.lifts
-                      .map((l) => LiftDraft(
-                            name: l.name,
-                            sets: l.sets,
-                            repsPerSet: l.repsPerSet,
-                            multiplier: l.multiplier,
-                            isBodyweight: l.isBodyweight,
-                            isDumbbellLift: l.isDumbbellLift,
-                          ))
-                      .toList(),
-                  isPersisted: true,
-                ))
+          id: w.id,
+          dayIndex: w.dayIndex,
+          name: w.name,
+          lifts: w.lifts
+              .map((l) => LiftDraft(
+            name: l.name,
+            sets: l.sets,
+            repsPerSet: l.repsPerSet,
+            multiplier: l.multiplier,
+            isBodyweight: l.isBodyweight,
+            isDumbbellLift: l.isDumbbellLift,
+          ))
+              .toList(),
+          isPersisted: true,
+        ))
             .toList();
 
         _coverImagePath = block.coverImagePath;
@@ -98,13 +85,12 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         _nameCtrl.text = block.name;
         _currentStep = 5; // jump to workout step
       } else {
-        // New/empty draft → start at step 0 (Block name)
         workouts = [];
-        _nameCtrl.text = block.name; // keep name visible in step 0
+        _nameCtrl.text = block.name;
         _currentStep = 0;
       }
     } else {
-      // No initial block → new flow
+      // New flow
       workouts = [];
       _nameCtrl.text = '';
       _currentStep = 0;
@@ -115,7 +101,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       blockName = _nameCtrl.text;
     });
 
-    // Auto-open the full-screen editor if we land on Step 5 on load (e.g., editing existing block)
+    // Auto-open the full-screen editor if we land on Step 5 on load (editing existing block)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_currentStep == 5 && workouts.isNotEmpty && !_openedEditorOnce) {
         _openedEditorOnce = true;
@@ -124,8 +110,6 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     });
   }
 
-
-
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -133,11 +117,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   }
 
   void _initializeWorkouts() {
-    final count = _uniqueCount ?? 0;
+    final count = (_uniqueCount ?? 0).clamp(1, 10); // ensure at least 1
     final baseId = DateTime.now().millisecondsSinceEpoch;
     workouts = List.generate(
       count,
-      (i) => WorkoutDraft(
+          (i) => WorkoutDraft(
         id: baseId + i,
         dayIndex: i,
         name: 'Workout ${i + 1}',
@@ -145,6 +129,40 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         isPersisted: false,
       ),
     );
+  }
+
+  List<WorkoutDraft> _firstWeekTemplateFromBlock(CustomBlock block) {
+    final firstWeek = block.workouts
+        .where((w) => w.dayIndex < block.daysPerWeek)
+        .toList()
+      ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
+
+    // If names could repeat within a week, keep the first occurrence by name
+    final seen = <String>{};
+    final uniques = <WorkoutDraft>[];
+    for (final w in firstWeek) {
+      final key = w.name.toLowerCase().trim();
+      if (seen.add(key)) uniques.add(w);
+    }
+    return uniques;
+  }
+
+  List<WorkoutDraft> _firstWeekTemplateFromList(
+      List<WorkoutDraft> all, {
+        required int daysPerWeek,
+      }) {
+    final firstWeek = all
+        .where((w) => w.dayIndex < daysPerWeek)
+        .toList()
+      ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
+
+    final seen = <String>{};
+    final uniques = <WorkoutDraft>[];
+    for (final w in firstWeek) {
+      final key = w.name.toLowerCase().trim();
+      if (seen.add(key)) uniques.add(w);
+    }
+    return uniques;
   }
 
   Future<void> _pickCoverImage() async {
@@ -164,8 +182,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
     final bytes = await File(cropped.path).readAsBytes();
     final dir = await getApplicationDocumentsDirectory();
-    final file = File(
-        '${dir.path}/custom_block_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    final file =
+    File('${dir.path}/custom_block_${DateTime.now().millisecondsSinceEpoch}.jpg');
     await file.writeAsBytes(bytes);
 
     setState(() {
@@ -205,14 +223,18 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               return ListTile(
                 dense: true,
                 title: Text(
-                    'Week ${item['week']} – Day ${item['dayIndex'] + 1}: ${w.name.isEmpty ? 'Workout ${w.id + 1}' : w.name}'),
+                  'Week ${item['week']} – Day ${item['dayIndex'] + 1}: '
+                      '${w.name.isEmpty ? 'Workout ${w.id + 1}' : w.name}',
+                ),
               );
             },
           ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
         ],
       ),
     );
@@ -233,10 +255,38 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               setState(() => _workoutIndex = i);       // keep wizard in sync
             }
 
+            // ---- Build first-week template (unique by name) ----
+            List<WorkoutDraft> _toTemplate(List<WorkoutDraft> all, int dPerWeek) {
+              final firstWeek = all
+                  .where((w) => w.dayIndex < dPerWeek)
+                  .toList()
+                ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
+              final seen = <String>{};
+              final uniques = <WorkoutDraft>[];
+              for (final w in firstWeek) {
+                final key = w.name.toLowerCase().trim();
+                if (seen.add(key)) uniques.add(w);
+              }
+              return uniques;
+            }
+
+            final int dPerWeek = (daysPerWeek ?? 3).clamp(1, 7);
+            final List<WorkoutDraft> template =
+            _toTemplate(workouts, dPerWeek); // safe if already template
+
+            // Clamp index in case template length changed
+            if (template.isNotEmpty && localIndex >= template.length) {
+              localIndex = template.length - 1;
+            }
+
             return Scaffold(
               backgroundColor: Colors.black,
               appBar: AppBar(
-                title: Text('Edit Workouts (${localIndex + 1}/${workouts.length})'),
+                title: Text(
+                  template.isEmpty
+                      ? 'Edit Workouts'
+                      : 'Edit Workouts (${localIndex + 1}/${template.length})',
+                ),
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -246,17 +296,17 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                 ],
               ),
               body: SafeArea(
-                child: workouts.isEmpty
+                child: template.isEmpty
                     ? const SizedBox.shrink()
                     : WorkoutBuilder(
-                  key: ValueKey<int>(workouts[localIndex].id),
-                  workout: workouts[localIndex],
-                  allWorkouts: workouts,
+                  key: ValueKey<int>(template[localIndex].id),
+                  workout: template[localIndex],
+                  allWorkouts: template,             // ← pass only template
                   currentIndex: localIndex,
-                  onSelectWorkout: _setIndex, // reactive chip switching
-                  isLast: localIndex == workouts.length - 1,
+                  onSelectWorkout: _setIndex,        // reactive chip switching
+                  isLast: localIndex == template.length - 1,
                   onComplete: () async {
-                    if (localIndex < workouts.length - 1) {
+                    if (localIndex < template.length - 1) {
                       _setIndex(localIndex + 1);
                       return;
                     }
@@ -289,6 +339,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   }
 
   Future<int?> _finish() async {
+    // Validate inputs
+    if (blockName.trim().isEmpty || daysPerWeek == null || numWeeks == null) return null;
+    if (workouts.isEmpty) return null;
+
     // 1) Expand the template across the full run
     final int totalDays = numWeeks! * daysPerWeek!;
     final baseId = DateTime.now().millisecondsSinceEpoch;
@@ -315,8 +369,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     });
 
     // 2) Build/save the CustomBlock
-    final int id =
-        widget.initialBlock?.id ?? DateTime.now().millisecondsSinceEpoch;
+    final int id = widget.initialBlock?.id ?? widget.customBlockId;
+
     final block = CustomBlock(
       id: id,
       name: blockName,
@@ -334,81 +388,51 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       await DBService().insertCustomBlock(block);
     }
 
-    // 3) If the user has an active instance of this block, apply edits in-place
-    final int? editedActiveInstanceId =
-        await _applyEditsToActiveInstance(block);
+    // 3) Try to apply to an active run (non-destructive)
+    final int? editedActiveInstanceId = await _applyEditsToActiveInstance(block);
 
-    // 4) Sync to Firestore (optional, if you need it here)
+    // 4) Sync to Firestore (optional)
     await _uploadBlockToFirestore(block);
 
-    // 5) Decide what to return (which instance to navigate to), but do not navigate here
+    // 5) Decide what to return
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    // If we edited an active instance, use that one
-    if (editedActiveInstanceId != null) {
-      return editedActiveInstanceId;
-    }
+    // If we updated an active run, navigate to it
+    if (editedActiveInstanceId != null) return editedActiveInstanceId;
 
-    // If this is a brand-new block (not editing an existing one), create a fresh instance
-    if (widget.initialBlock == null) {
-      final newInstanceId =
-          await DBService().insertNewBlockInstance(block.name, user.uid);
-
-      // Make sure it’s active so downstream screens behave as expected
-      await DBService()
-          .activateBlockInstanceIfNeeded(newInstanceId, user.uid, block.name);
-
-      return newInstanceId;
-    }
-
-    // We edited an existing custom block that isn’t the active one — no auto-build/redirect
-    // Return null so the caller can just close the wizard or stay put.
-    return null;
+    // Otherwise, ALWAYS build a fresh run and activate it
+    final newInstanceId =
+    await DBService().insertNewBlockInstance(block.name, user.uid);
+    await DBService()
+        .activateBlockInstanceIfNeeded(newInstanceId, user.uid, block.name);
+    return newInstanceId;
   }
 
+
   /// Applies custom block edits to the user's active block instance (if any).
-  /// Returns the blockInstanceId if edits were applied.
+  /// Returns the blockInstanceId if edits were applied; otherwise null.
+  /// Applies edits to an existing instance in priority order:
+  /// 1) The instance we navigated from (widget.blockInstanceId), if present
+  /// 2) The user's active instance with this name
+  /// 3) The latest instance with this name
+  /// Returns the instance id if applied; otherwise null.
   Future<int?> _applyEditsToActiveInstance(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    final activeIdStr = await DBService().getActiveBlockInstanceId(user.uid);
-    if (activeIdStr == null) return null;
-    final int? blockInstanceId = int.tryParse(activeIdStr);
-    if (blockInstanceId == null) return null;
+    int? targetInstanceId = widget.blockInstanceId;
 
-    final db = await DBService().database;
-    final inst = await db.query('block_instances',
-        where: 'blockInstanceId = ?', whereArgs: [blockInstanceId], limit: 1);
-    if (inst.isEmpty) return null;
+    targetInstanceId ??=
+    await DBService().findActiveInstanceIdByName(block.name, user.uid);
 
-    final activeCustomId = inst.first['customBlockId'] as int?;
-    final activeBlockName = inst.first['blockName'] as String?;
-    final prevBlockName = widget.initialBlock?.name;
+    targetInstanceId ??=
+    await DBService().findLatestInstanceIdByName(block.name, user.uid);
 
-    // If this block instance is already linked by id, apply edits directly.
-    if (activeCustomId == block.id) {
-      await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
-      return blockInstanceId;
-    }
+    if (targetInstanceId == null) return null;
 
-    // Allow matching on either the new or previous name in case the block was
-    // renamed or the instance wasn't yet linked to a customBlockId.
-    if (activeBlockName == block.name ||
-        (prevBlockName != null && activeBlockName == prevBlockName)) {
-      await DBService().applyCustomBlockEdits(block.id, blockInstanceId);
-      await db.update(
-          'block_instances',
-          {
-            'customBlockId': block.id,
-          },
-          where: 'blockInstanceId = ?',
-          whereArgs: [blockInstanceId]);
-      return blockInstanceId;
-    }
-
-    return null;
+    await DBService().applyCustomBlockEdits(block.id, targetInstanceId);
+    return targetInstanceId;
   }
 
   Future<void> _uploadBlockToFirestore(CustomBlock block) async {
@@ -423,7 +447,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         final fileName =
             '${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final ref =
-            FirebaseStorage.instance.ref().child('block_covers/$fileName');
+        FirebaseStorage.instance.ref().child('block_covers/$fileName');
         final task = await ref.putFile(file);
         imageUrl = await task.ref.getDownloadURL();
       }
@@ -441,20 +465,20 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       'source': 'mobile_custom_builder',
       'workouts': block.workouts
           .map((w) => {
-                'id': w.id,
-                'dayIndex': w.dayIndex,
-                'name': w.name,
-                'lifts': w.lifts
-                    .map((l) => {
-                          'name': l.name,
-                          'sets': l.sets,
-                          'repsPerSet': l.repsPerSet,
-                          'multiplier': l.multiplier,
-                          'isBodyweight': l.isBodyweight,
-                          'isDumbbellLift': l.isDumbbellLift,
-                        })
-                    .toList(),
-              })
+        'id': w.id,
+        'dayIndex': w.dayIndex,
+        'name': w.name,
+        'lifts': w.lifts
+            .map((l) => {
+          'name': l.name,
+          'sets': l.sets,
+          'repsPerSet': l.repsPerSet,
+          'multiplier': l.multiplier,
+          'isBodyweight': l.isBodyweight,
+          'isDumbbellLift': l.isDumbbellLift,
+        })
+            .toList(),
+      })
           .toList(),
     };
     // Save to user's personal collection (for backwards compatibility)
@@ -500,7 +524,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             if (numWeeks != null) {
               setState(() => _currentStep = 5);
 
-              // 👇 open the editor full-screen once
+              // open the editor full-screen once
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (!_openedEditorOnce) {
                   _openedEditorOnce = true;
@@ -575,9 +599,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   ),
                 ElevatedButton(
                   onPressed: _pickCoverImage,
-                  child: Text(_coverImageBytes == null
-                      ? 'Select Image'
-                      : 'Change Image'),
+                  child: Text(
+                      _coverImageBytes == null ? 'Select Image' : 'Change Image'),
                 ),
               ],
             ),
