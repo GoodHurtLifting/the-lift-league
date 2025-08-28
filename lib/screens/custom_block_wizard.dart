@@ -340,10 +340,16 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
   Future<int?> _finish() async {
     // Validate inputs
-    if (blockName.trim().isEmpty || daysPerWeek == null || numWeeks == null) return null;
-    if (workouts.isEmpty) return null;
+    if (blockName.trim().isEmpty || daysPerWeek == null || numWeeks == null) {
+      debugPrint('[Wizard] Missing basics: name/daysPerWeek/numWeeks');
+      return null;
+    }
+    if (workouts.isEmpty) {
+      debugPrint('[Wizard] Workouts empty; nothing to build/apply');
+      return null;
+    }
 
-    // 1) Expand the template across the full run
+    // 1) Expand template across full run
     final int totalDays = numWeeks! * daysPerWeek!;
     final baseId = DateTime.now().millisecondsSinceEpoch;
 
@@ -368,7 +374,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       );
     });
 
-    // 2) Build/save the CustomBlock
+    // 2) Save the draft (id = initial id or provided customBlockId)
     final int id = widget.initialBlock?.id ?? widget.customBlockId;
 
     final block = CustomBlock(
@@ -384,12 +390,14 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
     if (widget.initialBlock != null) {
       await DBService().updateCustomBlock(block);
+      debugPrint('[Wizard] Updated draft for blockId=$id (${block.name})');
     } else {
       await DBService().insertCustomBlock(block);
+      debugPrint('[Wizard] Inserted draft for blockId=$id (${block.name})');
     }
 
-    // 3) Try to apply to an active run (non-destructive)
-    final int? editedActiveInstanceId = await _applyEditsToActiveInstance(block);
+    // 3) Try to apply to an existing run
+    final int? appliedInstanceId = await _applyEditsToActiveInstance(block);
 
     // 4) Sync to Firestore (optional)
     await _uploadBlockToFirestore(block);
@@ -398,20 +406,23 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    // If we updated an active run, navigate to it
-    if (editedActiveInstanceId != null) return editedActiveInstanceId;
+    if (appliedInstanceId != null) {
+      debugPrint('[Wizard] Returning applied instanceId=$appliedInstanceId');
+      return appliedInstanceId;
+    }
 
-    // Otherwise, ALWAYS build a fresh run and activate it
+    // No instance existed to update → build new & activate
     final newInstanceId =
     await DBService().insertNewBlockInstance(block.name, user.uid);
     await DBService()
         .activateBlockInstanceIfNeeded(newInstanceId, user.uid, block.name);
+
+    debugPrint('[Wizard] Built NEW instanceId=$newInstanceId for "${block.name}"');
     return newInstanceId;
   }
 
 
-  /// Applies custom block edits to the user's active block instance (if any).
-  /// Returns the blockInstanceId if edits were applied; otherwise null.
+
   /// Applies edits to an existing instance in priority order:
   /// 1) The instance we navigated from (widget.blockInstanceId), if present
   /// 2) The user's active instance with this name
@@ -419,21 +430,38 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   /// Returns the instance id if applied; otherwise null.
   Future<int?> _applyEditsToActiveInstance(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return null;
+    if (user == null) {
+      debugPrint('[Wizard] No user → cannot apply edits');
+      return null;
+    }
 
     int? targetInstanceId = widget.blockInstanceId;
+    if (targetInstanceId != null) {
+      debugPrint('[Wizard] Using provided instanceId=${targetInstanceId} for apply');
+    } else {
+      targetInstanceId =
+      await DBService().findActiveInstanceIdByName(block.name, user.uid);
+      if (targetInstanceId != null) {
+        debugPrint('[Wizard] Found ACTIVE instanceId=$targetInstanceId for "${block.name}"');
+      } else {
+        targetInstanceId =
+        await DBService().findLatestInstanceIdByName(block.name, user.uid);
+        if (targetInstanceId != null) {
+          debugPrint('[Wizard] No active. Using LATEST instanceId=$targetInstanceId for "${block.name}"');
+        }
+      }
+    }
 
-    targetInstanceId ??=
-    await DBService().findActiveInstanceIdByName(block.name, user.uid);
-
-    targetInstanceId ??=
-    await DBService().findLatestInstanceIdByName(block.name, user.uid);
-
-    if (targetInstanceId == null) return null;
+    if (targetInstanceId == null) {
+      debugPrint('[Wizard] No existing instance found for "${block.name}" → will build new');
+      return null;
+    }
 
     await DBService().applyCustomBlockEdits(block.id, targetInstanceId);
+    debugPrint('[Wizard] Applied edits to instanceId=$targetInstanceId (blockId=${block.id})');
     return targetInstanceId;
   }
+
 
   Future<void> _uploadBlockToFirestore(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
