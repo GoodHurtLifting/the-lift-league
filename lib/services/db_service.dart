@@ -845,6 +845,7 @@ class DBService {
     ''', [workoutInstanceId]);
   }
 
+
   // ──────────────────────────────────────────────
 // 🔍 FETCH PREVIOUS LIFT ENTRY FOR COMPARISON
 // ──────────────────────────────────────────────
@@ -2039,28 +2040,50 @@ class DBService {
     return [for (final r in rows) (r['workoutInstanceId'] as num).toInt()];
   }
 
-  Future<int> peerCountForWorkout(int workoutInstanceId) async {
-    final db = await database;
-    final wi = await db.query(
-      'workout_instances',
-      columns: ['blockInstanceId', 'slotIndex'],
-      where: 'workoutInstanceId = ?',
-      whereArgs: [workoutInstanceId],
-      limit: 1,
+/// Count how many workouts in the same block share the same repeating slot
+/// as this workout instance. Returns at least 1.
+Future<int> peerCountForWorkoutInstance(int workoutInstanceId) async {
+  final db = await database;
+
+  // Locate block + slot for this instance
+  final wi = await db.query(
+    'workout_instances',
+    columns: ['blockInstanceId', 'slotIndex'],
+    where: 'workoutInstanceId = ?',
+    whereArgs: [workoutInstanceId],
+    limit: 1,
+  );
+  if (wi.isEmpty) return 1;
+
+  final int blockInstanceId = (wi.first['blockInstanceId'] as num).toInt();
+  final int? slotIndex = wi.first['slotIndex'] as int?;
+  if (slotIndex == null) return 1;
+
+  // Detect optional 'archived' column
+  var hasArchived = false;
+  try {
+    final cols = await db.rawQuery('PRAGMA table_info(workout_instances);');
+    hasArchived = cols.any(
+      (r) => ((r['name'] as String?) ?? '').toLowerCase() == 'archived',
     );
-    if (wi.isEmpty) return 0;
-    final blockInstanceId = (wi.first['blockInstanceId'] as num).toInt();
-    final slotIndex = (wi.first['slotIndex'] as num).toInt();
-    final hasArchived = await _hasColumn(db, 'workout_instances', 'archived');
-    final where = StringBuffer('blockInstanceId = ? AND slotIndex = ?');
-    final args = [blockInstanceId, slotIndex];
-    if (hasArchived) where.write(' AND archived = 0');
-    final rows = await db.rawQuery(
-      'SELECT COUNT(*) as c FROM workout_instances WHERE ${where.toString()}',
-      args,
-    );
-    return (rows.first['c'] as num).toInt();
-  }
+  } catch (_) {}
+
+  final whereArchived = hasArchived ? ' AND COALESCE(archived,0)=0' : '';
+
+  final rows = await db.rawQuery(
+    'SELECT COUNT(*) AS c FROM workout_instances '
+    'WHERE blockInstanceId = ? AND slotIndex = ?$whereArchived',
+    [blockInstanceId, slotIndex],
+  );
+
+  final int count = (rows.first['c'] as num).toInt();
+  return count == 0 ? 1 : count;
+}
+
+/// Backward-compatible alias for older call sites.
+Future<int> peerCountForWorkout(int workoutInstanceId) =>
+    peerCountForWorkoutInstance(workoutInstanceId);
+
 
   Future<String> _liftNameColTx(DatabaseExecutor txn) async {
     return await _hasColumn(txn, 'lift_instances', 'liftName') ? 'liftName' : 'name';
@@ -2228,18 +2251,48 @@ class DBService {
     });
   }
 
-  Future<void> updateWorkoutNameAcrossSlot(
-      int workoutInstanceId, String name) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      final peerWids = await _peerWorkoutIdsTx(txn, workoutInstanceId);
-      if (peerWids.isEmpty) return;
-      for (final wid in peerWids) {
-        await txn.update('workout_instances', {'workoutName': name},
-            where: 'workoutInstanceId = ?', whereArgs: [wid]);
-      }
-    });
-  }
+
+/// Rename a workout across all peers in the same slot within the block.
+Future<void> updateWorkoutNameAcrossSlot(
+  int workoutInstanceId,
+  String name,
+) async {
+  final db = await database;
+  await db.transaction((txn) async {
+    // Find block + slot for this instance
+    final wi = await txn.query(
+      'workout_instances',
+      columns: ['blockInstanceId', 'slotIndex'],
+      where: 'workoutInstanceId = ?',
+      whereArgs: [workoutInstanceId],
+      limit: 1,
+    );
+    if (wi.isEmpty) return;
+
+    final int blockInstanceId = (wi.first['blockInstanceId'] as num).toInt();
+    final int? slotIndex = wi.first['slotIndex'] as int?;
+    if (slotIndex == null) return;
+
+    // Detect optional 'archived' column
+    var hasArchived = false;
+    try {
+      final cols = await txn.rawQuery('PRAGMA table_info(workout_instances);');
+      hasArchived = cols.any(
+        (r) => ((r['name'] as String?) ?? '').toLowerCase() == 'archived',
+      );
+    } catch (_) {}
+
+    final whereArchived = hasArchived ? ' AND COALESCE(archived,0)=0' : '';
+
+    // Update all peers
+    await txn.rawUpdate(
+      'UPDATE workout_instances SET workoutName = ? '
+      'WHERE blockInstanceId = ? AND slotIndex = ?$whereArchived',
+      [name, blockInstanceId, slotIndex],
+    );
+  });
+}
+
 
 
   Future<int?> findLatestInstanceIdByName(String blockName, String userId) async {

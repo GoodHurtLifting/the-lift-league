@@ -266,6 +266,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           await _loadWorkoutFromDb();
                           final count =
                               await DBService().peerCountForWorkout(widget.workout.id);
+
                           _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           sheetNav.pop();
@@ -449,8 +450,12 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             isDumbbellLift: isDumbbellLift,
                           );
                           await _loadWorkoutFromDb();
+
                           final count =
                               await DBService().peerCountForWorkout(widget.workout.id);
+
+
+
                           _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           sheetNav.pop();
@@ -504,6 +509,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                               ),
                             );
                           }
+
                         } catch (e) {
                           if (!mounted) return;
                           setLocalState(() => _isSaving = false);
