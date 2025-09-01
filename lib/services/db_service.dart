@@ -1795,6 +1795,196 @@ class DBService {
     });
   }
 
+  Future<List<int>> _peerWorkoutIdsTx(DatabaseExecutor txn, int workoutInstanceId) async {
+    final wi = await txn.query(
+      'workout_instances',
+      columns: ['blockInstanceId', 'slotIndex'],
+      where: 'workoutInstanceId = ?',
+      whereArgs: [workoutInstanceId],
+      limit: 1,
+    );
+    if (wi.isEmpty) return [];
+    final blockInstanceId = (wi.first['blockInstanceId'] as num).toInt();
+    final slotIndex = (wi.first['slotIndex'] as num).toInt();
+    final hasArchived = await _hasColumn(txn, 'workout_instances', 'archived');
+    final where = StringBuffer('blockInstanceId = ? AND slotIndex = ?');
+    final args = [blockInstanceId, slotIndex];
+    if (hasArchived) where.write(' AND archived = 0');
+    final rows = await txn.query(
+      'workout_instances',
+      columns: ['workoutInstanceId'],
+      where: where.toString(),
+      whereArgs: args,
+    );
+    return [for (final r in rows) (r['workoutInstanceId'] as num).toInt()];
+  }
+
+  Future<String> _liftNameColTx(DatabaseExecutor txn) async {
+    return await _hasColumn(txn, 'lift_instances', 'liftName') ? 'liftName' : 'name';
+  }
+
+  Future<void> addLiftAcrossSlot({
+    required int workoutInstanceId,
+    required LiftDraft lift,
+    required int insertAt,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final peerWids = await _peerWorkoutIdsTx(txn, workoutInstanceId);
+      if (peerWids.isEmpty) return;
+      final liftNameCol = await _liftNameColTx(txn);
+
+      for (final wid in peerWids) {
+        await txn.rawUpdate(
+          'UPDATE lift_instances SET position = position + 1 WHERE workoutInstanceId = ? AND position >= ? AND archived = 0',
+          [wid, insertAt],
+        );
+
+        final values = {
+          'workoutInstanceId': wid,
+          liftNameCol: lift.name,
+          'sets': lift.sets,
+          'repsPerSet': lift.repsPerSet,
+          'scoreMultiplier': lift.multiplier,
+          'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+          'isBodyweight': lift.isBodyweight ? 1 : 0,
+          'position': insertAt,
+          'archived': 0,
+        };
+        final newLid = await txn.insert('lift_instances', values);
+        await _resizeEntriesForLiftInstanceTx(txn, newLid, lift.sets);
+      }
+    });
+  }
+
+  Future<void> updateLiftAcrossSlot({
+    required int workoutInstanceId,
+    required int liftInstanceId,
+    String? name,
+    int? sets,
+    int? repsPerSet,
+    double? scoreMultiplier,
+    bool? isDumbbellLift,
+    bool? isBodyweight,
+    int? position,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final peerWids = await _peerWorkoutIdsTx(txn, workoutInstanceId);
+      if (peerWids.isEmpty) return;
+      final liftNameCol = await _liftNameColTx(txn);
+
+      final baseRows = await txn.query(
+        'lift_instances',
+        where: 'liftInstanceId = ?',
+        whereArgs: [liftInstanceId],
+        limit: 1,
+      );
+      if (baseRows.isEmpty) return;
+      final base = baseRows.first;
+      final baseName = (base[liftNameCol]?.toString() ?? '').toLowerCase().trim();
+      final baseSets = (base['sets'] as num?)?.toInt() ?? 0;
+      final baseReps = (base['repsPerSet'] as num?)?.toInt() ?? 0;
+      final baseDb = (base['isDumbbellLift'] as num?)?.toInt() ?? 0;
+      final baseBw = (base['isBodyweight'] as num?)?.toInt() ?? 0;
+
+      final shapeWhere = 'workoutInstanceId = ? AND archived = 0 AND lower($liftNameCol) = ? AND isDumbbellLift = ? AND isBodyweight = ? AND sets = ? AND repsPerSet = ?';
+      final shapeArgs = [0, baseName, baseDb, baseBw, baseSets, baseReps];
+
+      for (final wid in peerWids) {
+        shapeArgs[0] = wid;
+        final peer = await txn.query(
+          'lift_instances',
+          where: shapeWhere,
+          whereArgs: shapeArgs,
+          limit: 1,
+        );
+        if (peer.isEmpty) continue;
+        final pid = (peer.first['liftInstanceId'] as num).toInt();
+
+        final upd = <String, Object?>{};
+        if (name != null) upd[liftNameCol] = name;
+        if (sets != null) upd['sets'] = sets;
+        if (repsPerSet != null) upd['repsPerSet'] = repsPerSet;
+        if (scoreMultiplier != null) upd['scoreMultiplier'] = scoreMultiplier;
+        if (isDumbbellLift != null) {
+          upd['isDumbbellLift'] = isDumbbellLift ? 1 : 0;
+        }
+        if (isBodyweight != null) {
+          upd['isBodyweight'] = isBodyweight ? 1 : 0;
+        }
+        if (position != null) upd['position'] = position;
+        if (upd.isEmpty) continue;
+
+        await txn.update('lift_instances', upd,
+            where: 'liftInstanceId = ?', whereArgs: [pid]);
+
+        if (sets != null && sets != baseSets) {
+          await _resizeEntriesForLiftInstanceTx(txn, pid, sets);
+        }
+      }
+    });
+  }
+
+  Future<void> removeLiftAcrossSlot({
+    required int workoutInstanceId,
+    required int liftInstanceId,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final peerWids = await _peerWorkoutIdsTx(txn, workoutInstanceId);
+      if (peerWids.isEmpty) return;
+      final liftNameCol = await _liftNameColTx(txn);
+
+      final baseRows = await txn.query(
+        'lift_instances',
+        where: 'liftInstanceId = ?',
+        whereArgs: [liftInstanceId],
+        limit: 1,
+      );
+      if (baseRows.isEmpty) return;
+      final base = baseRows.first;
+      final baseName = (base[liftNameCol]?.toString() ?? '').toLowerCase().trim();
+      final baseSets = (base['sets'] as num?)?.toInt() ?? 0;
+      final baseReps = (base['repsPerSet'] as num?)?.toInt() ?? 0;
+      final baseDb = (base['isDumbbellLift'] as num?)?.toInt() ?? 0;
+      final baseBw = (base['isBodyweight'] as num?)?.toInt() ?? 0;
+
+      final shapeWhere = 'workoutInstanceId = ? AND archived = 0 AND lower($liftNameCol) = ? AND isDumbbellLift = ? AND isBodyweight = ? AND sets = ? AND repsPerSet = ?';
+      final shapeArgs = [0, baseName, baseDb, baseBw, baseSets, baseReps];
+
+      for (final wid in peerWids) {
+        shapeArgs[0] = wid;
+        final peer = await txn.query(
+          'lift_instances',
+          columns: ['liftInstanceId'],
+          where: shapeWhere,
+          whereArgs: shapeArgs,
+          limit: 1,
+        );
+        if (peer.isEmpty) continue;
+        final lid = (peer.first['liftInstanceId'] as num).toInt();
+
+        final hasData = await txn.query(
+          'lift_entries',
+          columns: ['1'],
+          where: 'liftInstanceId = ? AND (reps > 0 OR weight > 0)',
+          whereArgs: [lid],
+          limit: 1,
+        );
+        if (hasData.isNotEmpty) {
+          await txn.update('lift_instances', {'archived': 1},
+              where: 'liftInstanceId = ?', whereArgs: [lid]);
+        } else {
+          await txn.delete('lift_entries',
+              where: 'liftInstanceId = ?', whereArgs: [lid]);
+          await txn.delete('lift_instances',
+              where: 'liftInstanceId = ?', whereArgs: [lid]);
+        }
+      }
+    });
+  }
+
 
   Future<int?> findLatestInstanceIdByName(String blockName, String userId) async {
     final db = await database;
