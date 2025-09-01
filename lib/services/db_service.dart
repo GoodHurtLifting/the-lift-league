@@ -2176,19 +2176,6 @@ class DBService {
     });
   }
 
-  Future<void> updateWorkoutNameAcrossSlot(
-      int workoutInstanceId, String name) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      final peerWids = await _peerWorkoutIdsTx(txn, workoutInstanceId);
-      if (peerWids.isEmpty) return;
-      for (final wid in peerWids) {
-        await txn.update('workout_instances', {'workoutName': name},
-            where: 'workoutInstanceId = ?', whereArgs: [wid]);
-      }
-    });
-  }
-
 
   Future<int?> findLatestInstanceIdByName(String blockName, String userId) async {
     final db = await database;
