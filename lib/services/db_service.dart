@@ -2010,29 +2010,6 @@ class DBService {
     return [for (final r in rows) (r['workoutInstanceId'] as num).toInt()];
   }
 
-  Future<int> peerCountForWorkout(int workoutInstanceId) async {
-    final db = await database;
-    final wi = await db.query(
-      'workout_instances',
-      columns: ['blockInstanceId', 'slotIndex'],
-      where: 'workoutInstanceId = ?',
-      whereArgs: [workoutInstanceId],
-      limit: 1,
-    );
-    if (wi.isEmpty) return 0;
-    final blockInstanceId = (wi.first['blockInstanceId'] as num).toInt();
-    final slotIndex = (wi.first['slotIndex'] as num).toInt();
-    final hasArchived = await _hasColumn(db, 'workout_instances', 'archived');
-    final where = StringBuffer('blockInstanceId = ? AND slotIndex = ?');
-    final args = [blockInstanceId, slotIndex];
-    if (hasArchived) where.write(' AND archived = 0');
-    final rows = await db.rawQuery(
-      'SELECT COUNT(*) as c FROM workout_instances WHERE ${where.toString()}',
-      args,
-    );
-    return (rows.first['c'] as num).toInt();
-  }
-
   Future<String> _liftNameColTx(DatabaseExecutor txn) async {
     return await _hasColumn(txn, 'lift_instances', 'liftName') ? 'liftName' : 'name';
   }
@@ -2195,19 +2172,6 @@ class DBService {
           await txn.delete('lift_instances',
               where: 'liftInstanceId = ?', whereArgs: [lid]);
         }
-      }
-    });
-  }
-
-  Future<void> updateWorkoutNameAcrossSlot(
-      int workoutInstanceId, String name) async {
-    final db = await database;
-    await db.transaction((txn) async {
-      final peerWids = await _peerWorkoutIdsTx(txn, workoutInstanceId);
-      if (peerWids.isEmpty) return;
-      for (final wid in peerWids) {
-        await txn.update('workout_instances', {'workoutName': name},
-            where: 'workoutInstanceId = ?', whereArgs: [wid]);
       }
     });
   }

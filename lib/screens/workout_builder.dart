@@ -264,8 +264,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             insertAt: widget.workout.lifts.length,
                           );
                           await _loadWorkoutFromDb();
-                          final count =
-                              await DBService().peerCountForWorkout(widget.workout.id);
+
                           _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           sheetNav.pop();
@@ -449,8 +448,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             isDumbbellLift: isDumbbellLift,
                           );
                           await _loadWorkoutFromDb();
-                          final count =
-                              await DBService().peerCountForWorkout(widget.workout.id);
+
                           _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           sheetNav.pop();
@@ -491,19 +489,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             liftInstanceId: liftId,
                           );
                           await _loadWorkoutFromDb();
-                          final count =
-                              await DBService().peerCountForWorkout(widget.workout.id);
-                          _applyEditsSoon();
-                          setLocalState(() => _isSaving = false);
-                          if (ctx.mounted) Navigator.of(ctx).pop();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Applied to all $count workouts in this block'),
-                              ),
-                            );
-                          }
+
                         } catch (e) {
                           if (!mounted) return;
                           setLocalState(() => _isSaving = false);
