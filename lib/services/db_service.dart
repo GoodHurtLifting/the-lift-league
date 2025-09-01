@@ -2016,10 +2016,12 @@ class DBService {
     final int dPerWeek = isCustomBlock ? (customDaysPerWeek ?? workoutsPerWeek) : workoutsPerWeek;
 
     // 6) Insert instances; never abort the whole loop on lift seeding errors
+    final int numWorkouts = dPerWeek;
     int inserted = 0;
     for (int i = 0; i < distribution.length; i++) {
       final workout = distribution[i];
       final int week = (i ~/ dPerWeek) + 1;
+      final int slotIndex = i % numWorkouts;
 
       final int newWorkoutInstanceId = await db.insert(
         'workout_instances',
@@ -2030,6 +2032,7 @@ class DBService {
           'workoutName': workout['workoutName'],
           'blockName': blockName,
           'week': week,
+          'slotIndex': slotIndex,
           'startTime': null,
           'endTime': null,
           'completed': 0,
