@@ -30,7 +30,16 @@ class DBService {
   // ──────────────────────────────────────────────────────────
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 21;   // bump any time the schema changes
+  static const _dbVersion = 22;   // bump any time the schema changes
+
+  Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
+    final rows = await db.rawQuery('PRAGMA table_info($table);');
+    for (final r in rows) {
+      final name = (r['name'] as String?)?.toLowerCase();
+      if (name == col.toLowerCase()) return true;
+    }
+    return false;
+  }
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
@@ -148,6 +157,29 @@ class DBService {
 
         await db.execute('PRAGMA foreign_keys = ON;');
         }
+
+        if (oldV < 22) {
+          try {
+            if (!await _hasColumn(db, 'workout_instances', 'slotIndex')) {
+              await db.execute(
+                  'ALTER TABLE workout_instances ADD COLUMN slotIndex INTEGER;');
+            }
+          } catch (_) {}
+
+          try {
+            if (!await _hasColumn(db, 'lift_instances', 'position')) {
+              await db.execute(
+                  'ALTER TABLE lift_instances ADD COLUMN position INTEGER DEFAULT 0;');
+            }
+          } catch (_) {}
+
+          try {
+            if (!await _hasColumn(db, 'lift_instances', 'archived')) {
+              await db.execute(
+                  'ALTER TABLE lift_instances ADD COLUMN archived INTEGER DEFAULT 0;');
+            }
+          } catch (_) {}
+        }
       },
     );
   }
@@ -223,6 +255,7 @@ class DBService {
         workoutName       TEXT,
         blockName         TEXT,
         week              INTEGER,
+        slotIndex         INTEGER,
         scheduledDate     TEXT,    -- NEW v16
         startTime         TEXT,
         endTime           TEXT,
@@ -1491,16 +1524,6 @@ class DBService {
     if (customBlock == null || customBlock.workouts.isEmpty) return;
 
     await db.transaction((txn) async {
-      // Utility: does a column exist on this table?
-      Future<bool> hasColumn(String table, String col) async {
-        final rows = await txn.rawQuery('PRAGMA table_info($table);');
-        for (final r in rows) {
-          final name = (r['name'] as String?)?.toLowerCase();
-          if (name == col.toLowerCase()) return true;
-        }
-        return false;
-      }
-
       // Ensure instance exists
       final instanceRows = await txn.query(
         'block_instances',
@@ -1523,10 +1546,10 @@ class DBService {
       );
 
       // Figure out optional columns once
-      final hasDayIndex    = await hasColumn('workout_instances', 'dayIndex');
-      final hasPosCol      = await hasColumn('lift_instances', 'position');
-      final hasArchivedWi  = await hasColumn('workout_instances', 'archived');
-      final hasArchivedLi  = await hasColumn('lift_instances', 'archived');
+      final hasDayIndex    = await _hasColumn(txn, 'workout_instances', 'dayIndex');
+      final hasPosCol      = await _hasColumn(txn, 'lift_instances', 'position');
+      final hasArchivedWi  = await _hasColumn(txn, 'workout_instances', 'archived');
+      final hasArchivedLi  = await _hasColumn(txn, 'lift_instances', 'archived');
 
       // Helpers
       Future<List<Map<String, Object?>>> workoutInstances() => txn.query(
@@ -1993,10 +2016,12 @@ class DBService {
     final int dPerWeek = isCustomBlock ? (customDaysPerWeek ?? workoutsPerWeek) : workoutsPerWeek;
 
     // 6) Insert instances; never abort the whole loop on lift seeding errors
+    final int numWorkouts = dPerWeek;
     int inserted = 0;
     for (int i = 0; i < distribution.length; i++) {
       final workout = distribution[i];
       final int week = (i ~/ dPerWeek) + 1;
+      final int slotIndex = i % numWorkouts;
 
       final int newWorkoutInstanceId = await db.insert(
         'workout_instances',
@@ -2007,6 +2032,7 @@ class DBService {
           'workoutName': workout['workoutName'],
           'blockName': blockName,
           'week': week,
+          'slotIndex': slotIndex,
           'startTime': null,
           'endTime': null,
           'completed': 0,
