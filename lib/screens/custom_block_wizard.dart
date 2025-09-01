@@ -340,16 +340,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
   Future<int?> _finish() async {
     // Validate inputs
-    if (blockName.trim().isEmpty || daysPerWeek == null || numWeeks == null) {
-      debugPrint('[Wizard] Missing basics: name/daysPerWeek/numWeeks');
-      return null;
-    }
-    if (workouts.isEmpty) {
-      debugPrint('[Wizard] Workouts empty; nothing to build/apply');
-      return null;
-    }
+    if (blockName.trim().isEmpty || daysPerWeek == null || numWeeks == null) return null;
+    if (workouts.isEmpty) return null;
 
-    // 1) Expand template across full run
+    // 1) Expand the template across the full run
     final int totalDays = numWeeks! * daysPerWeek!;
     final baseId = DateTime.now().millisecondsSinceEpoch;
 
@@ -374,7 +368,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       );
     });
 
-    // 2) Save the draft (id = initial id or provided customBlockId)
+    // 2) Build/save the CustomBlock
     final int id = widget.initialBlock?.id ?? widget.customBlockId;
 
     final block = CustomBlock(
@@ -390,14 +384,12 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
     if (widget.initialBlock != null) {
       await DBService().updateCustomBlock(block);
-      debugPrint('[Wizard] Updated draft for blockId=$id (${block.name})');
     } else {
       await DBService().insertCustomBlock(block);
-      debugPrint('[Wizard] Inserted draft for blockId=$id (${block.name})');
     }
 
-    // 3) Try to apply to an existing run
-    final int? appliedInstanceId = await _applyEditsToActiveInstance(block);
+    // 3) Try to apply to an active run (non-destructive)
+    final int? editedActiveInstanceId = await _applyEditsToActiveInstance(block);
 
     // 4) Sync to Firestore (optional)
     await _uploadBlockToFirestore(block);
@@ -406,23 +398,148 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
-    if (appliedInstanceId != null) {
-      debugPrint('[Wizard] Returning applied instanceId=$appliedInstanceId');
-      return appliedInstanceId;
-    }
+    // If we updated an active run, navigate to it
+    if (editedActiveInstanceId != null) return editedActiveInstanceId;
 
-    // No instance existed to update → build new & activate
+    // Otherwise, ALWAYS build a fresh run and activate it
     final newInstanceId =
     await DBService().insertNewBlockInstance(block.name, user.uid);
     await DBService()
         .activateBlockInstanceIfNeeded(newInstanceId, user.uid, block.name);
-
-    debugPrint('[Wizard] Built NEW instanceId=$newInstanceId for "${block.name}"');
     return newInstanceId;
   }
 
+  /// Returns lifts for a workout instance, handling both built-in (workoutId != null)
+  /// and custom (workoutId == null && block_instances.customBlockId != null).
+  /// Output rows contain: liftId, name, sets, repsPerSet, multiplier, isBodyweight, isDumbbellLift.
+  Future<List<Map<String, Object?>>> getLiftsForWorkoutInstance(int workoutInstanceId) async {
+    final db = await database;
 
+    // 1) Load the instance + its parent customBlockId
+    final meta = await db.rawQuery('''
+    SELECT wi.workoutInstanceId, wi.workoutId, wi.blockInstanceId, wi.week, wi.scheduledDate,
+           bi.customBlockId
+    FROM workout_instances wi
+    JOIN block_instances bi ON bi.blockInstanceId = wi.blockInstanceId
+    WHERE wi.workoutInstanceId = ?
+    LIMIT 1
+  ''', [workoutInstanceId]);
 
+    if (meta.isEmpty) return const [];
+    final row = meta.first;
+    final int? workoutId    = row['workoutId'] as int?;
+    final int blockInstance = row['blockInstanceId'] as int;
+    final int? customBlockId = row['customBlockId'] as int?;
+
+    // 2) Built-in path → join lift_workouts → lifts
+    if (workoutId != null) {
+      return await db.rawQuery('''
+      SELECT lw.liftId, l.liftName AS name,
+             COALESCE(lw.numSets, 3) AS sets,
+             COALESCE(lw.repsPerSet, 0) AS repsPerSet,
+             COALESCE(lw.multiplier, 0.0) AS multiplier,
+             COALESCE(lw.isBodyweight, 0) AS isBodyweight,
+             COALESCE(lw.isDumbbellLift, 0) AS isDumbbellLift
+      FROM lift_workouts lw
+      JOIN lifts l ON l.liftId = lw.liftId
+      WHERE lw.workoutId = ?
+      ORDER BY lw.liftWorkoutId ASC
+    ''', [workoutId]);
+    }
+
+    // 3) Custom path → resolve ordinal of this instance within the block
+    //    (stable order: week, scheduledDate, then id)
+    final instances = await db.query(
+      'workout_instances',
+      columns: ['workoutInstanceId'],
+      where: 'blockInstanceId = ?',
+      whereArgs: [blockInstance],
+      orderBy: 'week ASC, scheduledDate ASC, workoutInstanceId ASC',
+    );
+    int ordinal = 0;
+    for (int i = 0; i < instances.length; i++) {
+      if ((instances[i]['workoutInstanceId'] as int) == workoutInstanceId) {
+        ordinal = i; break;
+      }
+    }
+
+    if (customBlockId == null) return const [];
+
+    // 4) Pick the matching draft workout (ordered by dayIndex, then id)
+    final draftWorkout = await db.rawQuery('''
+    SELECT id, name
+    FROM workout_drafts
+    WHERE blockId = ?
+    ORDER BY COALESCE(dayIndex, 0) ASC, id ASC
+    LIMIT 1 OFFSET ?
+  ''', [customBlockId, ordinal]);
+
+    if (draftWorkout.isEmpty) return const [];
+    final int draftWorkoutId = draftWorkout.first['id'] as int;
+
+    final drafts = await db.rawQuery('''
+    SELECT name, COALESCE(sets,0) AS sets, COALESCE(repsPerSet,0) AS repsPerSet,
+           COALESCE(multiplier,0.0) AS multiplier,
+           COALESCE(isBodyweight,0) AS isBodyweight,
+           COALESCE(isDumbbellLift,0) AS isDumbbellLift
+    FROM lift_drafts
+    WHERE workoutId = ?
+    ORDER BY id ASC
+  ''', [draftWorkoutId]);
+
+    // 5) Ensure each draft has a liftId (by name); create minimal lift rows if needed
+    List<Map<String, Object?>> result = [];
+    for (final d in drafts) {
+      final String name = ((d['name'] as String?) ?? '').trim();
+      if (name.isEmpty) continue;
+
+      // try resolve by name (case-insensitive)
+      final found = await db.rawQuery(
+        'SELECT liftId FROM lifts WHERE LOWER(liftName) = LOWER(?) LIMIT 1',
+        [name],
+      );
+      int liftId;
+      if (found.isNotEmpty) {
+        liftId = found.first['liftId'] as int;
+      } else {
+        // Minimal insert to keep logging consistent with lift_entries(liftId)
+        liftId = await db.insert('lifts', {
+          'liftName': name,
+          'repScheme': '${d['sets']}x${d['repsPerSet']}',
+          'numSets': d['sets'],
+          'scoreMultiplier': (d['multiplier'] as num).toDouble(),
+          'isDumbbellLift': d['isDumbbellLift'],
+          'scoreType': 'standard',
+          'youtubeUrl': null,
+          'description': null,
+          'referenceLiftId': null,
+          'percentOfReference': null,
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        if (liftId == 0) {
+          // race: another insert happened; fetch id
+          final r = await db.rawQuery(
+            'SELECT liftId FROM lifts WHERE LOWER(liftName) = LOWER(?) LIMIT 1',
+            [name],
+          );
+          liftId = r.isNotEmpty ? r.first['liftId'] as int : -1;
+        }
+      }
+
+      result.add({
+        'liftId': liftId,
+        'name': name,
+        'sets': d['sets'],
+        'repsPerSet': d['repsPerSet'],
+        'multiplier': d['multiplier'],
+        'isBodyweight': d['isBodyweight'],
+        'isDumbbellLift': d['isDumbbellLift'],
+      });
+    }
+    return result;
+  }
+
+  /// Applies custom block edits to the user's active block instance (if any).
+  /// Returns the blockInstanceId if edits were applied; otherwise null.
   /// Applies edits to an existing instance in priority order:
   /// 1) The instance we navigated from (widget.blockInstanceId), if present
   /// 2) The user's active instance with this name
@@ -430,38 +547,21 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   /// Returns the instance id if applied; otherwise null.
   Future<int?> _applyEditsToActiveInstance(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      debugPrint('[Wizard] No user → cannot apply edits');
-      return null;
-    }
+    if (user == null) return null;
 
     int? targetInstanceId = widget.blockInstanceId;
-    if (targetInstanceId != null) {
-      debugPrint('[Wizard] Using provided instanceId=${targetInstanceId} for apply');
-    } else {
-      targetInstanceId =
-      await DBService().findActiveInstanceIdByName(block.name, user.uid);
-      if (targetInstanceId != null) {
-        debugPrint('[Wizard] Found ACTIVE instanceId=$targetInstanceId for "${block.name}"');
-      } else {
-        targetInstanceId =
-        await DBService().findLatestInstanceIdByName(block.name, user.uid);
-        if (targetInstanceId != null) {
-          debugPrint('[Wizard] No active. Using LATEST instanceId=$targetInstanceId for "${block.name}"');
-        }
-      }
-    }
 
-    if (targetInstanceId == null) {
-      debugPrint('[Wizard] No existing instance found for "${block.name}" → will build new');
-      return null;
-    }
+    targetInstanceId ??=
+    await DBService().findActiveInstanceIdByName(block.name, user.uid);
+
+    targetInstanceId ??=
+    await DBService().findLatestInstanceIdByName(block.name, user.uid);
+
+    if (targetInstanceId == null) return null;
 
     await DBService().applyCustomBlockEdits(block.id, targetInstanceId);
-    debugPrint('[Wizard] Applied edits to instanceId=$targetInstanceId (blockId=${block.id})');
     return targetInstanceId;
   }
-
 
   Future<void> _uploadBlockToFirestore(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;

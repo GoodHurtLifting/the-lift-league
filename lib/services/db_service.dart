@@ -30,7 +30,7 @@ class DBService {
   // ──────────────────────────────────────────────────────────
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 20;   // bump any time the schema changes
+  static const _dbVersion = 21;   // bump any time the schema changes
 
   Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
@@ -122,26 +122,31 @@ class DBService {
           await db.execute('PRAGMA foreign_keys = OFF;');
 
           await db.execute('''
-    CREATE TABLE workouts_blocks_new (
-      workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
-      blockId INTEGER,
-      workoutId INTEGER,
-      FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
-      FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
-    );
-  ''');
+          CREATE TABLE workouts_blocks_new (
+            workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
+            blockId INTEGER NOT NULL,
+            workoutId INTEGER NOT NULL,
+            FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
+            FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
+          );
+        ''');
 
           // Copy data over
           await db.execute('''
-    INSERT INTO workouts_blocks_new (workoutBlockId, blockId, workoutId)
-    SELECT workoutBlockId, blockId, workoutId FROM workouts_blocks;
-  ''');
+          INSERT OR IGNORE INTO workouts_blocks_new (workoutBlockId, blockId, workoutId)
+          SELECT wb.workoutBlockId, wb.blockId, wb.workoutId
+          FROM workouts_blocks wb
+          JOIN blocks b   ON b.blockId   = wb.blockId
+          JOIN workouts w ON w.workoutId = wb.workoutId;
+        ''');
 
           await db.execute('DROP TABLE workouts_blocks;');
           await db.execute('ALTER TABLE workouts_blocks_new RENAME TO workouts_blocks;');
 
-          // (Re)create any indexes you rely on here
-          await db.execute('PRAGMA foreign_keys = ON;');
+        // recreate the unique index after rename
+        await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_wb_block_workout ON workouts_blocks(blockId, workoutId);');
+
+        await db.execute('PRAGMA foreign_keys = ON;');
         }
       },
     );
@@ -201,11 +206,12 @@ class DBService {
     await db.execute('''
       CREATE TABLE workouts_blocks (
         workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
-        blockId INTEGER,
-        workoutId INTEGER,
-        FOREIGN KEY (blockId) REFERENCES block_instances(blockId) ON DELETE CASCADE,
+        blockId INTEGER NOT NULL,
+        workoutId INTEGER NOT NULL,
+        FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
         FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
-      )
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_wb_block_workout ON workouts_blocks(blockId, workoutId);
     ''');
 
     await db.execute('''
@@ -1271,57 +1277,85 @@ class DBService {
 
   Future<CustomBlock?> getCustomBlock(int id) async {
     final db = await database;
-    final blockData = await db.query(
+
+    // 1) Block row
+    final blockRows = await db.query(
       'custom_blocks',
       where: 'id = ?',
       whereArgs: [id],
       limit: 1,
     );
-    if (blockData.isEmpty) return null;
-    final blockRow = blockData.first;
-    final workoutRows = await db.query(
+    if (blockRows.isEmpty) return null;
+    final b = blockRows.first;
+
+    // 2) All workouts for this block (stable order)
+    final wRows = await db.query(
       'workout_drafts',
       where: 'blockId = ?',
       whereArgs: [id],
-      orderBy: 'dayIndex ASC',
+      orderBy: 'COALESCE(dayIndex, 0) ASC, id ASC',
     );
-    final List<WorkoutDraft> workouts = [];
-    for (final w in workoutRows) {
-      final lifts = await db.query(
-        'lift_drafts',
-        where: 'workoutId = ?',
-        whereArgs: [w['id']],
-      );
-      workouts.add(
-        WorkoutDraft(
-          id: w['id'] as int,
-          dayIndex: w['dayIndex'] as int,
-          name: w['name'] as String? ?? '',
-          lifts: lifts
-              .map((l) => LiftDraft(
-                    name: l['name'] as String,
-                    sets: l['sets'] as int,
-                    repsPerSet: l['repsPerSet'] as int,
-                    multiplier: (l['multiplier'] as num).toDouble(),
-                    isBodyweight: (l['isBodyweight'] as int) == 1,
-                    isDumbbellLift: (l['isDumbbellLift'] as int) == 1,
-                  ))
-              .toList(),
-          isPersisted: true,
-        ),
-
+    if (wRows.isEmpty) {
+      return CustomBlock(
+        id: b['id'] as int,
+        name: (b['name'] as String?) ?? '',
+        numWeeks: (b['numWeeks'] as int?) ?? 4,
+        daysPerWeek: (b['daysPerWeek'] as int?) ?? 3,
+        isDraft: ((b['isDraft'] as int?) ?? 0) == 1,
+        coverImagePath: b['coverImagePath'] as String?,
+        workouts: const [],
       );
     }
 
+    // 3) Fetch lifts for all workouts in one query, then group
+    final workoutIds = wRows.map((w) => w['id'] as int).toList();
+    final placeholders = List.filled(workoutIds.length, '?').join(',');
+    final lRows = await db.rawQuery(
+      'SELECT * FROM lift_drafts WHERE workoutId IN ($placeholders) ORDER BY id ASC',
+      workoutIds,
+    );
+
+    final Map<int, List<LiftDraft>> liftsByWorkout = {};
+    for (final l in lRows) {
+      final wid = l['workoutId'] as int;
+      (liftsByWorkout[wid] ??= []).add(
+        LiftDraft(
+          name: (l['name'] as String?) ?? '',
+          sets: (l['sets'] as int?) ?? 0,
+          repsPerSet: (l['repsPerSet'] as int?) ?? 0,
+          multiplier: (l['multiplier'] as num?)?.toDouble() ?? 0.0,
+          isBodyweight: ((l['isBodyweight'] as int?) ?? 0) == 1,
+          isDumbbellLift: ((l['isDumbbellLift'] as int?) ?? 0) == 1,
+        ),
+      );
+    }
+
+    // 4) Build workouts with a fallback dayIndex if any are null
+    int fallback = 0;
+    final workouts = <WorkoutDraft>[];
+    for (final w in wRows) {
+      final wid = w['id'] as int;
+      final dayIdx = (w['dayIndex'] as int?) ?? (fallback++);
+      workouts.add(
+        WorkoutDraft(
+          id: wid,
+          dayIndex: dayIdx,
+          name: (w['name'] as String?) ?? '',
+          lifts: liftsByWorkout[wid] ?? const [],
+          isPersisted: true,
+        ),
+      );
+    }
+
+    // 5) Return full block
     return CustomBlock(
-      id: blockRow['id'] as int,
-      name: blockRow['name'] as String,
-      numWeeks: blockRow['numWeeks'] as int,
-      daysPerWeek: blockRow['daysPerWeek'] as int,
-      coverImagePath: blockRow['coverImagePath'] as String?,
+      id: b['id'] as int,
+      name: (b['name'] as String?) ?? '',
+      numWeeks: (b['numWeeks'] as int?) ?? 4,
+      daysPerWeek: (b['daysPerWeek'] as int?) ?? 3,
+      isDraft: ((b['isDraft'] as int?) ?? 0) == 1,
+      coverImagePath: b['coverImagePath'] as String?,
       workouts: workouts,
-      isDraft: (blockRow['isDraft'] as int) == 1,
-      scheduleType: 'standard',
     );
   }
 
@@ -1457,6 +1491,16 @@ class DBService {
     if (customBlock == null || customBlock.workouts.isEmpty) return;
 
     await db.transaction((txn) async {
+      // Utility: does a column exist on this table?
+      Future<bool> hasColumn(String table, String col) async {
+        final rows = await txn.rawQuery('PRAGMA table_info($table);');
+        for (final r in rows) {
+          final name = (r['name'] as String?)?.toLowerCase();
+          if (name == col.toLowerCase()) return true;
+        }
+        return false;
+      }
+
       // Ensure instance exists
       final instanceRows = await txn.query(
         'block_instances',
@@ -1478,22 +1522,28 @@ class DBService {
         whereArgs: [blockInstanceId],
       );
 
+      // Figure out optional columns once
+      final hasDayIndex    = await hasColumn('workout_instances', 'dayIndex');
+      final hasPosCol      = await hasColumn('lift_instances', 'position');
+      final hasArchivedWi  = await hasColumn('workout_instances', 'archived');
+      final hasArchivedLi  = await hasColumn('lift_instances', 'archived');
+
       // Helpers
       Future<List<Map<String, Object?>>> workoutInstances() => txn.query(
         'workout_instances',
         where: 'blockInstanceId = ?',
         whereArgs: [blockInstanceId],
-        orderBy: 'dayIndex ASC',
+        // ✅ no dayIndex — sort by stable, existing columns
+        orderBy: 'week ASC, scheduledDate ASC, workoutInstanceId ASC',
       );
 
       Future<List<Map<String, Object?>>> liftsFor(int workoutInstanceId) => txn.query(
         'lift_instances',
         where: 'workoutInstanceId = ?',
         whereArgs: [workoutInstanceId],
-        orderBy: 'position ASC',
+        orderBy: hasPosCol ? 'position ASC' : 'liftInstanceId ASC',
       );
 
-      // AFTER
       Future<bool> liftHasEntriesTx(int liftInstanceId) async {
         final rows = await txn.query(
           'lift_entries',
@@ -1504,30 +1554,29 @@ class DBService {
         return rows.isNotEmpty;
       }
 
-// Key that doesn't rely on templateLiftId
+      // Key that doesn't rely on template IDs
       String rowKey(Map<String, Object?> m) {
-        final n  = ((m['name'] ?? '') as String).toLowerCase().trim();
-        final st = (m['sets'] ?? 0).toString();
-        final rp = (m['repsPerSet'] ?? 0).toString();
+        final n   = ((m['name'] ?? '') as String).toLowerCase().trim();
+        final st  = (m['sets'] ?? 0).toString();
+        final rp  = (m['repsPerSet'] ?? 0).toString();
         final dbb = (m['isDumbbellLift'] ?? 0).toString();
         final bw  = (m['isBodyweight'] ?? 0).toString();
         return '$n|$st|$rp|$dbb|$bw';
       }
 
       String draftKey(dynamic dl) {
-        final n  = (dl.name as String).toLowerCase().trim();
-        final st = dl.sets.toString();
-        final rp = dl.repsPerSet.toString();
+        final n   = (dl.name as String).toLowerCase().trim();
+        final st  = dl.sets.toString();
+        final rp  = dl.repsPerSet.toString();
         final dbb = (dl.isDumbbellLift ? 1 : 0).toString();
         final bw  = (dl.isBodyweight ? 1 : 0).toString();
         return '$n|$st|$rp|$dbb|$bw';
       }
 
-
-      // Existing workouts keyed by dayIndex
+      // Existing workouts in stable order (index by array position, not dayIndex)
       final existingWorkouts = await workoutInstances();
-      final byIndex = <int, Map<String, Object?>>{
-        for (final w in existingWorkouts) (w['dayIndex'] as int): w
+      final Map<int, Map<String, Object?>> byOrdinal = {
+        for (int idx = 0; idx < existingWorkouts.length; idx++) idx: existingWorkouts[idx]
       };
 
       final int daysPerWeek = (customBlock.daysPerWeek ?? 3).clamp(1, 7);
@@ -1535,42 +1584,46 @@ class DBService {
       // Upsert workouts in draft order
       for (int i = 0; i < customBlock.workouts.length; i++) {
         final draftW = customBlock.workouts[i];
-        Map<String, Object?>? existing = byIndex[i];
+        Map<String, Object?>? existing = byOrdinal[i];
 
         if (existing == null) {
           final int week = (i ~/ daysPerWeek) + 1;
-          final newWid = await txn.insert('workout_instances', {
+          final values = <String, Object?>{
             'blockInstanceId': blockInstanceId,
             'userId': userId,
-            'workoutId': null,             // custom path
-            'workoutName': draftW.name,    // schema uses workoutName
+            'workoutId': null,           // custom path
+            'workoutName': draftW.name,  // schema uses workoutName
             'blockName': blockName,
             'week': week,
-            'dayIndex': i,
             'startTime': null,
             'endTime': null,
             'completed': 0,
-          });
+          };
+          if (hasDayIndex) values['dayIndex'] = i;
+
+          final newWid = await txn.insert('workout_instances', values);
           existing = {
             'workoutInstanceId': newWid,
             'blockInstanceId': blockInstanceId,
             'workoutName': draftW.name,
-            'dayIndex': i,
           };
+          if (hasDayIndex) existing['dayIndex'] = i;
         } else {
           final wid = existing['workoutInstanceId'] as int;
+          final upd = <String, Object?>{
+            'workoutName': draftW.name,
+          };
+          if (hasDayIndex) upd['dayIndex'] = i;
+
           await txn.update(
             'workout_instances',
-            {
-              'workoutName': draftW.name,
-              'dayIndex': i,
-            },
+            upd,
             where: 'workoutInstanceId = ?',
             whereArgs: [wid],
           );
         }
 
-        // Sync lifts within workout
+        // Sync lifts within this workout
         final wid = existing['workoutInstanceId'] as int;
         final currentLifts = await liftsFor(wid);
         final currentByKey = <String, Map<String, Object?>>{
@@ -1579,36 +1632,38 @@ class DBService {
 
         // Upsert/Update lifts
         for (int j = 0; j < draftW.lifts.length; j++) {
-          final dl = draftW.lifts[j];
+          final dl  = draftW.lifts[j];
           final key = draftKey(dl);
           final match = currentByKey[key];
 
           if (match == null) {
-            await txn.insert('lift_instances', {
+            final ins = <String, Object?>{
               'workoutInstanceId': wid,
-              // NO templateLiftId writes
               'name': dl.name,
               'sets': dl.sets,
               'repsPerSet': dl.repsPerSet,
               'scoreMultiplier': dl.multiplier,
               'isDumbbellLift': dl.isDumbbellLift ? 1 : 0,
               'isBodyweight': dl.isBodyweight ? 1 : 0,
-              'position': j,
-            });
+            };
+            if (hasPosCol) ins['position'] = j;
+
+            await txn.insert('lift_instances', ins);
           } else {
             final lid = match['liftInstanceId'] as int;
+            final upd = <String, Object?>{
+              'name': dl.name,
+              'sets': dl.sets,
+              'repsPerSet': dl.repsPerSet,
+              'scoreMultiplier': dl.multiplier,
+              'isDumbbellLift': dl.isDumbbellLift ? 1 : 0,
+              'isBodyweight': dl.isBodyweight ? 1 : 0,
+            };
+            if (hasPosCol) upd['position'] = j;
+
             await txn.update(
               'lift_instances',
-              {
-                'name': dl.name,
-                'sets': dl.sets,
-                'repsPerSet': dl.repsPerSet,
-                'scoreMultiplier': dl.multiplier,
-                'isDumbbellLift': dl.isDumbbellLift ? 1 : 0,
-                'isBodyweight': dl.isBodyweight ? 1 : 0,
-                'position': j,
-                // NO templateLiftId writes
-              },
+              upd,
               where: 'liftInstanceId = ?',
               whereArgs: [lid],
             );
@@ -1625,20 +1680,16 @@ class DBService {
 
             if (!hasData) {
               await txn.delete('lift_instances', where: 'liftInstanceId = ?', whereArgs: [lid]);
-            } else {
-              try {
-                await txn.update('lift_instances', {'archived': 1}, where: 'liftInstanceId = ?', whereArgs: [lid]);
-              } catch (_) {
-                // no archived column in some schemas — ignore
-              }
+            } else if (hasArchivedLi) {
+              await txn.update('lift_instances', {'archived': 1}, where: 'liftInstanceId = ?', whereArgs: [lid]);
             }
           }
         }
       }
 
-      // Remove/Archive workouts beyond draft length
+      // Remove/Archive workouts beyond draft length (by ordinal)
       for (int k = customBlock.workouts.length; k < existingWorkouts.length; k++) {
-        final orphan = byIndex[k];
+        final orphan = byOrdinal[k];
         if (orphan == null) continue;
         final wid = orphan['workoutInstanceId'] as int;
 
@@ -1658,10 +1709,8 @@ class DBService {
 
         if (!hasAnyEntries) {
           await txn.delete('workout_instances', where: 'workoutInstanceId = ?', whereArgs: [wid]);
-        } else {
-          try {
-            await txn.update('workout_instances', {'archived': 1}, where: 'workoutInstanceId = ?', whereArgs: [wid]);
-          } catch (_) {/* ignore if column missing */}
+        } else if (hasArchivedWi) {
+          await txn.update('workout_instances', {'archived': 1}, where: 'workoutInstanceId = ?', whereArgs: [wid]);
         }
       }
 
@@ -1669,6 +1718,7 @@ class DBService {
       print('[applyCustomBlockEdits] In-place sync complete for instance=$blockInstanceId (custom=$customBlockId)');
     });
   }
+
 
   Future<int?> findLatestInstanceIdByName(String blockName, String userId) async {
     final db = await database;

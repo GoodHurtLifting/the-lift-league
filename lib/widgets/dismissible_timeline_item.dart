@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:lift_league/models/timeline_entry.dart';
 import 'package:lift_league/widgets/timeline_checkin_card.dart';
 import 'package:lift_league/screens/edit_check_in_screen.dart';

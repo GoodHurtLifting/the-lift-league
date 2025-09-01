@@ -8,13 +8,12 @@ plugins {
 
 android {
     namespace = "com.example.lift_league"
-    compileSdk = 35
-    buildToolsVersion = "34.0.0" // Safe current version
+    compileSdk = 36
     ndkVersion = "28.0.13004108"
 
     defaultConfig {
         applicationId = "com.example.lift_league"
-        minSdk = 23
+        minSdkVersion = flutter.minSdkVersion
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -24,13 +23,13 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
         coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
-        jvmTarget = "21" // ✅ Kotlin requires string, not JavaVersion enum
+        jvmTarget = "17" // ✅ Kotlin requires string, not JavaVersion enum
     }
 
     signingConfigs {

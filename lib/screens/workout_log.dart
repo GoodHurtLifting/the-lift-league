@@ -117,18 +117,13 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
 
     _isCustomBlock = blockInstance['customBlockId'] != null;
 
-    final int workoutId = (workoutInstance['workoutId'] as num).toInt();
+    final int workoutId = (workoutInstance['workoutId'] as int?) ?? 0; // 0 for custom instances
 
-    // Always load lifts from DB for THIS workout instance
-    // (reflects custom/shadow edits immediately).
-    List<Map<String, dynamic>> liftsFromDb =
-    await db.getWorkoutLifts(widget.workoutInstanceId);
+// Unified fetch: built-ins (workoutId!=null) use lift_workouts; customs use lift_drafts.
+// Shows edits immediately for custom blocks.
+    final List<Map<String, Object?>> liftsFromDb =
+    await DBService.instance.getLiftsForWorkoutInstance(widget.workoutInstanceId);
 
-    // If edits purged & rebuilt instances but lifts weren't seeded yet, seed now.
-    if (liftsFromDb.isEmpty) {
-      await db.insertLiftsForWorkoutInstance(widget.workoutInstanceId);
-      liftsFromDb = await db.getWorkoutLifts(widget.workoutInstanceId);
-    }
 
     final List<Liftinfo> orderedLifts = [];
     for (final lift in liftsFromDb) {
@@ -142,10 +137,11 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
         Liftinfo(
           liftId: lift['liftId'] as int,
           workoutInstanceId: widget.workoutInstanceId,
-          liftName: (lift['liftName'] as String?) ?? 'Unknown',
+          // ⬇️ built-ins return "name" aliased; legacy paths returned "liftName"
+          liftName: (lift['liftName'] as String?) ?? (lift['name'] as String?) ?? 'Unknown',
           repScheme: repScheme,
           numSets: sets,
-          scoreMultiplier: (lift['multiplier'] ?? 1.0).toDouble(),
+          scoreMultiplier: ((lift['multiplier'] as num?) ?? 1.0).toDouble(),
           isDumbbellLift: (lift['isDumbbellLift'] ?? 0) == 1,
           scoreType: (lift['scoreType'] as String?) ?? 'multiplier',
           youtubeUrl: lift['youtubeUrl'],
@@ -155,6 +151,7 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
         ),
       );
     }
+
 
     final blockDisplayName = (blockInstance['blockName'] as String?) ?? 'Block Name';
     final workoutDisplayName = (workoutInstance['workoutName'] as String?) ?? 'Workout';
