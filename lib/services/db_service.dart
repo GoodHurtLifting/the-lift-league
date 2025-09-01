@@ -1035,6 +1035,57 @@ class DBService {
     }
   }
 
+  Future<void> _resizeEntriesForLiftInstanceTx(
+      dynamic db, // Database or Transaction
+      int liftInstanceId,
+      int newSetCount,
+      ) async {
+    final rows = await db.query(
+      'lift_entries',
+      where: 'liftInstanceId = ?',
+      whereArgs: [liftInstanceId],
+      orderBy: 'setIndex ASC',
+    );
+
+    int? workoutInstanceId;
+    int? liftId;
+    if (rows.isNotEmpty) {
+      workoutInstanceId = (rows.first['workoutInstanceId'] as num?)?.toInt();
+      liftId = (rows.first['liftId'] as num?)?.toInt();
+    } else {
+      final li = await db.query(
+        'lift_instances',
+        columns: ['workoutInstanceId'],
+        where: 'liftInstanceId = ?',
+        whereArgs: [liftInstanceId],
+        limit: 1,
+      );
+      if (li.isNotEmpty) {
+        workoutInstanceId = (li.first['workoutInstanceId'] as num?)?.toInt();
+      }
+    }
+
+    final current = rows.length;
+    if (current > newSetCount) {
+      await db.delete(
+        'lift_entries',
+        where: 'liftInstanceId = ? AND setIndex > ?',
+        whereArgs: [liftInstanceId, newSetCount],
+      );
+    } else if (current < newSetCount) {
+      for (int i = current + 1; i <= newSetCount; i++) {
+        await db.insert('lift_entries', {
+          'liftInstanceId': liftInstanceId,
+          if (workoutInstanceId != null) 'workoutInstanceId': workoutInstanceId,
+          if (liftId != null) 'liftId': liftId,
+          'setIndex': i,
+          'reps': 0,
+          'weight': 0.0,
+        });
+      }
+    }
+  }
+
   /// Loads a single [WorkoutDraft] with its associated lifts from the database.
   Future<WorkoutDraft?> fetchWorkoutDraft(int workoutId) async {
     final db = await database;
@@ -1671,7 +1722,8 @@ class DBService {
             };
             if (hasPosCol) ins['position'] = j;
 
-            await txn.insert('lift_instances', ins);
+            final newLid = await txn.insert('lift_instances', ins);
+            await _resizeEntriesForLiftInstanceTx(txn, newLid, dl.sets);
           } else {
             final lid = match['liftInstanceId'] as int;
             final upd = <String, Object?>{
@@ -1690,6 +1742,7 @@ class DBService {
               where: 'liftInstanceId = ?',
               whereArgs: [lid],
             );
+            await _resizeEntriesForLiftInstanceTx(txn, lid, dl.sets);
           }
         }
 
