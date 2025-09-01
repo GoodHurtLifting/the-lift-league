@@ -644,6 +644,197 @@ class DBService {
   }
 
   // ──────────────────────────────────────────────
+  // 🔍 FETCH LIFTS FOR A WORKOUT INSTANCE
+  // ──────────────────────────────────────────────
+  Future<List<Map<String, Object?>>> getLiftsForWorkoutInstance(
+      int workoutInstanceId) async {
+    final db = await database;
+
+    final meta = await db.query(
+      'workout_instances',
+      columns: ['workoutId', 'blockInstanceId', 'slotIndex'],
+      where: 'workoutInstanceId = ?',
+      whereArgs: [workoutInstanceId],
+      limit: 1,
+    );
+    if (meta.isEmpty) return [];
+    final row = meta.first;
+    final int? workoutId = row['workoutId'] as int?;
+    final int blockInstanceId = (row['blockInstanceId'] as num).toInt();
+    final int? slotIndex = (row['slotIndex'] as num?)?.toInt();
+
+    if (workoutId != null) {
+      return await db.rawQuery('''
+        SELECT 0 AS liftInstanceId, lw.liftId, l.liftName AS name,
+               COALESCE(lw.numSets,3) AS sets,
+               COALESCE(lw.repsPerSet,0) AS repsPerSet,
+               COALESCE(lw.multiplier,0.0) AS scoreMultiplier,
+               COALESCE(lw.isDumbbellLift,0) AS isDumbbellLift,
+               COALESCE(lw.isBodyweight,0) AS isBodyweight,
+               COALESCE(lw.position, lw.liftWorkoutId) AS position
+        FROM lift_workouts lw
+        JOIN lifts l ON l.liftId = lw.liftId
+        WHERE lw.workoutId = ?
+        ORDER BY COALESCE(lw.position, lw.liftWorkoutId) ASC, lw.liftWorkoutId ASC
+      ''', [workoutId]);
+    }
+
+    final liftNameCol = await _liftNameColTx(db);
+    List<Map<String, Object?>> lifts = await db.rawQuery('''
+      SELECT liftInstanceId, liftId, $liftNameCol AS name,
+             sets, repsPerSet, scoreMultiplier,
+             COALESCE(isDumbbellLift,0) AS isDumbbellLift,
+             COALESCE(isBodyweight,0) AS isBodyweight,
+             COALESCE(position,0) AS position
+      FROM lift_instances
+      WHERE workoutInstanceId = ? AND COALESCE(archived,0) = 0
+      ORDER BY COALESCE(position,0) ASC, liftInstanceId ASC
+    ''', [workoutInstanceId]);
+    if (lifts.isNotEmpty) return lifts;
+
+    await db.transaction((txn) async {
+      final nameCol = await _liftNameColTx(txn);
+      final existing = await txn.query(
+        'lift_instances',
+        where: 'workoutInstanceId = ?',
+        whereArgs: [workoutInstanceId],
+        limit: 1,
+      );
+      if (existing.isNotEmpty) return;
+
+      int? peerId;
+      if (slotIndex != null) {
+        final peer = await txn.rawQuery(
+          'SELECT workoutInstanceId FROM workout_instances WHERE blockInstanceId = ? AND slotIndex = ? ORDER BY week ASC, workoutInstanceId ASC LIMIT 1',
+          [blockInstanceId, slotIndex],
+        );
+        if (peer.isNotEmpty) {
+          peerId = (peer.first['workoutInstanceId'] as num).toInt();
+        }
+      }
+
+      if (peerId != null && peerId != workoutInstanceId) {
+        final peerLifts = await txn.rawQuery('''
+          SELECT liftId, $nameCol AS name, sets, repsPerSet, scoreMultiplier,
+                 COALESCE(isDumbbellLift,0) AS isDumbbellLift,
+                 COALESCE(isBodyweight,0) AS isBodyweight,
+                 COALESCE(position,0) AS position
+          FROM lift_instances
+          WHERE workoutInstanceId = ? AND COALESCE(archived,0) = 0
+          ORDER BY COALESCE(position,0) ASC, liftInstanceId ASC
+        ''', [peerId]);
+        for (final pl in peerLifts) {
+          final ins = {
+            'workoutInstanceId': workoutInstanceId,
+            'liftId': pl['liftId'],
+            nameCol: pl['name'],
+            'sets': pl['sets'],
+            'repsPerSet': pl['repsPerSet'],
+            'scoreMultiplier': pl['scoreMultiplier'],
+            'isDumbbellLift': pl['isDumbbellLift'],
+            'isBodyweight': pl['isBodyweight'],
+            'position': pl['position'],
+            'archived': 0,
+          };
+          final newLid = await txn.insert('lift_instances', ins);
+          final sets = (pl['sets'] as num?)?.toInt() ?? 0;
+          await _resizeEntriesForLiftInstanceTx(txn, newLid, sets);
+        }
+        return;
+      }
+
+      final customRow = await txn.rawQuery(
+        'SELECT customBlockId FROM block_instances WHERE blockInstanceId = ? LIMIT 1',
+        [blockInstanceId],
+      );
+      final int? customBlockId =
+          customRow.isNotEmpty ? customRow.first['customBlockId'] as int? : null;
+      if (customBlockId != null && slotIndex != null) {
+        final draftWorkout = await txn.rawQuery(
+          'SELECT id FROM workout_drafts WHERE blockId = ? ORDER BY COALESCE(dayIndex,0) ASC, id ASC LIMIT 1 OFFSET ?',
+          [customBlockId, slotIndex],
+        );
+        if (draftWorkout.isNotEmpty) {
+          final dwid = (draftWorkout.first['id'] as num).toInt();
+          final drafts = await txn.rawQuery('''
+            SELECT name, COALESCE(sets,0) AS sets, COALESCE(repsPerSet,0) AS repsPerSet,
+                   COALESCE(multiplier,0.0) AS scoreMultiplier,
+                   COALESCE(isDumbbellLift,0) AS isDumbbellLift,
+                   COALESCE(isBodyweight,0) AS isBodyweight
+            FROM lift_drafts
+            WHERE workoutId = ?
+            ORDER BY id ASC
+          ''', [dwid]);
+          int pos = 0;
+          for (final d in drafts) {
+            final String name = ((d['name'] as String?) ?? '').trim();
+            if (name.isEmpty) continue;
+
+            int liftId;
+            final found = await txn.rawQuery(
+              'SELECT liftId FROM lifts WHERE LOWER(liftName) = LOWER(?) LIMIT 1',
+              [name],
+            );
+            if (found.isNotEmpty) {
+              liftId = (found.first['liftId'] as num).toInt();
+            } else {
+              liftId = await txn.insert('lifts', {
+                'liftName': name,
+                'repScheme': '${d['sets']}x${d['repsPerSet']}',
+                'numSets': d['sets'],
+                'scoreMultiplier': (d['scoreMultiplier'] as num?)?.toDouble(),
+                'isDumbbellLift': d['isDumbbellLift'],
+                'scoreType': 'standard',
+                'youtubeUrl': null,
+                'description': null,
+                'referenceLiftId': null,
+                'percentOfReference': null,
+              }, conflictAlgorithm: ConflictAlgorithm.ignore);
+              if (liftId == 0) {
+                final r = await txn.rawQuery(
+                  'SELECT liftId FROM lifts WHERE LOWER(liftName) = LOWER(?) LIMIT 1',
+                  [name],
+                );
+                if (r.isNotEmpty) {
+                  liftId = (r.first['liftId'] as num).toInt();
+                }
+              }
+            }
+
+            final ins = {
+              'workoutInstanceId': workoutInstanceId,
+              'liftId': liftId,
+              nameCol: name,
+              'sets': d['sets'],
+              'repsPerSet': d['repsPerSet'],
+              'scoreMultiplier': d['scoreMultiplier'],
+              'isDumbbellLift': d['isDumbbellLift'],
+              'isBodyweight': d['isBodyweight'],
+              'position': pos++,
+              'archived': 0,
+            };
+            final newLid = await txn.insert('lift_instances', ins);
+            final sets = (d['sets'] as num?)?.toInt() ?? 0;
+            await _resizeEntriesForLiftInstanceTx(txn, newLid, sets);
+          }
+        }
+      }
+    });
+
+    lifts = await db.rawQuery('''
+      SELECT liftInstanceId, liftId, $liftNameCol AS name,
+             sets, repsPerSet, scoreMultiplier,
+             COALESCE(isDumbbellLift,0) AS isDumbbellLift,
+             COALESCE(isBodyweight,0) AS isBodyweight,
+             COALESCE(position,0) AS position
+      FROM lift_instances
+      WHERE workoutInstanceId = ? AND COALESCE(archived,0) = 0
+      ORDER BY COALESCE(position,0) ASC, liftInstanceId ASC
+    ''', [workoutInstanceId]);
+    return lifts;
+  }
+
+  // ──────────────────────────────────────────────
 // 🔍 FETCH PREVIOUS LIFT ENTRY FOR COMPARISON
 // ──────────────────────────────────────────────
   Future<List<Map<String, dynamic>>> getPreviousLiftEntry(

@@ -68,6 +68,7 @@ class WorkoutDraft {
 }
 
 class LiftDraft {
+  int? id; // liftInstanceId when editing existing custom workouts
   String name;
   int sets;
   int repsPerSet;
@@ -75,6 +76,7 @@ class LiftDraft {
   bool isBodyweight;
   bool isDumbbellLift;
   LiftDraft({
+    this.id,
     required this.name,
     required this.sets,
     required this.repsPerSet,

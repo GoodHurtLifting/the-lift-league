@@ -119,10 +119,10 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
 
     final int workoutId = (workoutInstance['workoutId'] as int?) ?? 0; // 0 for custom instances
 
-// Unified fetch: built-ins (workoutId!=null) use lift_workouts; customs use lift_drafts.
+// Unified fetch: built-ins (workoutId!=null) use lift_workouts; customs pull from lift_instances.
 // Shows edits immediately for custom blocks.
     final List<Map<String, Object?>> liftsFromDb =
-    await DBService.instance.getLiftsForWorkoutInstance(widget.workoutInstanceId);
+        await DBService().getLiftsForWorkoutInstance(widget.workoutInstanceId);
 
 
     final List<Liftinfo> orderedLifts = [];
