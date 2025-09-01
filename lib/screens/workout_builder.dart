@@ -52,21 +52,6 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     });
   }
 
-  Future<void> _ensureDraftParentRowExists() async {
-    // Only needed if the draft row might not exist yet
-    if (!widget.workout.isPersisted) {
-      // requires the upsert helper you added in db_service.dart
-      await DBService().upsertWorkoutDraftRowWithBlock(
-        id: widget.workout.id,
-        blockId: widget.customBlockId,
-        name: widget.workout.name,
-        dayIndex: widget.workout.dayIndex,
-      );
-      setState(() {
-        widget.workout.isPersisted = true;
-      });
-    }
-  }
 
   @override
   void initState() {
@@ -93,20 +78,31 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   }
 
   Future<void> _loadWorkoutFromDb() async {
-    if (!widget.workout.isPersisted) return;
-    final fetched = await DBService().fetchWorkoutDraft(widget.workout.id);
-    if (fetched != null && mounted) {
-      setState(() {
-        widget.workout
-          ..name = fetched.name
-          ..dayIndex = fetched.dayIndex
-          ..isPersisted = true;
-        widget.workout.lifts
-          ..clear()
-          ..addAll(fetched.lifts);
-      });
-      _nameController.text = fetched.name;
-    }
+    final inst =
+        await DBService().getWorkoutInstanceById(widget.workout.id);
+    if (inst == null || !mounted) return;
+    final lifts =
+        await DBService().getLiftsForWorkoutInstance(widget.workout.id);
+    setState(() {
+      widget.workout
+        ..name = (inst['workoutName'] as String? ?? widget.workout.name)
+        ..dayIndex = (inst['dayIndex'] as int? ?? widget.workout.dayIndex)
+        ..isPersisted = true;
+      widget.workout.lifts
+        ..clear()
+        ..addAll(lifts.map((m) => LiftDraft(
+              id: (m['liftInstanceId'] as num?)?.toInt(),
+              name: (m['name'] as String?) ?? '',
+              sets: (m['sets'] as num?)?.toInt() ?? 0,
+              repsPerSet: (m['repsPerSet'] as num?)?.toInt() ?? 0,
+              multiplier:
+                  ((m['scoreMultiplier'] as num?) ?? 0).toDouble(),
+              isBodyweight: (m['isBodyweight'] as num?)?.toInt() == 1,
+              isDumbbellLift:
+                  (m['isDumbbellLift'] as num?)?.toInt() == 1,
+            )));
+    });
+    _nameController.text = widget.workout.name;
   }
 
   void _showAddLiftSheet() {
@@ -257,33 +253,30 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         print(
                             '[AddLift] BEFORE add → ${newLift.name}: ${newLift.sets}x${newLift.repsPerSet} (BW=$isBodyweight, DB=$isDumbbellLift)');
 
-                        // Build a workout object with the new lift but don't
-                        // mutate state yet. If the DB update succeeds we'll
-                        // add it to the in-memory list inside setState.
-                        final w = widget.workout;
-                        final updatedWorkout = WorkoutDraft(
-                          id: w.id,
-                          dayIndex: w.dayIndex,
-                          name: w.name,
-                          lifts: [...w.lifts, newLift],
-                          isPersisted: w.isPersisted,
-                        );
-
                         final sheetNav = Navigator.of(ctx);
                         FocusScope.of(ctx).unfocus();
 
                         setLocalState(() => _isSaving = true);
                         try {
-                          await _ensureDraftParentRowExists();
-                          await DBService().updateWorkoutDraft(updatedWorkout);
-                          if (!mounted) return;
-                          setState(() {
-                            widget.workout.lifts.add(newLift);
-                            widget.workout.isPersisted = true;
-                          });
+                          await DBService().addLiftAcrossSlot(
+                            workoutInstanceId: widget.workout.id,
+                            lift: newLift,
+                            insertAt: widget.workout.lifts.length,
+                          );
+                          await _loadWorkoutFromDb();
+                          final count =
+                              await DBService().peerCountForWorkout(widget.workout.id);
                           _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           sheetNav.pop();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Applied to all $count workouts in this block'),
+                              ),
+                            );
+                          }
                         } catch (e) {
                           if (!mounted) return;
                           setLocalState(() => _isSaving = false);
@@ -439,45 +432,36 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           isBodyweight: isBodyweight,
                         );
 
-                        // Prepare updated workout with the edited lift but do
-                        // not update state yet. We'll apply the change only if
-                        // the DB update succeeds.
-                        final w = widget.workout;
-                        final updatedLift = LiftDraft(
-                          name: name,
-                          sets: sets,
-                          repsPerSet: reps,
-                          multiplier: multiplier,
-                          isBodyweight: isBodyweight,
-                          isDumbbellLift: isDumbbellLift,
-                        );
-                        final updatedWorkout = WorkoutDraft(
-                          id: w.id,
-                          dayIndex: w.dayIndex,
-                          name: w.name,
-                          lifts: [
-                            ...w.lifts.sublist(0, index),
-                            updatedLift,
-                            ...w.lifts.sublist(index + 1),
-                          ],
-                          isPersisted: w.isPersisted,
-                        );
-
+                        final liftId = widget.workout.lifts[index].id!;
                         final sheetNav = Navigator.of(ctx);
                         FocusScope.of(ctx).unfocus();
 
                         setLocalState(() => _isSaving = true);
                         try {
-                          await _ensureDraftParentRowExists();
-                          await DBService().updateWorkoutDraft(updatedWorkout);
-                          if (!mounted) return;
-                          setState(() {
-                            widget.workout.lifts[index] = updatedLift;
-                            widget.workout.isPersisted = true;
-                          });
+                          await DBService().updateLiftAcrossSlot(
+                            workoutInstanceId: widget.workout.id,
+                            liftInstanceId: liftId,
+                            name: name,
+                            sets: sets,
+                            repsPerSet: reps,
+                            scoreMultiplier: multiplier,
+                            isBodyweight: isBodyweight,
+                            isDumbbellLift: isDumbbellLift,
+                          );
+                          await _loadWorkoutFromDb();
+                          final count =
+                              await DBService().peerCountForWorkout(widget.workout.id);
                           _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
                           sheetNav.pop();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Applied to all $count workouts in this block'),
+                              ),
+                            );
+                          }
                         } catch (e) {
                           if (!mounted) return;
                           setLocalState(() => _isSaving = false);
@@ -498,29 +482,28 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       onPressed: _isSaving
                           ? null
                           : () async {
-                        final w = widget.workout;
-                        final updatedWorkout = WorkoutDraft(
-                          id: w.id,
-                          dayIndex: w.dayIndex,
-                          name: w.name,
-                          lifts: [
-                            ...w.lifts.sublist(0, index),
-                            ...w.lifts.sublist(index + 1),
-                          ],
-                          isPersisted: w.isPersisted,
-                        );
+                        final liftId = widget.workout.lifts[index].id!;
 
                         setLocalState(() => _isSaving = true);
                         try {
-                          await _ensureDraftParentRowExists();
-                          await DBService().updateWorkoutDraft(updatedWorkout);
-                          if (!mounted) return;
-                          setState(() {
-                            widget.workout.lifts.removeAt(index);
-                          });
+                          await DBService().removeLiftAcrossSlot(
+                            workoutInstanceId: widget.workout.id,
+                            liftInstanceId: liftId,
+                          );
+                          await _loadWorkoutFromDb();
+                          final count =
+                              await DBService().peerCountForWorkout(widget.workout.id);
                           _applyEditsSoon();
                           setLocalState(() => _isSaving = false);
-                          if (ctx.mounted) Navigator.of(ctx).pop(); // <- use ctx, not context
+                          if (ctx.mounted) Navigator.of(ctx).pop();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Applied to all $count workouts in this block'),
+                              ),
+                            );
+                          }
                         } catch (e) {
                           if (!mounted) return;
                           setLocalState(() => _isSaving = false);
@@ -556,8 +539,10 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             onChanged: (v) async {
               widget.workout.name = v;
               try {
-                await _ensureDraftParentRowExists();
-                await DBService().updateWorkoutDraft(widget.workout);
+                await DBService().updateWorkoutNameAcrossSlot(
+                  widget.workout.id,
+                  v,
+                );
                 _applyEditsSoon();
               } catch (e) {
                 if (!mounted) return;
@@ -626,8 +611,10 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         if (widget.workout.name != _nameController.text) {
                           widget.workout.name = _nameController.text;
                           try {
-                            await _ensureDraftParentRowExists();
-                            await DBService().updateWorkoutDraft(widget.workout);
+                            await DBService().updateWorkoutNameAcrossSlot(
+                              widget.workout.id,
+                              widget.workout.name,
+                            );
                           } catch (_) {}
                         }
                         _applyEditsSoon();
