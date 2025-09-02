@@ -240,6 +240,7 @@ class DBService {
         multiplier REAL,
         isBodyweight INTEGER,
         isDumbbellLift INTEGER,
+        position INTEGER DEFAULT 0,
         FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE,
         FOREIGN KEY (liftId) REFERENCES lifts(liftId) ON DELETE CASCADE
       )
