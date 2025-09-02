@@ -31,7 +31,7 @@ class DBService {
   // ──────────────────────────────────────────────────────────
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 22;   // bump any time the schema changes
+  static const _dbVersion = 20;   // bump any time the schema changes
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
     final rows = await db.rawQuery('PRAGMA table_info($table);');
@@ -60,124 +60,88 @@ class DBService {
         await db.execute('PRAGMA foreign_keys = ON;');
       },
       onUpgrade: (db, oldV, newV) async {
+        // Always keep FKs on
+        await db.execute('PRAGMA foreign_keys = ON;');
+
         if (oldV < 16) {
-          // add scheduledDate so we can credit make-up workouts
-          await db.execute(
-              "ALTER TABLE workout_instances ADD COLUMN scheduledDate TEXT;"
-          );
-          // helpful indexes
-          await db.execute(
-              "CREATE INDEX IF NOT EXISTS idx_wi_user_block "
-                  "ON workout_instances (userId, blockInstanceId);"
-          );
-          await db.execute(
-              "CREATE INDEX IF NOT EXISTS idx_wi_sched "
-                  "ON workout_instances (scheduledDate);"
-          );
+          await db.execute("ALTER TABLE workout_instances ADD COLUMN scheduledDate TEXT;");
+          await db.execute("CREATE INDEX IF NOT EXISTS idx_wi_user_block ON workout_instances (userId, blockInstanceId);");
+          await db.execute("CREATE INDEX IF NOT EXISTS idx_wi_sched ON workout_instances (scheduledDate);");
         }
 
         if (oldV < 17) {
-          await db.execute(
-              "ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;"
-          );
-
-          // add custom lift fields (best-effort, ignore if exist)
+          await db.execute("ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;");
           try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;"); } catch (_) {}
           try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;"); } catch (_) {}
           try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;"); } catch (_) {}
           try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
-          try { await db.execute("ALTER TABLE lift_drafts   ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
         }
 
         if (oldV < 18) {
-          await db.execute(
-              "ALTER TABLE block_instances ADD COLUMN customBlockId INTEGER;"
-          );
-
-          // backfill customBlockId by name
+          await db.execute("ALTER TABLE block_instances ADD COLUMN customBlockId INTEGER;");
+          // best-effort backfill by name
           final instances = await db.query('block_instances');
           for (final inst in instances) {
             final name = inst['blockName']?.toString();
             if (name == null) continue;
-            final custom = await db.query(
-              'custom_blocks',
-              where: 'name = ?',
-              whereArgs: [name],
-              limit: 1,
-            );
+            final custom = await db.query('custom_blocks', where: 'name = ?', whereArgs: [name], limit: 1);
             if (custom.isNotEmpty) {
-              await db.update(
-                'block_instances',
-                {'customBlockId': custom.first['id']},
-                where: 'blockInstanceId = ?',
-                whereArgs: [inst['blockInstanceId']],
-              );
+              await db.update('block_instances', {'customBlockId': custom.first['id']},
+                  where: 'blockInstanceId = ?', whereArgs: [inst['blockInstanceId']]);
             }
           }
         }
 
-        // ⬇️ This must NOT be nested under the <18 block
+        // === MERGED (former 19/20/22) ===
         if (oldV < 19) {
-          // Normalize completed flag so deletes catch stale future instances
-          await db.execute(
-              "UPDATE workout_instances SET completed = 0 WHERE completed IS NULL;"
-          );
-          await db.execute(
-              "CREATE INDEX IF NOT EXISTS idx_wi_block_completed "
-                  "ON workout_instances (blockInstanceId, completed);"
-          );
-        }
-        if (oldV < 20) {
-          // Recreate workouts_blocks with correct FK to blocks(blockId).
-          await db.execute('PRAGMA foreign_keys = OFF;');
+          // Normalize completed and index
+          await db.execute("UPDATE workout_instances SET completed = 0 WHERE completed IS NULL;");
+          await db.execute("CREATE INDEX IF NOT EXISTS idx_wi_block_completed ON workout_instances (blockInstanceId, completed);");
 
+          // Ensure workouts_blocks exists with correct schema (no rebuild)
           await db.execute('''
-          CREATE TABLE workouts_blocks_new (
-            workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
-            blockId INTEGER NOT NULL,
-            workoutId INTEGER NOT NULL,
-            FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
-            FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
-          );
-        ''');
+      CREATE TABLE IF NOT EXISTS workouts_blocks (
+        workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
+        blockId INTEGER NOT NULL,
+        workoutId INTEGER NOT NULL,
+        FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
+        FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
+      );
+    ''');
+          await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_wb_block_workout ON workouts_blocks(blockId, workoutId);');
 
-          // Copy data over
-          await db.execute('''
-          INSERT OR IGNORE INTO workouts_blocks_new (workoutBlockId, blockId, workoutId)
-          SELECT wb.workoutBlockId, wb.blockId, wb.workoutId
-          FROM workouts_blocks wb
-          JOIN blocks b   ON b.blockId   = wb.blockId
-          JOIN workouts w ON w.workoutId = wb.workoutId;
-        ''');
-
-          await db.execute('DROP TABLE workouts_blocks;');
-          await db.execute('ALTER TABLE workouts_blocks_new RENAME TO workouts_blocks;');
-
-        // recreate the unique index after rename
-        await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_wb_block_workout ON workouts_blocks(blockId, workoutId);');
-
-        await db.execute('PRAGMA foreign_keys = ON;');
-        }
-
-        if (oldV < 22) {
+          // slotIndex on workout_instances
           try {
-            if (!await _hasColumn(db, 'workout_instances', 'slotIndex')) {
-              await db.execute(
-                  'ALTER TABLE workout_instances ADD COLUMN slotIndex INTEGER;');
+            final hasSlot = await _hasColumn(db, 'workout_instances', 'slotIndex');
+            if (!hasSlot) {
+              await db.execute('ALTER TABLE workout_instances ADD COLUMN slotIndex INTEGER;');
             }
           } catch (_) {}
 
+          // lift_instances: position + archived (defensive)
           try {
             if (!await _hasColumn(db, 'lift_instances', 'position')) {
-              await db.execute(
-                  'ALTER TABLE lift_instances ADD COLUMN position INTEGER DEFAULT 0;');
+              await db.execute('ALTER TABLE lift_instances ADD COLUMN position INTEGER DEFAULT 0;');
+            }
+          } catch (_) {}
+          try {
+            if (!await _hasColumn(db, 'lift_instances', 'archived')) {
+              await db.execute('ALTER TABLE lift_instances ADD COLUMN archived INTEGER DEFAULT 0;');
             }
           } catch (_) {}
 
+          // Reordering support: position on built-ins and customs
           try {
-            if (!await _hasColumn(db, 'lift_instances', 'archived')) {
-              await db.execute(
-                  'ALTER TABLE lift_instances ADD COLUMN archived INTEGER DEFAULT 0;');
+            if (!await _hasColumn(db, 'lift_workouts', 'position')) {
+              await db.execute('ALTER TABLE lift_workouts ADD COLUMN position INTEGER DEFAULT 0;');
+              await db.execute('CREATE INDEX IF NOT EXISTS idx_lw_workout_pos ON lift_workouts(workoutId, position);');
+            }
+          } catch (_) {}
+          try {
+            if (!await _hasColumn(db, 'lift_drafts', 'position')) {
+              await db.execute('ALTER TABLE lift_drafts ADD COLUMN position INTEGER DEFAULT 0;');
+              await db.execute('CREATE INDEX IF NOT EXISTS idx_ld_workout_pos ON lift_drafts(workoutId, position);');
             }
           } catch (_) {}
         }
