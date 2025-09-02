@@ -129,28 +129,29 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
     for (final lift in liftsFromDb) {
       final int sets = (lift['sets'] as int?) ?? 3;
       final int? repsPerSet = lift['repsPerSet'] as int?;
-      final repScheme = repsPerSet != null
+      final String repScheme = repsPerSet != null
           ? '$sets sets x $repsPerSet reps'
-          : (lift['repScheme'] ?? '');
+          : (lift['repScheme'] as String? ?? ''); // rare legacy fallback
 
       orderedLifts.add(
         Liftinfo(
-          liftId: lift['liftId'] as int,
+          liftId: (lift['liftId'] as num?)?.toInt() ?? 0,
           workoutInstanceId: widget.workoutInstanceId,
-          // ⬇️ built-ins return "name" aliased; legacy paths returned "liftName"
+          // built-ins return "name"; legacy paths returned "liftName"
           liftName: (lift['liftName'] as String?) ?? (lift['name'] as String?) ?? 'Unknown',
           repScheme: repScheme,
           numSets: sets,
-          scoreMultiplier: ((lift['multiplier'] as num?) ?? 1.0).toDouble(),
-          isDumbbellLift: (lift['isDumbbellLift'] ?? 0) == 1,
+          scoreMultiplier: ((lift['scoreMultiplier'] as num?) ?? 1.0).toDouble(),
+          isDumbbellLift: ((lift['isDumbbellLift'] as num?) ?? 0).toInt() == 1,
           scoreType: (lift['scoreType'] as String?) ?? 'multiplier',
-          youtubeUrl: lift['youtubeUrl'],
-          description: (lift['description'] as String?) ?? '',
-          referenceLiftId: lift['referenceLiftId'],
+          youtubeUrl: lift['youtubeUrl'] as String? ?? '',
+          description: lift['description'] as String? ?? '',
+          referenceLiftId: (lift['referenceLiftId'] as num?)?.toInt(),
           percentOfReference: (lift['percentOfReference'] as num?)?.toDouble(),
         ),
       );
     }
+
 
 
     final blockDisplayName = (blockInstance['blockName'] as String?) ?? 'Block Name';

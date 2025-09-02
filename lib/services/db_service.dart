@@ -802,9 +802,11 @@ class DBService {
   // 🔍 FETCH LIFTS FOR A WORKOUT INSTANCE
   // ──────────────────────────────────────────────
   Future<List<Map<String, Object?>>> getLiftsForWorkoutInstance(
-      int workoutInstanceId) async {
+      int workoutInstanceId,
+      ) async {
     final db = await database;
 
+    // Built-in workouts (have workoutId) → use lift_workouts → lifts (+ meta columns)
     final meta = await db.query(
       'workout_instances',
       columns: ['workoutId'],
@@ -817,33 +819,54 @@ class DBService {
 
     if (workoutId != null) {
       return await db.rawQuery('''
-        SELECT 0 AS liftInstanceId, lw.liftId, l.liftName AS name,
-               COALESCE(lw.numSets,3) AS sets,
-               COALESCE(lw.repsPerSet,0) AS repsPerSet,
-               COALESCE(lw.multiplier,0.0) AS scoreMultiplier,
-               COALESCE(lw.isDumbbellLift,0) AS isDumbbellLift,
-               COALESCE(lw.isBodyweight,0) AS isBodyweight,
-               COALESCE(lw.position, lw.liftWorkoutId) AS position
-        FROM lift_workouts lw
-        JOIN lifts l ON l.liftId = lw.liftId
-        WHERE lw.workoutId = ?
-        ORDER BY COALESCE(lw.position, lw.liftWorkoutId) ASC, lw.liftWorkoutId ASC
-      ''', [workoutId]);
+      SELECT
+        0 AS liftInstanceId,
+        lw.liftId,
+        l.liftName AS name,
+        COALESCE(lw.numSets,3)      AS sets,
+        COALESCE(lw.repsPerSet,0)   AS repsPerSet,
+        COALESCE(lw.multiplier,0.0) AS scoreMultiplier,
+        COALESCE(lw.isDumbbellLift,0) AS isDumbbellLift,
+        COALESCE(lw.isBodyweight,0)   AS isBodyweight,
+        COALESCE(lw.position, lw.liftWorkoutId) AS position,
+        l.scoreType           AS scoreType,
+        l.youtubeUrl          AS youtubeUrl,
+        l.description         AS description,
+        l.referenceLiftId     AS referenceLiftId,
+        l.percentOfReference  AS percentOfReference
+      FROM lift_workouts lw
+      JOIN lifts l ON l.liftId = lw.liftId
+      WHERE lw.workoutId = ?
+      ORDER BY COALESCE(lw.position, lw.liftWorkoutId) ASC, lw.liftWorkoutId ASC
+    ''', [workoutId]);
     }
 
+    // Custom workouts → ensure instances exist, then read lift_instances (+ meta columns via LEFT JOIN lifts)
     await ensureCustomLiftInstancesSeeded(workoutInstanceId);
     final liftNameCol = await _liftNameColTx(db);
     return await db.rawQuery('''
-      SELECT liftInstanceId, liftId, $liftNameCol AS name,
-             sets, repsPerSet, scoreMultiplier,
-             COALESCE(isDumbbellLift,0) AS isDumbbellLift,
-             COALESCE(isBodyweight,0) AS isBodyweight,
-             COALESCE(position,0) AS position
-      FROM lift_instances
-      WHERE workoutInstanceId = ? AND COALESCE(archived,0) = 0
-      ORDER BY COALESCE(position,0) ASC, liftInstanceId ASC
-    ''', [workoutInstanceId]);
+    SELECT
+      li.liftInstanceId,
+      li.liftId,
+      $liftNameCol AS name,
+      li.sets,
+      li.repsPerSet,
+      li.scoreMultiplier,
+      COALESCE(li.isDumbbellLift,0) AS isDumbbellLift,
+      COALESCE(li.isBodyweight,0)   AS isBodyweight,
+      COALESCE(li.position,0)       AS position,
+      l.scoreType           AS scoreType,
+      l.youtubeUrl          AS youtubeUrl,
+      l.description         AS description,
+      l.referenceLiftId     AS referenceLiftId,
+      l.percentOfReference  AS percentOfReference
+    FROM lift_instances li
+    LEFT JOIN lifts l ON l.liftId = li.liftId
+    WHERE li.workoutInstanceId = ? AND COALESCE(li.archived,0) = 0
+    ORDER BY COALESCE(li.position,0) ASC, li.liftInstanceId ASC
+  ''', [workoutInstanceId]);
   }
+
 
 
   // ──────────────────────────────────────────────
