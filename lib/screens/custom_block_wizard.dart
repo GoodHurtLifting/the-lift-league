@@ -71,6 +71,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
             multiplier: l.multiplier,
             isBodyweight: l.isBodyweight,
             isDumbbellLift: l.isDumbbellLift,
+            position: l.position,
           ))
               .toList(),
           isPersisted: true,
@@ -354,14 +355,15 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         dayIndex: i,
         name: template.name,
         lifts: [
-          for (final l in template.lifts)
+          for (var j = 0; j < template.lifts.length; j++)
             LiftDraft(
-              name: l.name,
-              sets: l.sets,
-              repsPerSet: l.repsPerSet,
-              multiplier: l.multiplier,
-              isBodyweight: l.isBodyweight,
-              isDumbbellLift: l.isDumbbellLift,
+              name: template.lifts[j].name,
+              sets: template.lifts[j].sets,
+              repsPerSet: template.lifts[j].repsPerSet,
+              multiplier: template.lifts[j].multiplier,
+              isBodyweight: template.lifts[j].isBodyweight,
+              isDumbbellLift: template.lifts[j].isDumbbellLift,
+              position: j,
             ),
         ],
         isPersisted: false,

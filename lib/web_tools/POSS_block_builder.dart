@@ -81,6 +81,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
                       multiplier: l.multiplier,
                       isBodyweight: l.isBodyweight,
                       isDumbbellLift: l.isDumbbellLift,
+                      position: l.position,
                     ),
                   )
                   .toList(),
@@ -266,14 +267,15 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
           dayIndex: w.dayIndex,
           name: w.name,
           lifts: [
-            for (final l in w.lifts)
+            for (var j = 0; j < w.lifts.length; j++)
               LiftDraft(
-                name: l.name,
-                sets: l.sets,
-                repsPerSet: l.repsPerSet,
-                multiplier: l.multiplier,
-                isBodyweight: l.isBodyweight,
-                isDumbbellLift: l.isDumbbellLift,
+                name: w.lifts[j].name,
+                sets: w.lifts[j].sets,
+                repsPerSet: w.lifts[j].repsPerSet,
+                multiplier: w.lifts[j].multiplier,
+                isBodyweight: w.lifts[j].isBodyweight,
+                isDumbbellLift: w.lifts[j].isDumbbellLift,
+                position: j,
               ),
           ],
           isPersisted: false,

@@ -43,6 +43,7 @@ class CustomBlock {
               multiplier: (l['multiplier'] as num?)?.toDouble() ?? 1.0,
               isBodyweight: l['isBodyweight'] ?? false,
               isDumbbellLift: l['isDumbbellLift'] ?? false,
+              position: l['position'] ?? 0,
             );
           }).toList(),
           isPersisted: true,
@@ -75,6 +76,7 @@ class LiftDraft {
   double multiplier;
   bool isBodyweight;
   bool isDumbbellLift;
+  int position;
   LiftDraft({
     this.id,
     required this.name,
@@ -83,5 +85,6 @@ class LiftDraft {
     required this.multiplier,
     required this.isBodyweight,
     this.isDumbbellLift = false,
+    this.position = 0,
   });
 }
