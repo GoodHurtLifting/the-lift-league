@@ -100,6 +100,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
               isBodyweight: (m['isBodyweight'] as num?)?.toInt() == 1,
               isDumbbellLift:
                   (m['isDumbbellLift'] as num?)?.toInt() == 1,
+              position: (m['position'] as num?)?.toInt() ?? 0,
             )));
     });
     _nameController.text = widget.workout.name;
@@ -246,6 +247,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           multiplier: multiplier,
                           isBodyweight: isBodyweight,
                           isDumbbellLift: isDumbbellLift,
+                          position: widget.workout.lifts.length,
                         );
 
                         // Debug before add

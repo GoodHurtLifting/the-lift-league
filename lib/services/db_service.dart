@@ -370,9 +370,13 @@ class DBService {
         multiplier REAL,
         isBodyweight INTEGER,
         isDumbbellLift INTEGER,
+        position INTEGER DEFAULT 0,
         FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
       )
     ''');
+
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_ld_workout_pos ON lift_drafts(workoutId, position);');
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS health_weight_samples (
@@ -745,7 +749,7 @@ class DBService {
                      COALESCE(isBodyweight,0) AS isBodyweight
               FROM lift_drafts
               WHERE workoutId = ?
-              ORDER BY id ASC
+              ORDER BY position ASC, id ASC
             ''', [dwid]);
             int pos = 0;
             for (final d in drafts) {
@@ -1110,7 +1114,8 @@ class DBService {
         );
 
         // Recreate lifts for this workout_draft
-        for (final l in w.lifts) {
+        for (var j = 0; j < w.lifts.length; j++) {
+          final l = w.lifts[j];
           await txn.insert('lift_drafts', {
             'workoutId': wid,     // use actual draft PK we just inserted
             'name': l.name,
@@ -1119,7 +1124,7 @@ class DBService {
             'multiplier': l.multiplier,
             'isBodyweight': l.isBodyweight ? 1 : 0,
             'isDumbbellLift': l.isDumbbellLift ? 1 : 0,
-            // add 'position' here if your schema supports it
+            'position': l.position,
           });
         }
         i++;
@@ -1330,8 +1335,12 @@ class DBService {
         where: 'id = ?', whereArgs: [workoutId], limit: 1);
     if (workoutRows.isEmpty) return null;
     final w = workoutRows.first;
-    final liftRows =
-        await db.query('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
+    final liftRows = await db.query(
+      'lift_drafts',
+      where: 'workoutId = ?',
+      whereArgs: [workoutId],
+      orderBy: 'position ASC',
+    );
     final lifts = liftRows
         .map(
           (l) => LiftDraft(
@@ -1341,6 +1350,7 @@ class DBService {
             multiplier: (l['multiplier'] as num).toDouble(),
             isBodyweight: (l['isBodyweight'] as int) == 1,
             isDumbbellLift: (l['isDumbbellLift'] as int) == 1,
+            position: (l['position'] as int?) ?? 0,
           ),
         )
         .toList();
@@ -1385,7 +1395,8 @@ class DBService {
       await txn.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workout.id]);
       print('[updateWorkoutDraft] workoutId=${workout.id} lifts=${workout.lifts.length}');
 
-      for (final lift in workout.lifts) {
+      for (var i = 0; i < workout.lifts.length; i++) {
+        final lift = workout.lifts[i];
         await txn.insert('lift_drafts', {
           'workoutId': workout.id,
           'name': lift.name,
@@ -1394,6 +1405,7 @@ class DBService {
           'multiplier': lift.multiplier,
           'isBodyweight': lift.isBodyweight ? 1 : 0,
           'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+          'position': lift.position,
         });
       }
     });
@@ -1494,7 +1506,8 @@ class DBService {
       );
 
       await txn.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
-      for (final lift in lifts) {
+      for (var i = 0; i < lifts.length; i++) {
+        final lift = lifts[i];
         await txn.insert('lift_drafts', {
           'workoutId': workoutId,
           'name': lift.name,
@@ -1503,6 +1516,7 @@ class DBService {
           'multiplier': lift.multiplier,
           'isBodyweight': lift.isBodyweight ? 1 : 0,
           'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+          'position': lift.position,
         });
       }
     });
@@ -1644,7 +1658,7 @@ class DBService {
     final workoutIds = wRows.map((w) => w['id'] as int).toList();
     final placeholders = List.filled(workoutIds.length, '?').join(',');
     final lRows = await db.rawQuery(
-      'SELECT * FROM lift_drafts WHERE workoutId IN ($placeholders) ORDER BY id ASC',
+      'SELECT * FROM lift_drafts WHERE workoutId IN ($placeholders) ORDER BY position ASC, id ASC',
       workoutIds,
     );
 
@@ -1659,6 +1673,7 @@ class DBService {
           multiplier: (l['multiplier'] as num?)?.toDouble() ?? 0.0,
           isBodyweight: ((l['isBodyweight'] as int?) ?? 0) == 1,
           isDumbbellLift: ((l['isDumbbellLift'] as int?) ?? 0) == 1,
+          position: (l['position'] as int?) ?? 0,
         ),
       );
     }
@@ -1756,7 +1771,8 @@ class DBService {
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
 
-        for (final l in w.lifts) {
+        for (var j = 0; j < w.lifts.length; j++) {
+          final l = w.lifts[j];
           await txn.insert('lift_drafts', {
             'workoutId': wid,
             'name': l.name,
@@ -1765,7 +1781,7 @@ class DBService {
             'multiplier': l.multiplier,
             'isBodyweight': l.isBodyweight ? 1 : 0,
             'isDumbbellLift': l.isDumbbellLift ? 1 : 0,
-            // add 'position' if you have that column
+            'position': l.position,
           });
         }
       }
