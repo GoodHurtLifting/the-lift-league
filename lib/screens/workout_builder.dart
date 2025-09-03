@@ -357,12 +357,17 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           : () async {
                               final sets = int.tryParse(setsCtrl.text) ?? 3;
                               final reps = int.tryParse(repsCtrl.text) ?? 10;
-                              final repText = '${sets}x${reps}';
+                              final sets = int.tryParse(setsCtrl.text);
+                              final reps = int.tryParse(repsCtrl.text);
+                              final repText =
+                                  (sets != null && reps != null)
+                                      ? '${sets}x${reps}'
+                                      : null;
 
                               final newLift = LiftDraft(
                                 name: selected!['name'] as String,
-                                sets: sets,
-                                repsPerSet: reps,
+                                sets: sets ?? 0,
+                                repsPerSet: reps ?? 0,
                                 multiplier: 0,
                                 isBodyweight: isBodyweight,
                                 isDumbbellLift: isDumbbellLift,
@@ -379,7 +384,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                     : SCORE_TYPE_MULTIPLIER;
                                 await DBService.instance.addLiftToCustomWorkout(
                                   customWorkoutId: widget.workout.id,
-                                  liftCatalogId: selected!['catalogId'] as int,
+                                  liftCatalogId:
+                                      selected!['catalogId'] as int?,
                                   name: selected!['name'] as String,
                                   repSchemeText: repText,
                                   sets: sets,
