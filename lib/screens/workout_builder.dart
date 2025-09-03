@@ -39,12 +39,19 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   late TextEditingController _nameController;
 
   Timer? _applyDebounce;
+  List<Map<String, dynamic>> _liftMeta = [];
 
   void _applyEditsSoon() {
-    final instanceId = widget.activeBlockInstanceId;
-    if (instanceId == null) return;
     _applyDebounce?.cancel();
-    _applyDebounce = Timer(const Duration(milliseconds: 400), () {});
+    _applyDebounce = Timer(const Duration(milliseconds: 400), () {
+      DBService().syncBuilderEdits(
+        customBlockId: widget.customBlockId,
+        blockInstanceId: widget.activeBlockInstanceId,
+        dayIndex: widget.workout.dayIndex,
+        lifts: widget.workout.lifts,
+        meta: _liftMeta,
+      );
+    });
   }
 
 
@@ -73,11 +80,30 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   }
 
   Future<void> _loadWorkoutFromDb() async {
+    if (widget.activeBlockInstanceId == null) {
+      _nameController.text = widget.workout.name;
+      _liftMeta = widget.workout.lifts
+          .map((l) => {
+                'liftId': null,
+                'repScheme': '${l.sets}x${l.repsPerSet}',
+                'scoreType': '',
+                'youtubeUrl': '',
+                'referenceLiftId': null,
+                'percentOfReference': null,
+              })
+          .toList();
+      setState(() {});
+      return;
+    }
+
     final inst =
         await DBService().getWorkoutInstanceById(widget.workout.id);
-    if (inst == null || !mounted) return;
+    if (!mounted || inst == null) return;
+
     final lifts =
         await DBService().getLiftsForWorkoutInstance(widget.workout.id);
+    if (!mounted) return;
+
     setState(() {
       widget.workout
         ..name = (inst['workoutName'] as String? ?? widget.workout.name)
@@ -97,6 +123,19 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                   (m['isDumbbellLift'] as num?)?.toInt() == 1,
               position: (m['position'] as num?)?.toInt() ?? 0,
             )));
+      _liftMeta = lifts
+          .map((m) => {
+                'liftId': (m['liftId'] as num?)?.toInt(),
+                'repScheme': (m['repScheme'] as String?) ??
+                    '${m['sets'] ?? 0}x${m['repsPerSet'] ?? 0}',
+                'scoreType': m['scoreType']?.toString() ?? '',
+                'youtubeUrl': m['youtubeUrl']?.toString() ?? '',
+                'referenceLiftId':
+                    (m['referenceLiftId'] as num?)?.toInt(),
+                'percentOfReference':
+                    (m['percentOfReference'] as num?)?.toDouble(),
+              })
+          .toList();
     });
     _nameController.text = widget.workout.name;
   }

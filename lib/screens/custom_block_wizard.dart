@@ -186,7 +186,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     final file =
     File('${dir.path}/custom_block_${DateTime.now().millisecondsSinceEpoch}.jpg');
     await file.writeAsBytes(bytes);
-
+    if (!mounted) return;
     setState(() {
       _coverImageBytes = bytes;
       _coverImagePath = file.path;
