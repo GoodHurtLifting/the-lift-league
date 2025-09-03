@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lift_league/models/custom_block_models.dart';
-import 'package:lift_league/data/lift_data.dart';
-import 'package:lift_league/services/score_multiplier_service.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/widgets/confirmation_dialog.dart';
 
@@ -141,24 +139,135 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     _nameController.text = widget.workout.name;
   }
 
+  Future<Map<String, Object?>?> _pickFromCatalog(BuildContext context) async {
+    final groups = await DBService.instance.getLiftGroups();
+    String? group;
+    String search = '';
+    bool? bw;
+    bool? dbb;
+    List<Map<String, Object?>> results = [];
+
+    Future<void> load() async {
+      results = await DBService.instance.getLiftCatalog(
+        group: group,
+        queryText: search,
+        bodyweightCapable: bw,
+        dumbbellCapable: dbb,
+        limit: 100,
+      );
+    }
+
+    await load();
+    return await showModalBottomSheet<Map<String, Object?>>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return SafeArea(
+          child: StatefulBuilder(
+            builder: (ctx, setModalState) {
+              Future<void> refresh() async {
+                await load();
+                setModalState(() {});
+              }
+
+              return Padding(
+                padding: EdgeInsets.fromLTRB(
+                    16, 16, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButton<String?>(
+                      value: group,
+                      isExpanded: true,
+                      hint: const Text('Muscle Group'),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                            value: null, child: Text('All')),
+                        ...groups.map(
+                          (g) => DropdownMenuItem<String?>(
+                            value: g,
+                            child: Text(g),
+                          ),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        group = v;
+                        refresh();
+                      },
+                    ),
+                    TextField(
+                      decoration:
+                          const InputDecoration(labelText: 'Search'),
+                      onChanged: (v) {
+                        search = v;
+                        refresh();
+                      },
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Bodyweight-capable'),
+                            value: bw ?? false,
+                            onChanged: (v) {
+                              bw = v == true ? true : null;
+                              refresh();
+                            },
+                          ),
+                        ),
+                        Expanded(
+                          child: CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Dumbbell-capable'),
+                            value: dbb ?? false,
+                            onChanged: (v) {
+                              dbb = v == true ? true : null;
+                              refresh();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 300,
+                      child: ListView.builder(
+                        itemCount: results.length,
+                        itemBuilder: (ctx, i) {
+                          final r = results[i];
+                          return ListTile(
+                            title: Text(r['name']?.toString() ?? ''),
+                            subtitle: Text(r['primaryGroup']?.toString() ?? ''),
+                            onTap: () => Navigator.of(ctx).pop(r),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   void _showAddLiftSheet() {
-    final nameController = TextEditingController();
     final setsCtrl = TextEditingController(text: '');
     final repsCtrl = TextEditingController(text: '');
 
     bool isBodyweight = false;
     bool isDumbbellLift = false;
+    Map<String, Object?>? selected;
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        final liftNames = liftDataList
-            .map((e) => e['liftName'] as String)
-            .toSet()
-            .toList()
-          ..sort();
-
         bool _isSaving = false;
 
         return Padding(
@@ -174,30 +283,16 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Lift name
-                    Autocomplete<String>(
-                      optionsBuilder: (TextEditingValue text) {
-                        if (text.text.isEmpty) {
-                          return const Iterable<String>.empty();
+                    ListTile(
+                      title: Text(selected?['name']?.toString() ?? 'Select lift'),
+                      trailing: const Icon(Icons.search),
+                      onTap: () async {
+                        final res = await _pickFromCatalog(ctx);
+                        if (res != null) {
+                          setLocalState(() => selected = res);
                         }
-                        return liftNames.where(
-                          (n) =>
-                              n.toLowerCase().contains(text.text.toLowerCase()),
-                        );
                       },
-                      fieldViewBuilder: (context, controller, focus, onSubmit) {
-                        return TextField(
-                          controller: controller,
-                          focusNode: focus,
-                          decoration:
-                              const InputDecoration(labelText: 'Lift name'),
-                          onChanged: (v) => nameController.text = v,
-                        );
-                      },
-                      onSelected: (v) => nameController.text = v,
                     ),
-
-                    // Sets / Reps
                     Row(
                       children: [
                         Expanded(
@@ -219,8 +314,6 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         ),
                       ],
                     ),
-
-                    // Mutually exclusive checkboxes
                     Row(
                       children: [
                         Expanded(
@@ -254,81 +347,67 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: _isSaving
+                      onPressed: _isSaving || selected == null
                           ? null
                           : () async {
-                        final name = nameController.text.trim();
-                        if (name.isEmpty) return;
+                              final sets = int.tryParse(setsCtrl.text) ?? 3;
+                              final reps = int.tryParse(repsCtrl.text) ?? 10;
+                              final repText = '${sets}x${reps}';
 
-                        final sets = int.tryParse(setsCtrl.text) ?? 3;
-                        final reps = int.tryParse(repsCtrl.text) ?? 10;
+                              final newLift = LiftDraft(
+                                name: selected!['name'] as String,
+                                sets: sets,
+                                repsPerSet: reps,
+                                multiplier: 0,
+                                isBodyweight: isBodyweight,
+                                isDumbbellLift: isDumbbellLift,
+                                position: widget.workout.lifts.length,
+                              );
 
-                        // Get multiplier (should be PURE; if it mutates inputs, we'll catch below)
-                        final multiplier =
-                        ScoreMultiplierService().getMultiplier(
-                          sets: sets,
-                          repsPerSet: reps,
-                          isBodyweight: isBodyweight,
-                        );
+                              final sheetNav = Navigator.of(ctx);
+                              FocusScope.of(ctx).unfocus();
 
-                        // Add lift using exactly what the user chose
-                        final newLift = LiftDraft(
-                          name: name,
-                          sets: sets,
-                          repsPerSet: reps,
-                          multiplier: multiplier,
-                          isBodyweight: isBodyweight,
-                          isDumbbellLift: isDumbbellLift,
-                          position: widget.workout.lifts.length,
-                        );
-
-                        // Debug before add
-                        // ignore: avoid_print
-                        print(
-                            '[AddLift] BEFORE add → ${newLift.name}: ${newLift.sets}x${newLift.repsPerSet} (BW=$isBodyweight, DB=$isDumbbellLift)');
-
-                        final sheetNav = Navigator.of(ctx);
-                        FocusScope.of(ctx).unfocus();
-
-                        setLocalState(() => _isSaving = true);
-                        try {
-                          await DBService().addLiftAcrossSlot(
-                            workoutInstanceId: widget.workout.id,
-                            lift: newLift,
-                            insertAt: widget.workout.lifts.length,
-                          );
-                          await _loadWorkoutFromDb();
-                          final count =
-                              await DBService().peerCountForWorkout(widget.workout.id);
-
-                          _applyEditsSoon();
-                          setLocalState(() => _isSaving = false);
-                          sheetNav.pop();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Applied to all $count workouts in this block'),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (!mounted) return;
-                          setLocalState(() => _isSaving = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Failed to save lift')),
-                          );
-                        }
-                      },
+                              setLocalState(() => _isSaving = true);
+                              try {
+                                await DBService.instance.addLiftToCustomWorkout(
+                                  customWorkoutId: widget.workout.id,
+                                  liftCatalogId: selected!['catalogId'] as int,
+                                  name: selected!['name'] as String,
+                                  repSchemeText: repText,
+                                  sets: sets,
+                                  repsPerSet: reps,
+                                  isBodyweight: isBodyweight ? 1 : 0,
+                                  isDumbbell: isDumbbellLift ? 1 : 0,
+                                  scoreType:
+                                      isBodyweight ? 'bodyweight' : 'multiplier',
+                                );
+                                widget.workout.lifts.add(newLift);
+                                _liftMeta.add({
+                                  'liftId': selected!['catalogId'],
+                                  'repScheme': repText,
+                                  'scoreType':
+                                      isBodyweight ? 'bodyweight' : 'multiplier',
+                                });
+                                _applyEditsSoon();
+                                setLocalState(() => _isSaving = false);
+                                sheetNav.pop();
+                              } catch (e) {
+                                if (!mounted) return;
+                                setLocalState(() => _isSaving = false);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Failed to save lift')),
+                                );
+                              }
+                            },
                       child: _isSaving
                           ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text('Save'),
                     ),
                   ],
@@ -343,25 +422,21 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
   void _showEditLiftSheet(int index) {
     final lift = widget.workout.lifts[index];
-    final nameController = TextEditingController(text: lift.name);
     final setsCtrl = TextEditingController(text: lift.sets.toString());
     final repsCtrl = TextEditingController(text: lift.repsPerSet.toString());
 
     bool isBodyweight = lift.isBodyweight;
     bool isDumbbellLift = lift.isDumbbellLift;
+    Map<String, Object?> selected = {
+      'catalogId': _liftMeta[index]['liftId'],
+      'name': lift.name,
+    };
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        final liftNames = liftDataList
-            .map((e) => e['liftName'] as String)
-            .toSet()
-            .toList()
-          ..sort();
-
         bool _isSaving = false;
-
         return Padding(
           padding: EdgeInsets.fromLTRB(
             16,
@@ -375,27 +450,15 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Autocomplete<String>(
-                      optionsBuilder: (TextEditingValue text) {
-                        if (text.text.isEmpty) {
-                          return const Iterable<String>.empty();
+                    ListTile(
+                      title: Text(selected['name']?.toString() ?? 'Select lift'),
+                      trailing: const Icon(Icons.search),
+                      onTap: () async {
+                        final res = await _pickFromCatalog(ctx);
+                        if (res != null) {
+                          setLocalState(() => selected = res);
                         }
-                        return liftNames.where(
-                          (n) =>
-                              n.toLowerCase().contains(text.text.toLowerCase()),
-                        );
                       },
-                      fieldViewBuilder: (context, controller, focus, onSubmit) {
-                        controller.text = nameController.text;
-                        return TextField(
-                          controller: controller,
-                          focusNode: focus,
-                          decoration:
-                              const InputDecoration(labelText: 'Lift name'),
-                          onChanged: (v) => nameController.text = v,
-                        );
-                      },
-                      onSelected: (v) => nameController.text = v,
                     ),
                     Row(
                       children: [
@@ -456,125 +519,56 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       onPressed: _isSaving
                           ? null
                           : () async {
-                        final name = nameController.text.trim();
-                        if (name.isEmpty) return;
+                              final sets =
+                                  int.tryParse(setsCtrl.text) ?? lift.sets;
+                              final reps =
+                                  int.tryParse(repsCtrl.text) ?? lift.repsPerSet;
+                              final repText = '${sets}x${reps}';
 
-                        final sets = int.tryParse(setsCtrl.text) ?? lift.sets;
-                        final reps =
-                            int.tryParse(repsCtrl.text) ?? lift.repsPerSet;
+                              setLocalState(() => _isSaving = true);
 
-                        final multiplier =
-                        ScoreMultiplierService().getMultiplier(
-                          sets: sets,
-                          repsPerSet: reps,
-                          isBodyweight: isBodyweight,
-                        );
-
-                        if (widget.activeBlockInstanceId != null &&
-                            sets < lift.sets) {
-                          final ok = await showConfirmDialog(
-                            context,
-                            title: 'Reduce Sets?',
-                            message:
-                                'Deletes extra set data across all instances. This cannot be undone.',
-                          );
-                          if (!ok) return;
-                        }
-
-                        final liftId = widget.workout.lifts[index].id!;
-                        final sheetNav = Navigator.of(ctx);
-                        FocusScope.of(ctx).unfocus();
-
-                        setLocalState(() => _isSaving = true);
-                        try {
-                          await DBService().updateLiftAcrossSlot(
-                            workoutInstanceId: widget.workout.id,
-                            liftInstanceId: liftId,
-                            name: name,
-                            sets: sets,
-                            repsPerSet: reps,
-                            scoreMultiplier: multiplier,
-                            isBodyweight: isBodyweight,
-                            isDumbbellLift: isDumbbellLift,
-                          );
-                          await _loadWorkoutFromDb();
-
-                          final count =
-                              await DBService().peerCountForWorkout(widget.workout.id);
-
-
-
-                          _applyEditsSoon();
-                          setLocalState(() => _isSaving = false);
-                          sheetNav.pop();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Applied to all $count workouts in this block'),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (!mounted) return;
-                          setLocalState(() => _isSaving = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Failed to save lift')),
-                          );
-                        }
-                      },
+                              lift
+                                ..name = selected['name'] as String
+                                ..sets = sets
+                                ..repsPerSet = reps
+                                ..isBodyweight = isBodyweight
+                                ..isDumbbellLift = isDumbbellLift;
+                              _liftMeta[index] = {
+                                'liftId': selected['catalogId'],
+                                'repScheme': repText,
+                                'scoreType':
+                                    isBodyweight ? 'bodyweight' : 'multiplier',
+                              };
+                              _applyEditsSoon();
+                              setLocalState(() => _isSaving = false);
+                              Navigator.of(ctx).pop();
+                            },
                       child: _isSaving
                           ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Text('Save'),
                     ),
                     TextButton(
                       onPressed: _isSaving
                           ? null
                           : () async {
-                        final ok = await showConfirmDialog(
-                          context,
-                          title: 'Remove Lift?',
-                          message:
-                              'Deletes this lift from all workouts in this block and erases logged sets. This cannot be undone.',
-                        );
-                        if (!ok) return;
-                        final liftId = widget.workout.lifts[index].id!;
-
-                        setLocalState(() => _isSaving = true);
-                        try {
-                          await DBService().removeLiftAcrossSlot(
-                            workoutInstanceId: widget.workout.id,
-                            liftInstanceId: liftId,
-                          );
-                          await _loadWorkoutFromDb();
-                          final count =
-                              await DBService().peerCountForWorkout(widget.workout.id);
-                          _applyEditsSoon();
-                          setLocalState(() => _isSaving = false);
-                          if (ctx.mounted) Navigator.of(ctx).pop();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Applied to all $count workouts in this block'),
-                              ),
-                            );
-                          }
-
-                        } catch (e) {
-                          if (!mounted) return;
-                          setLocalState(() => _isSaving = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Failed to delete lift'),
-                            ),
-                          );
-                        }
-                      },
+                              final ok = await showConfirmDialog(
+                                context,
+                                title: 'Remove Lift?',
+                                message:
+                                    'Deletes this lift from all workouts in this block and erases logged sets. This cannot be undone.',
+                              );
+                              if (!ok) return;
+                              setLocalState(() => _isSaving = true);
+                              widget.workout.lifts.removeAt(index);
+                              _liftMeta.removeAt(index);
+                              _applyEditsSoon();
+                              setLocalState(() => _isSaving = false);
+                              if (ctx.mounted) Navigator.of(ctx).pop();
+                            },
                       child: const Text('Delete'),
                     ),
                   ],

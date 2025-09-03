@@ -19,6 +19,8 @@ class DBService {
 
   factory DBService() => _instance;
 
+  static DBService get instance => _instance;
+
   DBService._internal();
 
   static Database? _database;
@@ -677,6 +679,68 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       print("❌ Lift not found: Lift ID $liftId");
       return null;
     }
+  }
+
+  // ──────────────────────────────────────────────
+  // 🔍 SEARCH LIFT CATALOG
+  // ──────────────────────────────────────────────
+  Future<List<String>> getLiftGroups() async {
+    final db = await database;
+    final rows = await db.rawQuery(
+        'SELECT DISTINCT primaryGroup FROM lift_catalog ORDER BY primaryGroup ASC');
+    return rows.map((e) => e['primaryGroup'] as String).toList();
+  }
+
+  // ──────────────────────────────────────────────
+  // 🔍 FILTERED LIFT QUERY
+  // ──────────────────────────────────────────────
+  Future<List<Map<String, Object?>>> getLiftCatalog({
+    String? group,          // exact group name or null
+    String? queryText,      // name/alias contains
+    bool? bodyweightCapable,
+    bool? dumbbellCapable,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    final db = await database;
+    final where = <String>[];
+    final args = <Object?>[];
+    if (group != null && group.isNotEmpty) {
+      where.add('lc.primaryGroup = ?');
+      args.add(group);
+    }
+    if (bodyweightCapable != null) {
+      where.add('lc.isBodyweightCapable = ?');
+      args.add(bodyweightCapable ? 1 : 0);
+    }
+    if (dumbbellCapable != null) {
+      where.add('lc.isDumbbellCapable = ?');
+      args.add(dumbbellCapable ? 1 : 0);
+    }
+
+    String whereSql = where.isEmpty ? '' : 'WHERE ' + where.join(' AND ');
+
+    // name or alias search
+    String searchJoin = '';
+    if (queryText != null && queryText.trim().isNotEmpty) {
+      searchJoin = '''
+      LEFT JOIN lift_aliases la ON la.catalogId = lc.catalogId
+    ''';
+      final q = '%${queryText.trim()}%';
+      whereSql += (whereSql.isEmpty ? 'WHERE ' : ' AND ') +
+          '(lc.name LIKE ? OR la.alias LIKE ?)';
+      args..add(q)..add(q);
+    }
+
+    final rows = await db.rawQuery('''
+    SELECT DISTINCT lc.*
+    FROM lift_catalog lc
+    $searchJoin
+    $whereSql
+    ORDER BY lc.primaryGroup ASC, lc.name ASC
+    LIMIT $limit OFFSET $offset
+  ''', args);
+    return rows;
   }
 
   Future<void> resetDevDatabase() async {
@@ -2180,6 +2244,38 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       limit: 1,
     );
     return rows.isEmpty ? null : rows.first['blockInstanceId'] as int;
+  }
+
+  Future<int> addLiftToCustomWorkout({
+    required int customWorkoutId,
+    required int liftCatalogId,
+    required String name,
+    required String repSchemeText,
+    required int sets,
+    required int repsPerSet,
+    required int isBodyweight,
+    required int isDumbbell,
+    required String scoreType,
+  }) async {
+    final db = await database;
+    final posRows = await db.rawQuery(
+      'SELECT COALESCE(MAX(position), -1) + 1 AS pos FROM custom_lifts WHERE customWorkoutId = ?',
+      [customWorkoutId],
+    );
+    final position = (posRows.first['pos'] as num).toInt();
+    return await db.insert('custom_lifts', {
+      'customWorkoutId': customWorkoutId,
+      'liftCatalogId': liftCatalogId,
+      'name': name,
+      'repSchemeText': repSchemeText,
+      'sets': sets,
+      'repsPerSet': repsPerSet,
+      'isBodyweight': isBodyweight,
+      'isDumbbell': isDumbbell,
+      'scoreType': scoreType,
+      'scoreMultiplier': null,
+      'position': position,
+    });
   }
 
   Future<void> syncBuilderEdits({
