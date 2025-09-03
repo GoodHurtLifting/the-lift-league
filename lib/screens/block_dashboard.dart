@@ -106,8 +106,9 @@ class BlockDashboardState extends State<BlockDashboard> {
 
 
   Future<void> _loadWorkouts() async {
-    final db = DBService();
-    List<Map<String, dynamic>> workoutData = await db.getWorkoutInstancesByBlock(currentBlockInstanceId);
+    final db = DBService.instance;
+    List<Map<String, dynamic>> workoutData =
+        await db.getWorkoutInstancesByBlock(currentBlockInstanceId);
 
     // If no workouts exist yet, insert them first
     if (workoutData.isEmpty) {
@@ -116,9 +117,23 @@ class BlockDashboardState extends State<BlockDashboard> {
         isFirstLoad = true;
       });
 
-      await db.insertWorkoutInstancesForBlock(currentBlockInstanceId);
+      final isCustom =
+          await db.isCustomBlockInstance(currentBlockInstanceId);
+      if (isCustom) {
+        final block = await db.getBlockInstanceById(currentBlockInstanceId);
+        final customBlockId = block?['customBlockId'] as int?;
+        if (customBlockId != null) {
+          await db.buildCustomBlockInstances(
+            customBlockId: customBlockId,
+            blockInstanceId: currentBlockInstanceId,
+          );
+        }
+      } else {
+        await db.insertWorkoutInstancesForBlock(currentBlockInstanceId);
+      }
 
-      workoutData = await db.getWorkoutInstancesByBlock(currentBlockInstanceId);
+      workoutData =
+          await db.getWorkoutInstancesByBlock(currentBlockInstanceId);
 
       if (!mounted) return;
       setState(() {
@@ -204,8 +219,24 @@ class BlockDashboardState extends State<BlockDashboard> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    int newBlockInstanceId = await DBService().insertNewBlockInstance(blockName, user.uid);
-    await DBService().insertWorkoutInstancesForBlock(newBlockInstanceId);
+    int newBlockInstanceId =
+        await DBService.instance.insertNewBlockInstance(blockName, user.uid);
+    final isCustom =
+        await DBService.instance.isCustomBlockInstance(newBlockInstanceId);
+    if (isCustom) {
+      final block =
+          await DBService.instance.getBlockInstanceById(newBlockInstanceId);
+      final customBlockId = block?['customBlockId'] as int?;
+      if (customBlockId != null) {
+        await DBService.instance.buildCustomBlockInstances(
+          customBlockId: customBlockId,
+          blockInstanceId: newBlockInstanceId,
+        );
+      }
+    } else {
+      await DBService.instance.insertWorkoutInstancesForBlock(
+          newBlockInstanceId);
+    }
 
     setState(() {
       currentBlockInstanceId = newBlockInstanceId;
