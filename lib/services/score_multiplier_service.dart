@@ -3,8 +3,10 @@ import 'db_service.dart';
 class ScoreMultiplierService {
   static const double _calibrationConstant = 0.21;
 
-  /// Mid‑point assumption for progressive overload between
+  /// Mid‑point assumption for progressive overload (in lbs) between
   /// repeated instances of the same custom lift.
+  ///
+  /// Δ = 7.5 lb increase per occurrence.
   static const double deltaPerInstanceLbs = 7.5;
 
   double getMultiplier({
@@ -50,9 +52,11 @@ class ScoreMultiplierService {
       final liftCatalogId = tmpl.first['liftCatalogId'] as int?;
       if (sets <= 0 || repsPerSet <= 0) return;
 
-      // 1) Locate the first completed lift_instance for this template
+      // 1) Locate the first completed lift_instance for this template and
+      //    capture the heaviest set logged (max set weight).
       final first = await txn.rawQuery('''
-        SELECT li.liftInstanceId, li.liftId, MAX(le.weight) AS w0
+        SELECT li.liftInstanceId, li.liftId,
+               MAX(COALESCE(le.weight, 0)) AS w0
         FROM lift_instances li
         JOIN workout_instances wi ON wi.workoutInstanceId = li.workoutInstanceId
         LEFT JOIN lift_entries le ON le.liftInstanceId = li.liftInstanceId
