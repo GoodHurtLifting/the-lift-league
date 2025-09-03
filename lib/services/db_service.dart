@@ -32,7 +32,9 @@ class DBService {
   // ──────────────────────────────────────────────────────────
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
+
   static const _dbVersion = 23;   // bump any time the schema changes
+
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
     final rows = await db.rawQuery('PRAGMA table_info($table);');
@@ -242,6 +244,7 @@ CREATE TABLE IF NOT EXISTS custom_workout_instances (
           } catch (_) {}
         }
 
+
         if (oldV < 23) {
           await db.execute('''
 CREATE TABLE IF NOT EXISTS lift_catalog (
@@ -269,6 +272,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
           await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
           await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
         }
+
       },
     );
   }
@@ -513,6 +517,7 @@ CREATE TABLE IF NOT EXISTS custom_workout_instances (
     await db.execute('CREATE INDEX IF NOT EXISTS idx_cw_block_pos ON custom_workouts(customBlockId, position);');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_clifts_cw_pos ON custom_lifts(customWorkoutId, position);');
 
+
     await db.execute('''
 CREATE TABLE IF NOT EXISTS lift_catalog (
   catalogId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -539,6 +544,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 ''');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
+
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS health_weight_samples (
