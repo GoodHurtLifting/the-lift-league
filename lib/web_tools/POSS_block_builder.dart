@@ -337,7 +337,7 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
     // Save locally and build block dashboard just like the mobile app
     final db = DBService();
     final userId = FirebaseAuth.instance.currentUser!.uid;
-    await db.insertCustomBlock(block);
+    await db.upsertCustomBlock(block);
     final int blockInstanceId =
         await db.createBlockFromCustomBlockId(block.id, userId);
 
