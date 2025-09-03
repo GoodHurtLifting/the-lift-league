@@ -1561,8 +1561,9 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       {
         'id': block.id,
         'name': block.name,
-        'numWeeks': block.numWeeks,
-        'daysPerWeek': block.daysPerWeek,
+        // UI uses numWeeks/daysPerWeek; DB schema expects totalWeeks/workoutsPerWeek.
+        'totalWeeks': block.numWeeks,
+        'workoutsPerWeek': block.daysPerWeek,
         'isDraft': block.isDraft ? 1 : 0,
         'coverImagePath': block.coverImagePath,
         'scheduleType': block.scheduleType,
@@ -1949,8 +1950,9 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         {
           'id': blockId,
           'name': 'Untitled Block',
-          'numWeeks': 1,
-          'daysPerWeek': 1,
+          // Map UI defaults to DB column names.
+          'totalWeeks': 1,
+          'workoutsPerWeek': 1,
           'isDraft': 1,
           'coverImagePath': null,
         },
@@ -2157,8 +2159,11 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       return CustomBlockForEdit(
         id: b['id'] as int,
         name: (b['name'] as String?) ?? '',
-        numWeeks: (b['numWeeks'] as int?) ?? 4,
-        daysPerWeek: (b['daysPerWeek'] as int?) ?? 3,
+        // Support both legacy and current column names.
+        numWeeks:
+            (b['totalWeeks'] as int?) ?? (b['numWeeks'] as int?) ?? 4,
+        daysPerWeek: (b['workoutsPerWeek'] as int?) ??
+            (b['daysPerWeek'] as int?) ?? 3,
         isDraft: ((b['isDraft'] as int?) ?? 0) == 1,
         coverImagePath: b['coverImagePath'] as String?,
         scheduleType: b['scheduleType']?.toString() ?? 'standard',
@@ -2230,8 +2235,11 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     return CustomBlockForEdit(
       id: b['id'] as int,
       name: (b['name'] as String?) ?? '',
-      numWeeks: (b['numWeeks'] as int?) ?? 4,
-      daysPerWeek: (b['daysPerWeek'] as int?) ?? 3,
+      // Map DB columns back to UI field names with legacy support.
+      numWeeks:
+          (b['totalWeeks'] as int?) ?? (b['numWeeks'] as int?) ?? 4,
+      daysPerWeek: (b['workoutsPerWeek'] as int?) ??
+          (b['daysPerWeek'] as int?) ?? 3,
       isDraft: ((b['isDraft'] as int?) ?? 0) == 1,
       coverImagePath: b['coverImagePath'] as String?,
       scheduleType: b['scheduleType']?.toString() ?? 'standard',
@@ -3290,8 +3298,14 @@ Future<void> updateWorkoutNameAcrossSlot(
       limit: 1,
     );
     final bool isCustomBlock = customBlock.isNotEmpty;
-    final int? customDaysPerWeek = isCustomBlock ? (customBlock.first['daysPerWeek'] as int?) : null;
-    final int? customNumWeeks    = isCustomBlock ? (customBlock.first['numWeeks'] as int?)    : null;
+    final int? customDaysPerWeek = isCustomBlock
+        ? (customBlock.first['workoutsPerWeek'] as int? ??
+            customBlock.first['daysPerWeek'] as int?)
+        : null;
+    final int? customNumWeeks = isCustomBlock
+        ? (customBlock.first['totalWeeks'] as int? ??
+            customBlock.first['numWeeks'] as int?)
+        : null;
     final int? customTotalLength = (customDaysPerWeek != null && customNumWeeks != null)
         ? customDaysPerWeek * customNumWeeks
         : null;
