@@ -12,6 +12,7 @@ import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/screens/block_dashboard.dart';
 import 'package:lift_league/screens/workout_builder.dart';
+import 'package:lift_league/widgets/confirmation_dialog.dart';
 
 class CustomBlockWizard extends StatefulWidget {
   final CustomBlock? initialBlock;
@@ -312,6 +313,16 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                       return;
                     }
 
+                    if (widget.blockInstanceId != null) {
+                      final ok = await showConfirmDialog(
+                        context,
+                        title: 'Build Block?',
+                        message:
+                            'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
+                      );
+                      if (!ok) return;
+                    }
+
                     final nav = Navigator.of(context, rootNavigator: true);
                     final int? id = await _finish();
                     if (!mounted) return;
@@ -319,11 +330,14 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                     Navigator.of(ctx).pop(); // close full-screen editor
 
                     if (id != null) {
-                      nav.pushReplacement(MaterialPageRoute(
-                        builder: (_) => BlockDashboard(blockInstanceId: id),
-                      ));
+                      nav.pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => BlockDashboard(blockInstanceId: id),
+                        ),
+                        result: true,
+                      );
                     } else {
-                      nav.pop();
+                      nav.pop(false);
                     }
                   },
                   showDumbbellOption: true,
@@ -612,7 +626,26 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               items: List.generate(5, (i) => i + 2)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                   .toList(),
-              onChanged: (v) => setState(() => _uniqueCount = v),
+              onChanged: (v) async {
+                if (v == null) return;
+                if (widget.blockInstanceId != null) {
+                  final ok = await showConfirmDialog(
+                    context,
+                    title: 'Apply Shape Changes?',
+                    message:
+                        'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
+                  );
+                  if (!ok) return;
+                  await DBService().updateCustomBlockShape(
+                    customBlockId: widget.customBlockId,
+                    blockInstanceId: widget.blockInstanceId!,
+                    uniqueWorkoutCount: v,
+                    workoutsPerWeek: daysPerWeek!,
+                    totalWeeks: numWeeks!,
+                  );
+                }
+                setState(() => _uniqueCount = v);
+              },
             ),
             isActive: _currentStep >= 2,
           ),
@@ -624,7 +657,26 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               items: List.generate(5, (i) => i + 2)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                   .toList(),
-              onChanged: (v) => setState(() => daysPerWeek = v),
+              onChanged: (v) async {
+                if (v == null) return;
+                if (widget.blockInstanceId != null) {
+                  final ok = await showConfirmDialog(
+                    context,
+                    title: 'Apply Shape Changes?',
+                    message:
+                        'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
+                  );
+                  if (!ok) return;
+                  await DBService().updateCustomBlockShape(
+                    customBlockId: widget.customBlockId,
+                    blockInstanceId: widget.blockInstanceId!,
+                    uniqueWorkoutCount: _uniqueCount!,
+                    workoutsPerWeek: v,
+                    totalWeeks: numWeeks!,
+                  );
+                }
+                setState(() => daysPerWeek = v);
+              },
             ),
             isActive: _currentStep >= 3,
           ),
@@ -636,7 +688,26 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               items: List.generate(4, (i) => i + 3)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                   .toList(),
-              onChanged: (v) => setState(() => numWeeks = v),
+              onChanged: (v) async {
+                if (v == null) return;
+                if (widget.blockInstanceId != null) {
+                  final ok = await showConfirmDialog(
+                    context,
+                    title: 'Apply Shape Changes?',
+                    message:
+                        'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
+                  );
+                  if (!ok) return;
+                  await DBService().updateCustomBlockShape(
+                    customBlockId: widget.customBlockId,
+                    blockInstanceId: widget.blockInstanceId!,
+                    uniqueWorkoutCount: _uniqueCount!,
+                    workoutsPerWeek: daysPerWeek!,
+                    totalWeeks: v,
+                  );
+                }
+                setState(() => numWeeks = v);
+              },
             ),
             isActive: _currentStep >= 4,
           ),

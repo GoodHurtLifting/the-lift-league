@@ -5,6 +5,7 @@ import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/data/lift_data.dart';
 import 'package:lift_league/services/score_multiplier_service.dart';
 import 'package:lift_league/services/db_service.dart';
+import 'package:lift_league/widgets/confirmation_dialog.dart';
 
 class WorkoutBuilder extends StatefulWidget {
   final WorkoutDraft workout;
@@ -469,6 +470,17 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           isBodyweight: isBodyweight,
                         );
 
+                        if (widget.activeBlockInstanceId != null &&
+                            sets < lift.sets) {
+                          final ok = await showConfirmDialog(
+                            context,
+                            title: 'Reduce Sets?',
+                            message:
+                                'Deletes extra set data across all instances. This cannot be undone.',
+                          );
+                          if (!ok) return;
+                        }
+
                         final liftId = widget.workout.lifts[index].id!;
                         final sheetNav = Navigator.of(ctx);
                         FocusScope.of(ctx).unfocus();
@@ -523,6 +535,13 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       onPressed: _isSaving
                           ? null
                           : () async {
+                        final ok = await showConfirmDialog(
+                          context,
+                          title: 'Remove Lift?',
+                          message:
+                              'Deletes this lift from all workouts in this block and erases logged sets. This cannot be undone.',
+                        );
+                        if (!ok) return;
                         final liftId = widget.workout.lifts[index].id!;
 
                         setLocalState(() => _isSaving = true);
