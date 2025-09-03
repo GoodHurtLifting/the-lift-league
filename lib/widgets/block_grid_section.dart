@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/screens/block_dashboard.dart';
 
-import '../screens/custom_block_wizard.dart';
 
 class BlockGridSection extends StatelessWidget {
   final List<String> workoutImages;
@@ -15,7 +14,7 @@ class BlockGridSection extends StatelessWidget {
   final Function(String, int) onNewBlockInstanceCreated;
   final List<int>? customBlockIds;
   final void Function(int id)? onDeleteCustomBlock;
-  final void Function(int id)? onEditCustomBlock;
+  final Future<bool?> Function(int id)? onEditCustomBlock;
   final bool overlayNames;
 
   const BlockGridSection({
@@ -106,24 +105,8 @@ class BlockGridSection extends StatelessWidget {
               ),
             );
 
-            if (action == 'edit') {
-              // Load the custom block and open the wizard, passing the active instance if present.
-              final initial = await DBService().loadCustomBlockForEdit(
-                customBlockId: id,
-                blockInstanceId: blockInstanceId,
-              );
-              if (initial != null && context.mounted) {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CustomBlockWizard(
-                      initialBlock: initial,
-                      customBlockId: id,
-                      blockInstanceId: blockInstanceId, // ← may be null; when non-null, edits apply to the current run
-                    ),
-                  ),
-                );
-              }
+            if (action == 'edit' && onEditCustomBlock != null) {
+              await onEditCustomBlock!(id);
             } else if (action == 'delete' && onDeleteCustomBlock != null) {
               final confirm = await showDialog<bool>(
                 context: context,

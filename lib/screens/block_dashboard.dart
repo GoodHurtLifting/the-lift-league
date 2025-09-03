@@ -26,6 +26,7 @@ class BlockDashboardState extends State<BlockDashboard> {
   double _blockScore = 0.0; // ✅ sum of best scores
   String scheduleType = 'standard';
   bool isFirstLoad = false;
+  bool _depsReady = false;
 
   @override
   void initState() {
@@ -38,6 +39,22 @@ class BlockDashboardState extends State<BlockDashboard> {
       await _loadBlockRuns();
       await _loadWorkouts();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_depsReady) {
+      _reloadBlock();
+    } else {
+      _depsReady = true;
+    }
+  }
+
+  Future<void> _reloadBlock() async {
+    await _loadBlockName();
+    await _loadBlockRuns();
+    await _loadWorkouts();
   }
 
   // ✅ Fetch the block name dynamically
