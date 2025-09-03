@@ -370,7 +370,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       );
     });
 
-    // 2) Build/save the CustomBlock
+    // 2) Build the CustomBlock
     final int id = widget.initialBlock?.id ?? widget.customBlockId;
 
     final block = CustomBlock(
@@ -383,15 +383,14 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       isDraft: false,
       scheduleType: _scheduleType,
     );
-
-    if (widget.initialBlock != null) {
-      await DBService().updateCustomBlock(block);
+    // 3) Resolve target instance and apply edits if possible
+    final int? editedActiveInstanceId = await _resolveActiveInstanceId(block);
+    if (editedActiveInstanceId != null) {
+      await DBService().applyCustomBlockEdits(block, editedActiveInstanceId);
     } else {
-      await DBService().insertCustomBlock(block);
+      // Ensure block is stored for future runs
+      await DBService().upsertCustomBlock(block);
     }
-
-    // 3) Try to apply to an active run (non-destructive)
-    final int? editedActiveInstanceId = await _applyEditsToActiveInstance(block);
 
     // 4) Sync to Firestore (optional)
     await _uploadBlockToFirestore(block);
@@ -405,7 +404,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
     // Otherwise, ALWAYS build a fresh run and activate it
     final newInstanceId =
-    await DBService().insertNewBlockInstance(block.name, user.uid);
+        await DBService().insertNewBlockInstance(block.name, user.uid);
     await DBService()
         .activateBlockInstanceIfNeeded(newInstanceId, user.uid, block.name);
     return newInstanceId;
@@ -419,21 +418,18 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   /// 2) The user's active instance with this name
   /// 3) The latest instance with this name
   /// Returns the instance id if applied; otherwise null.
-  Future<int?> _applyEditsToActiveInstance(CustomBlock block) async {
+  Future<int?> _resolveActiveInstanceId(CustomBlock block) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return null;
 
     int? targetInstanceId = widget.blockInstanceId;
 
     targetInstanceId ??=
-    await DBService().findActiveInstanceIdByName(block.name, user.uid);
+        await DBService().findActiveInstanceIdByName(block.name, user.uid);
 
     targetInstanceId ??=
-    await DBService().findLatestInstanceIdByName(block.name, user.uid);
+        await DBService().findLatestInstanceIdByName(block.name, user.uid);
 
-    if (targetInstanceId == null) return null;
-
-    await DBService().applyCustomBlockEdits(block.id, targetInstanceId);
     return targetInstanceId;
   }
 

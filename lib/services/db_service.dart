@@ -1069,12 +1069,9 @@ class DBService {
   // ──────────────────────────────────────────────
   // 📝 CUSTOM BLOCK HELPERS
   // ──────────────────────────────────────────────
-  // DEPRECATED: instance-only migration
-  Future<int> insertCustomBlock(CustomBlock block) async {
-    debugPrint('DEPRECATED: insertCustomBlock called');
+  Future<int> upsertCustomBlock(CustomBlock block) async {
     final db = await database;
 
-    // Upsert the block shell
     await db.insert(
       'custom_blocks',
       {
@@ -1084,19 +1081,18 @@ class DBService {
         'daysPerWeek': block.daysPerWeek,
         'isDraft': block.isDraft ? 1 : 0,
         'coverImagePath': block.coverImagePath,
+        'scheduleType': block.scheduleType,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
-      // NOTE: replace is fine, we re-write children below transactionally
     );
 
-    // Normalize dayIndex and rewrite workouts/lifts transactionally
     await db.transaction((txn) async {
-      // Clear old children for this block (prevents duplicates)
-      await txn.delete('custom_lifts', where: 'workoutId IN (SELECT id FROM custom_workouts WHERE blockId = ?)', whereArgs: [block.id]);
-      await txn.delete('custom_workouts', where: 'blockId = ?', whereArgs: [block.id]);
+      await txn.delete('custom_lifts',
+          where: 'workoutId IN (SELECT id FROM custom_workouts WHERE blockId = ?)',
+          whereArgs: [block.id]);
+      await txn.delete('custom_workouts',
+          where: 'blockId = ?', whereArgs: [block.id]);
 
-      // If caller passed fully-expanded workouts (daysPerWeek*numWeeks) great.
-      // If not, we still respect given dayIndex order.
       final expanded = List<WorkoutDraft>.from(block.workouts)
         ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
 
@@ -1105,19 +1101,18 @@ class DBService {
         final wid = await txn.insert(
           'custom_workouts',
           {
-            'id': w.id,           // ok if null/auto; SQLite will assign
+            'id': w.id,
             'blockId': block.id,
-            'dayIndex': i,        // force normalized sequential dayIndex
+            'dayIndex': i,
             'name': w.name,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
         );
 
-        // Recreate lifts for this workout_draft
         for (var j = 0; j < w.lifts.length; j++) {
           final l = w.lifts[j];
           await txn.insert('custom_lifts', {
-            'workoutId': wid,     // use actual draft PK we just inserted
+            'workoutId': wid,
             'name': l.name,
             'sets': l.sets,
             'repsPerSet': l.repsPerSet,
@@ -1132,6 +1127,18 @@ class DBService {
     });
 
     return block.id;
+  }
+
+  // DEPRECATED: instance-only migration
+  Future<int> insertCustomBlock(CustomBlock block) async {
+    debugPrint('DEPRECATED: insertCustomBlock called');
+    return upsertCustomBlock(block);
+  }
+
+  // DEPRECATED: instance-only migration
+  Future<void> updateCustomBlock(CustomBlock block) async {
+    debugPrint('DEPRECATED: updateCustomBlock called');
+    await upsertCustomBlock(block);
   }
 
   // ──────────────────────────────────────────────
@@ -1765,74 +1772,6 @@ class DBService {
     return (v is int) ? v : (v is num ? v.toInt() : null);
   }
 
-  // DEPRECATED: instance-only migration
-  Future<void> updateCustomBlock(CustomBlock block) async {
-    debugPrint('DEPRECATED: updateCustomBlock called');
-    final db = await database;
-
-    await db.transaction((txn) async {
-      // 1) Update the block shell
-      await txn.update(
-        'custom_blocks',
-        {
-          'name': block.name,
-          'numWeeks': block.numWeeks,
-          'daysPerWeek': block.daysPerWeek,
-          'isDraft': block.isDraft ? 1 : 0,
-          'coverImagePath': block.coverImagePath,
-        },
-        where: 'id = ?',
-        whereArgs: [block.id],
-      );
-
-      // 2) Nuke old children for this block (prevents dupes)
-      await txn.delete(
-        'custom_lifts',
-        where: 'workoutId IN (SELECT id FROM custom_workouts WHERE blockId = ?)',
-        whereArgs: [block.id],
-      );
-      await txn.delete(
-        'custom_workouts',
-        where: 'blockId = ?',
-        whereArgs: [block.id],
-      );
-
-      // 3) Recreate workouts/lifts with normalized 0..n-1 dayIndex
-      final expanded = List<WorkoutDraft>.from(block.workouts)
-        ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
-
-      for (int i = 0; i < expanded.length; i++) {
-        final w = expanded[i];
-
-        final wid = await txn.insert(
-          'custom_workouts',
-          {
-            // keep w.id if you want stable IDs; otherwise let SQLite assign
-            'id': w.id,
-            'blockId': block.id,
-            'dayIndex': i,       // normalize
-            'name': w.name,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
-
-        for (var j = 0; j < w.lifts.length; j++) {
-          final l = w.lifts[j];
-          await txn.insert('custom_lifts', {
-            'workoutId': wid,
-            'name': l.name,
-            'sets': l.sets,
-            'repsPerSet': l.repsPerSet,
-            'multiplier': l.multiplier,
-            'isBodyweight': l.isBodyweight ? 1 : 0,
-            'isDumbbellLift': l.isDumbbellLift ? 1 : 0,
-            'position': l.position,
-          });
-        }
-      }
-    });
-  }
-
   Future<int?> findActiveInstanceIdByName(String blockName, String userId) async {
     final db = await database;
     final rows = await db.query(
@@ -1861,7 +1800,7 @@ class DBService {
       if (existing.isNotEmpty) continue;
       final data = doc.data();
       data['id'] = id;
-      await insertCustomBlock(CustomBlock.fromMap(data));
+      await upsertCustomBlock(CustomBlock.fromMap(data));
     }
   }
 
@@ -1879,13 +1818,12 @@ class DBService {
   ///   preserving existing IDs so lift_entries / lift_totals remain linked.
   /// - Removes workouts/lifts that are no longer in the draft only if they have
   ///   no entries; otherwise sets archived=1 if available.
-  Future<void> applyCustomBlockEdits(int customBlockId, int blockInstanceId) async {
+  Future<void> applyCustomBlockEdits(
+      CustomBlock block, int blockInstanceId) async {
     final db = await database;
 
-    // Load latest draft
-    final customBlock =
-        await loadCustomBlockForEdit(customBlockId: customBlockId);
-    if (customBlock == null || customBlock.workouts.isEmpty) return;
+    // Persist latest edits locally before applying
+    await upsertCustomBlock(block);
 
     await db.transaction((txn) async {
       // Ensure instance exists
@@ -1904,7 +1842,7 @@ class DBService {
       // Keep instance pointing at this custom draft; update display name
       await txn.update(
         'block_instances',
-        {'customBlockId': customBlockId, 'blockName': customBlock.name},
+        {'customBlockId': block.id, 'blockName': block.name},
         where: 'blockInstanceId = ?',
         whereArgs: [blockInstanceId],
       );
@@ -1966,11 +1904,11 @@ class DBService {
         for (int idx = 0; idx < existingWorkouts.length; idx++) idx: existingWorkouts[idx]
       };
 
-      final int daysPerWeek = (customBlock.daysPerWeek ?? 3).clamp(1, 7);
+      final int daysPerWeek = block.daysPerWeek.clamp(1, 7);
 
       // Upsert workouts in draft order
-      for (int i = 0; i < customBlock.workouts.length; i++) {
-        final draftW = customBlock.workouts[i];
+      for (int i = 0; i < block.workouts.length; i++) {
+        final draftW = block.workouts[i];
         Map<String, Object?>? existing = byOrdinal[i];
 
         if (existing == null) {
@@ -2077,7 +2015,7 @@ class DBService {
       }
 
       // Remove/Archive workouts beyond draft length (by ordinal)
-      for (int k = customBlock.workouts.length; k < existingWorkouts.length; k++) {
+      for (int k = block.workouts.length; k < existingWorkouts.length; k++) {
         final orphan = byOrdinal[k];
         if (orphan == null) continue;
         final wid = orphan['workoutInstanceId'] as int;
@@ -2104,7 +2042,7 @@ class DBService {
       }
 
       // ignore: avoid_print
-      print('[applyCustomBlockEdits] In-place sync complete for instance=$blockInstanceId (custom=$customBlockId)');
+      print('[applyCustomBlockEdits] In-place sync complete for instance=$blockInstanceId (custom=${block.id})');
     });
   }
 

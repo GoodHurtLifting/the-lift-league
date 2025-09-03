@@ -44,12 +44,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     final instanceId = widget.activeBlockInstanceId;
     if (instanceId == null) return;
     _applyDebounce?.cancel();
-    _applyDebounce = Timer(const Duration(milliseconds: 400), () async {
-      await DBService()
-          .applyCustomBlockEdits(widget.customBlockId, instanceId);
-      // Optional: log
-      // print('[WorkoutBuilder] Applied edits to instance=$instanceId');
-    });
+    _applyDebounce = Timer(const Duration(milliseconds: 400), () {});
   }
 
 

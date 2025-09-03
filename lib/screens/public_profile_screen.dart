@@ -128,7 +128,7 @@ class _PublicProfileScreenState extends State<PublicProfileScreen> {
     if (index < 0 || index >= _publicBlocks.length) return;
     final data = _publicBlocks[index];
     final block = CustomBlock.fromMap(data);
-    await DBService().insertCustomBlock(block);
+    await DBService().upsertCustomBlock(block);
 
     final user = FirebaseAuth.instance.currentUser;
     final blockId = data['id']?.toString();
