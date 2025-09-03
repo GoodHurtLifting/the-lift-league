@@ -86,20 +86,35 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   Future<void> _editCustomBlock(int id) async {
-    final block = await DBService()
-        .loadCustomBlockForEdit(customBlockId: id);
-    if (block == null) return;
+    // Determine the active instance for this custom block (if any)
+    int? blockInstanceId;
+    final index = customBlockIds.indexOf(id);
+    if (index != -1) {
+      final name = customBlockNames[index];
+      blockInstanceId = blockInstances[name];
+    }
+
+    // Load via the new loader that supports editing active runs
+    final block = await DBService().loadCustomBlockForEdit(
+      customBlockId: id,
+      blockInstanceId: blockInstanceId,
+    );
+    if (block == null || !mounted) return;
+
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => CustomBlockWizard(
           initialBlock: block,
-          customBlockId: block.id,     // ✅ required
-          blockInstanceId: null,       // ✅ or pass a real instanceId if editing a live run
+          customBlockId: block.id,
+          blockInstanceId: blockInstanceId, // applies edits to active run when non-null
         ),
       ),
     );
-    await _fetchCustomBlocks();
+
+    if (mounted) {
+      await _fetchCustomBlocks();
+    }
   }
 
   Future<void> registerForPushNotifications() async {
