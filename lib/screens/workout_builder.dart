@@ -85,7 +85,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
           .map((l) => {
                 'liftId': null,
                 'repScheme': '${l.sets}x${l.repsPerSet}',
-                'scoreType': '',
+                'scoreType': l.isBodyweight
+                    ? SCORE_TYPE_BODYWEIGHT
+                    : SCORE_TYPE_MULTIPLIER,
                 'youtubeUrl': '',
                 'referenceLiftId': null,
                 'percentOfReference': null,
@@ -127,7 +129,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                 'liftId': (m['liftId'] as num?)?.toInt(),
                 'repScheme': (m['repScheme'] as String?) ??
                     '${m['sets'] ?? 0}x${m['repsPerSet'] ?? 0}',
-                'scoreType': m['scoreType']?.toString() ?? '',
+                'scoreType': (m['scoreType'] as num?)?.toInt() ??
+                    SCORE_TYPE_MULTIPLIER,
                 'youtubeUrl': m['youtubeUrl']?.toString() ?? '',
                 'referenceLiftId':
                     (m['referenceLiftId'] as num?)?.toInt(),
@@ -371,6 +374,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                               setLocalState(() => _isSaving = true);
                               try {
+                                final scoreType = isBodyweight
+                                    ? SCORE_TYPE_BODYWEIGHT
+                                    : SCORE_TYPE_MULTIPLIER;
                                 await DBService.instance.addLiftToCustomWorkout(
                                   customWorkoutId: widget.workout.id,
                                   liftCatalogId: selected!['catalogId'] as int,
@@ -380,15 +386,13 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                   repsPerSet: reps,
                                   isBodyweight: isBodyweight ? 1 : 0,
                                   isDumbbell: isDumbbellLift ? 1 : 0,
-                                  scoreType:
-                                      isBodyweight ? 'bodyweight' : 'multiplier',
+                                  scoreType: scoreType,
                                 );
                                 widget.workout.lifts.add(newLift);
                                 _liftMeta.add({
                                   'liftId': selected!['catalogId'],
                                   'repScheme': repText,
-                                  'scoreType':
-                                      isBodyweight ? 'bodyweight' : 'multiplier',
+                                  'scoreType': scoreType,
                                 });
                                 _applyEditsSoon();
                                 setLocalState(() => _isSaving = false);
@@ -527,6 +531,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                               setLocalState(() => _isSaving = true);
 
+                              final scoreType = isBodyweight
+                                  ? SCORE_TYPE_BODYWEIGHT
+                                  : SCORE_TYPE_MULTIPLIER;
                               lift
                                 ..name = selected['name'] as String
                                 ..sets = sets
@@ -536,8 +543,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                               _liftMeta[index] = {
                                 'liftId': selected['catalogId'],
                                 'repScheme': repText,
-                                'scoreType':
-                                    isBodyweight ? 'bodyweight' : 'multiplier',
+                                'scoreType': scoreType,
                               };
                               _applyEditsSoon();
                               setLocalState(() => _isSaving = false);

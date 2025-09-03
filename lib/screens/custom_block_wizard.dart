@@ -96,6 +96,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       workouts = [];
       _nameCtrl.text = '';
       _currentStep = 0;
+      // ensure sane defaults for new blocks
+      _uniqueCount ??= 2;  // 1–7
+      daysPerWeek ??= 3;  // 1..?
+      numWeeks ??= 4;  // 3–6
     }
 
     // Keep blockName in sync with the field so step 0 can advance
@@ -628,7 +632,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) async {
                 if (v == null) return;
-                if (widget.blockInstanceId != null) {
+                final newCount = v;
+                final canApply = widget.blockInstanceId != null &&
+                    newCount != null && daysPerWeek != null && numWeeks != null;
+                if (canApply) {
                   final ok = await showConfirmDialog(
                     context,
                     title: 'Apply Shape Changes?',
@@ -639,12 +646,12 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   await DBService().updateCustomBlockShape(
                     customBlockId: widget.customBlockId,
                     blockInstanceId: widget.blockInstanceId!,
-                    uniqueWorkoutCount: v,
+                    uniqueWorkoutCount: newCount,
                     workoutsPerWeek: daysPerWeek!,
                     totalWeeks: numWeeks!,
                   );
                 }
-                setState(() => _uniqueCount = v);
+                setState(() => _uniqueCount = newCount);
               },
             ),
             isActive: _currentStep >= 2,
@@ -659,7 +666,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) async {
                 if (v == null) return;
-                if (widget.blockInstanceId != null) {
+                final newDays = v;
+                final canApply = widget.blockInstanceId != null &&
+                    _uniqueCount != null && newDays != null && numWeeks != null;
+                if (canApply) {
                   final ok = await showConfirmDialog(
                     context,
                     title: 'Apply Shape Changes?',
@@ -671,11 +681,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                     customBlockId: widget.customBlockId,
                     blockInstanceId: widget.blockInstanceId!,
                     uniqueWorkoutCount: _uniqueCount!,
-                    workoutsPerWeek: v,
+                    workoutsPerWeek: newDays,
                     totalWeeks: numWeeks!,
                   );
                 }
-                setState(() => daysPerWeek = v);
+                setState(() => daysPerWeek = newDays);
               },
             ),
             isActive: _currentStep >= 3,
@@ -690,7 +700,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   .toList(),
               onChanged: (v) async {
                 if (v == null) return;
-                if (widget.blockInstanceId != null) {
+                final newWeeks = v;
+                final canApply = widget.blockInstanceId != null &&
+                    _uniqueCount != null && daysPerWeek != null && newWeeks != null;
+                if (canApply) {
                   final ok = await showConfirmDialog(
                     context,
                     title: 'Apply Shape Changes?',
@@ -703,10 +716,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                     blockInstanceId: widget.blockInstanceId!,
                     uniqueWorkoutCount: _uniqueCount!,
                     workoutsPerWeek: daysPerWeek!,
-                    totalWeeks: v,
+                    totalWeeks: newWeeks,
                   );
                 }
-                setState(() => numWeeks = v);
+                setState(() => numWeeks = newWeeks);
               },
             ),
             isActive: _currentStep >= 4,
