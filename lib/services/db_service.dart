@@ -70,12 +70,12 @@ class DBService {
         }
 
         if (oldV < 17) {
-          await db.execute("ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;");
+          await db.execute("ALTER TABLE custom_lifts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;");
           try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;"); } catch (_) {}
           try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;"); } catch (_) {}
           try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;"); } catch (_) {}
           try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
-          try { await db.execute("ALTER TABLE lift_drafts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
+          try { await db.execute("ALTER TABLE custom_lifts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
         }
 
         if (oldV < 18) {
@@ -139,9 +139,9 @@ class DBService {
             }
           } catch (_) {}
           try {
-            if (!await _hasColumn(db, 'lift_drafts', 'position')) {
-              await db.execute('ALTER TABLE lift_drafts ADD COLUMN position INTEGER DEFAULT 0;');
-              await db.execute('CREATE INDEX IF NOT EXISTS idx_ld_workout_pos ON lift_drafts(workoutId, position);');
+            if (!await _hasColumn(db, 'custom_lifts', 'position')) {
+              await db.execute('ALTER TABLE custom_lifts ADD COLUMN position INTEGER DEFAULT 0;');
+              await db.execute('CREATE INDEX IF NOT EXISTS idx_ld_workout_pos ON custom_lifts(workoutId, position);');
             }
           } catch (_) {}
         }
@@ -351,7 +351,7 @@ class DBService {
     ''');
 
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS workout_drafts (
+      CREATE TABLE IF NOT EXISTS custom_workouts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         blockId INTEGER,
         dayIndex INTEGER,
@@ -361,7 +361,7 @@ class DBService {
     ''');
 
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS lift_drafts (
+      CREATE TABLE IF NOT EXISTS custom_lifts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         workoutId INTEGER,
         name TEXT,
@@ -371,12 +371,12 @@ class DBService {
         isBodyweight INTEGER,
         isDumbbellLift INTEGER,
         position INTEGER DEFAULT 0,
-        FOREIGN KEY (workoutId) REFERENCES workout_drafts(id) ON DELETE CASCADE
+        FOREIGN KEY (workoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
       )
     ''');
 
     await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_ld_workout_pos ON lift_drafts(workoutId, position);');
+        'CREATE INDEX IF NOT EXISTS idx_ld_workout_pos ON custom_lifts(workoutId, position);');
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS health_weight_samples (
@@ -737,7 +737,7 @@ class DBService {
             customRow.isNotEmpty ? customRow.first['customBlockId'] as int? : null;
         if (customBlockId != null) {
           final draftWorkout = await txn.rawQuery(
-            'SELECT id FROM workout_drafts WHERE blockId = ? ORDER BY COALESCE(dayIndex,0) ASC, id ASC LIMIT 1 OFFSET ?',
+            'SELECT id FROM custom_workouts WHERE blockId = ? ORDER BY COALESCE(dayIndex,0) ASC, id ASC LIMIT 1 OFFSET ?',
             [customBlockId, slotIndex],
           );
           if (draftWorkout.isNotEmpty) {
@@ -747,7 +747,7 @@ class DBService {
                      COALESCE(multiplier,0.0) AS scoreMultiplier,
                      COALESCE(isDumbbellLift,0) AS isDumbbellLift,
                      COALESCE(isBodyweight,0) AS isBodyweight
-              FROM lift_drafts
+              FROM custom_lifts
               WHERE workoutId = ?
               ORDER BY position ASC, id ASC
             ''', [dwid]);
@@ -1092,8 +1092,8 @@ class DBService {
     // Normalize dayIndex and rewrite workouts/lifts transactionally
     await db.transaction((txn) async {
       // Clear old children for this block (prevents duplicates)
-      await txn.delete('lift_drafts', where: 'workoutId IN (SELECT id FROM workout_drafts WHERE blockId = ?)', whereArgs: [block.id]);
-      await txn.delete('workout_drafts', where: 'blockId = ?', whereArgs: [block.id]);
+      await txn.delete('custom_lifts', where: 'workoutId IN (SELECT id FROM custom_workouts WHERE blockId = ?)', whereArgs: [block.id]);
+      await txn.delete('custom_workouts', where: 'blockId = ?', whereArgs: [block.id]);
 
       // If caller passed fully-expanded workouts (daysPerWeek*numWeeks) great.
       // If not, we still respect given dayIndex order.
@@ -1103,7 +1103,7 @@ class DBService {
       int i = 0;
       for (final w in expanded) {
         final wid = await txn.insert(
-          'workout_drafts',
+          'custom_workouts',
           {
             'id': w.id,           // ok if null/auto; SQLite will assign
             'blockId': block.id,
@@ -1116,7 +1116,7 @@ class DBService {
         // Recreate lifts for this workout_draft
         for (var j = 0; j < w.lifts.length; j++) {
           final l = w.lifts[j];
-          await txn.insert('lift_drafts', {
+          await txn.insert('custom_lifts', {
             'workoutId': wid,     // use actual draft PK we just inserted
             'name': l.name,
             'sets': l.sets,
@@ -1331,12 +1331,12 @@ class DBService {
   Future<WorkoutDraft?> fetchWorkoutDraft(int workoutId) async {
     debugPrint('DEPRECATED: fetchWorkoutDraft called');
     final db = await database;
-    final workoutRows = await db.query('workout_drafts',
+    final workoutRows = await db.query('custom_workouts',
         where: 'id = ?', whereArgs: [workoutId], limit: 1);
     if (workoutRows.isEmpty) return null;
     final w = workoutRows.first;
     final liftRows = await db.query(
-      'lift_drafts',
+      'custom_lifts',
       where: 'workoutId = ?',
       whereArgs: [workoutId],
       orderBy: 'position ASC',
@@ -1373,7 +1373,7 @@ class DBService {
     await db.transaction((txn) async {
       // Upsert the workout row first so JOINs won’t miss it
       await txn.insert(
-        'workout_drafts',
+        'custom_workouts',
         {
           'id': workout.id,
           'name': workout.name,
@@ -1382,7 +1382,7 @@ class DBService {
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
       await txn.update(
-        'workout_drafts',
+        'custom_workouts',
         {
           'name': workout.name,
           'dayIndex': workout.dayIndex,
@@ -1392,12 +1392,12 @@ class DBService {
       );
 
       // Replace all lifts
-      await txn.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workout.id]);
+      await txn.delete('custom_lifts', where: 'workoutId = ?', whereArgs: [workout.id]);
       print('[updateWorkoutDraft] workoutId=${workout.id} lifts=${workout.lifts.length}');
 
       for (var i = 0; i < workout.lifts.length; i++) {
         final lift = workout.lifts[i];
-        await txn.insert('lift_drafts', {
+        await txn.insert('custom_lifts', {
           'workoutId': workout.id,
           'name': lift.name,
           'sets': lift.sets,
@@ -1421,7 +1421,7 @@ class DBService {
     final db = await database;
     // 1) Try insert (ignore conflict)
     await db.insert(
-      'workout_drafts',
+      'custom_workouts',
       {
         'id': id,
         'name': name,
@@ -1431,7 +1431,7 @@ class DBService {
     );
     // 2) Ensure fields are current
     await db.update(
-      'workout_drafts',
+      'custom_workouts',
       {
         'name': name,
         'dayIndex': dayIndex,
@@ -1441,7 +1441,7 @@ class DBService {
     );
   }
 
-  /// Safe for FIRST-TIME inserts. Ensures parent custom_blocks exists, then upserts workout_drafts.
+  /// Safe for FIRST-TIME inserts. Ensures parent custom_blocks exists, then upserts custom_workouts.
   // DEPRECATED: instance-only migration
   Future<void> upsertWorkoutDraftRowWithBlock({
     required int id,
@@ -1466,9 +1466,9 @@ class DBService {
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      // 2) Insert-or-ignore the workout_drafts parent row
+      // 2) Insert-or-ignore the custom_workouts parent row
       await txn.insert(
-        'workout_drafts',
+        'custom_workouts',
         {
           'id': id,
           'blockId': blockId,
@@ -1480,7 +1480,7 @@ class DBService {
 
       // 3) Keep name/dayIndex up to date
       await txn.update(
-        'workout_drafts',
+        'custom_workouts',
         {
           'name': name,
           'dayIndex': dayIndex,
@@ -1500,15 +1500,15 @@ class DBService {
     await db.transaction((txn) async {
       // Ensure parent exists (keeps things consistent if called early)
       await txn.insert(
-        'workout_drafts',
+        'custom_workouts',
         {'id': workoutId, 'name': '', 'dayIndex': 0},
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      await txn.delete('lift_drafts', where: 'workoutId = ?', whereArgs: [workoutId]);
+      await txn.delete('custom_lifts', where: 'workoutId = ?', whereArgs: [workoutId]);
       for (var i = 0; i < lifts.length; i++) {
         final lift = lifts[i];
-        await txn.insert('lift_drafts', {
+        await txn.insert('custom_lifts', {
           'workoutId': workoutId,
           'name': lift.name,
           'sets': lift.sets,
@@ -1527,7 +1527,7 @@ class DBService {
   Future<void> updateWorkoutDraftName(int workoutId, String name) async {
     debugPrint('DEPRECATED: updateWorkoutDraftName called');
     final db = await database;
-    await db.update('workout_drafts', {'name': name},
+    await db.update('custom_workouts', {'name': name},
         where: 'id = ?', whereArgs: [workoutId]);
   }
 
@@ -1637,7 +1637,7 @@ class DBService {
 
     // 2) All workouts for this block (stable order)
     final wRows = await db.query(
-      'workout_drafts',
+      'custom_workouts',
       where: 'blockId = ?',
       whereArgs: [id],
       orderBy: 'COALESCE(dayIndex, 0) ASC, id ASC',
@@ -1658,7 +1658,7 @@ class DBService {
     final workoutIds = wRows.map((w) => w['id'] as int).toList();
     final placeholders = List.filled(workoutIds.length, '?').join(',');
     final lRows = await db.rawQuery(
-      'SELECT * FROM lift_drafts WHERE workoutId IN ($placeholders) ORDER BY position ASC, id ASC',
+      'SELECT * FROM custom_lifts WHERE workoutId IN ($placeholders) ORDER BY position ASC, id ASC',
       workoutIds,
     );
 
@@ -1742,12 +1742,12 @@ class DBService {
 
       // 2) Nuke old children for this block (prevents dupes)
       await txn.delete(
-        'lift_drafts',
-        where: 'workoutId IN (SELECT id FROM workout_drafts WHERE blockId = ?)',
+        'custom_lifts',
+        where: 'workoutId IN (SELECT id FROM custom_workouts WHERE blockId = ?)',
         whereArgs: [block.id],
       );
       await txn.delete(
-        'workout_drafts',
+        'custom_workouts',
         where: 'blockId = ?',
         whereArgs: [block.id],
       );
@@ -1760,7 +1760,7 @@ class DBService {
         final w = expanded[i];
 
         final wid = await txn.insert(
-          'workout_drafts',
+          'custom_workouts',
           {
             // keep w.id if you want stable IDs; otherwise let SQLite assign
             'id': w.id,
@@ -1773,7 +1773,7 @@ class DBService {
 
         for (var j = 0; j < w.lifts.length; j++) {
           final l = w.lifts[j];
-          await txn.insert('lift_drafts', {
+          await txn.insert('custom_lifts', {
             'workoutId': wid,
             'name': l.name,
             'sets': l.sets,
