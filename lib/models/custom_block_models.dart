@@ -53,6 +53,19 @@ class CustomBlock {
   }
 }
 
+class CustomBlockForEdit extends CustomBlock {
+  CustomBlockForEdit({
+    required super.id,
+    required super.name,
+    required super.numWeeks,
+    required super.daysPerWeek,
+    required super.workouts,
+    super.scheduleType,
+    super.coverImagePath,
+    super.isDraft,
+  });
+}
+
 class WorkoutDraft {
   int id;
   int dayIndex;

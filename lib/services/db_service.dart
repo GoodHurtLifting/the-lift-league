@@ -1620,55 +1620,97 @@ class DBService {
     }
   }
 
-  Future<CustomBlock?> loadCustomBlockForEdit(int id) async {
+  Future<CustomBlockForEdit?> loadCustomBlockForEdit({
+    required int customBlockId,
+    int? blockInstanceId,
+  }) async {
     final db = await database;
 
-    // 1) Block row
+    // 1) Block shell
     final blockRows = await db.query(
       'custom_blocks',
       where: 'id = ?',
-      whereArgs: [id],
+      whereArgs: [customBlockId],
       limit: 1,
     );
     if (blockRows.isEmpty) return null;
     final b = blockRows.first;
 
-    // 2) All workouts for this block (stable order)
-    final wRows = await db.query(
-      'custom_workouts',
-      where: 'blockId = ?',
-      whereArgs: [id],
-      orderBy: 'COALESCE(dayIndex, 0) ASC, id ASC',
-    );
+    // 2) Workouts depending on context
+    final List<Map<String, Object?>> wRows;
+    if (blockInstanceId == null) {
+      wRows = await db.query(
+        'custom_workouts',
+        where: 'blockId = ?',
+        whereArgs: [customBlockId],
+        orderBy: 'COALESCE(dayIndex, 0) ASC, id ASC',
+      );
+    } else {
+      final hasDayIndex = await _hasColumn(db, 'workout_instances', 'dayIndex');
+      wRows = await db.query(
+        'workout_instances',
+        columns: [
+          'workoutInstanceId AS id',
+          if (hasDayIndex) 'dayIndex',
+          'workoutName AS name',
+        ],
+        where: 'blockInstanceId = ?',
+        whereArgs: [blockInstanceId],
+        orderBy: hasDayIndex
+            ? 'COALESCE(dayIndex, 0) ASC, workoutInstanceId ASC'
+            : 'workoutInstanceId ASC',
+      );
+    }
+
     if (wRows.isEmpty) {
-      return CustomBlock(
+      return CustomBlockForEdit(
         id: b['id'] as int,
         name: (b['name'] as String?) ?? '',
         numWeeks: (b['numWeeks'] as int?) ?? 4,
         daysPerWeek: (b['daysPerWeek'] as int?) ?? 3,
         isDraft: ((b['isDraft'] as int?) ?? 0) == 1,
         coverImagePath: b['coverImagePath'] as String?,
+        scheduleType: b['scheduleType']?.toString() ?? 'standard',
         workouts: const [],
       );
     }
 
-    // 3) Fetch lifts for all workouts in one query, then group
+    // 3) Fetch lifts for all workouts and group
     final workoutIds = wRows.map((w) => w['id'] as int).toList();
     final placeholders = List.filled(workoutIds.length, '?').join(',');
-    final lRows = await db.rawQuery(
-      'SELECT * FROM custom_lifts WHERE workoutId IN ($placeholders) ORDER BY position ASC, id ASC',
-      workoutIds,
-    );
+    final List<Map<String, Object?>> lRows;
+    if (blockInstanceId == null) {
+      lRows = await db.rawQuery(
+        'SELECT * FROM custom_lifts WHERE workoutId IN ($placeholders) ORDER BY position ASC, id ASC',
+        workoutIds,
+      );
+    } else {
+      lRows = await db.rawQuery(
+        'SELECT * FROM lift_instances WHERE workoutInstanceId IN ($placeholders) AND COALESCE(archived,0)=0 ORDER BY position ASC, liftInstanceId ASC',
+        workoutIds,
+      );
+    }
 
     final Map<int, List<LiftDraft>> liftsByWorkout = {};
     for (final l in lRows) {
-      final wid = l['workoutId'] as int;
+      final wid = (blockInstanceId == null)
+          ? l['workoutId'] as int
+          : l['workoutInstanceId'] as int;
       (liftsByWorkout[wid] ??= []).add(
         LiftDraft(
-          name: (l['name'] as String?) ?? '',
+          id: (blockInstanceId == null)
+              ? l['id'] as int?
+              : l['liftInstanceId'] as int?,
+          name: ((blockInstanceId == null)
+                  ? l['name']
+                  : l['liftName'])
+              ?.toString() ??
+              '',
           sets: (l['sets'] as int?) ?? 0,
           repsPerSet: (l['repsPerSet'] as int?) ?? 0,
-          multiplier: (l['multiplier'] as num?)?.toDouble() ?? 0.0,
+          multiplier: (blockInstanceId == null)
+              ? (l['multiplier'] as num?)?.toDouble() ?? 0.0
+              : (l['scoreMultiplier'] as num?)?.toDouble() ?? 0.0,
           isBodyweight: ((l['isBodyweight'] as int?) ?? 0) == 1,
           isDumbbellLift: ((l['isDumbbellLift'] as int?) ?? 0) == 1,
           position: (l['position'] as int?) ?? 0,
@@ -1676,7 +1718,7 @@ class DBService {
       );
     }
 
-    // 4) Build workouts with a fallback dayIndex if any are null
+    // 4) Build workouts
     int fallback = 0;
     final workouts = <WorkoutDraft>[];
     for (final w in wRows) {
@@ -1693,20 +1735,22 @@ class DBService {
       );
     }
 
-    // 5) Return full block
-    return CustomBlock(
+    // 5) Return block
+    return CustomBlockForEdit(
       id: b['id'] as int,
       name: (b['name'] as String?) ?? '',
       numWeeks: (b['numWeeks'] as int?) ?? 4,
       daysPerWeek: (b['daysPerWeek'] as int?) ?? 3,
       isDraft: ((b['isDraft'] as int?) ?? 0) == 1,
       coverImagePath: b['coverImagePath'] as String?,
+      scheduleType: b['scheduleType']?.toString() ?? 'standard',
       workouts: workouts,
     );
   }
 
   @Deprecated('Use loadCustomBlockForEdit instead')
-  Future<CustomBlock?> getCustomBlock(int id) => loadCustomBlockForEdit(id);
+  Future<CustomBlockForEdit?> getCustomBlock(int id) =>
+      loadCustomBlockForEdit(customBlockId: id);
 
   Future<int?> getCustomBlockIdForInstance(int blockInstanceId) async {
     final db = await database;
@@ -1839,7 +1883,8 @@ class DBService {
     final db = await database;
 
     // Load latest draft
-    final customBlock = await loadCustomBlockForEdit(customBlockId);
+    final customBlock =
+        await loadCustomBlockForEdit(customBlockId: customBlockId);
     if (customBlock == null || customBlock.workouts.isEmpty) return;
 
     await db.transaction((txn) async {
@@ -2356,7 +2401,8 @@ Future<void> updateWorkoutNameAcrossSlot(
   }
 
   Future<int> createBlockFromCustomBlockId(int customId, String userId) async {
-    final customBlock = await loadCustomBlockForEdit(customId);
+    final customBlock =
+        await loadCustomBlockForEdit(customBlockId: customId);
     if (customBlock == null) {
       throw Exception('Custom block not found: $customId');
     }

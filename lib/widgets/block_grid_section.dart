@@ -108,7 +108,10 @@ class BlockGridSection extends StatelessWidget {
 
             if (action == 'edit') {
               // Load the custom block and open the wizard, passing the active instance if present.
-              final initial = await DBService().loadCustomBlockForEdit(id);
+              final initial = await DBService().loadCustomBlockForEdit(
+                customBlockId: id,
+                blockInstanceId: blockInstanceId,
+              );
               if (initial != null && context.mounted) {
                 await Navigator.push(
                   context,
