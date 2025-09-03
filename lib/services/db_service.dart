@@ -32,7 +32,9 @@ class DBService {
   // ──────────────────────────────────────────────────────────
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 22;   // bump any time the schema changes
+
+  static const _dbVersion = 23;   // bump any time the schema changes
+
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
     final rows = await db.rawQuery('PRAGMA table_info($table);');
@@ -241,6 +243,36 @@ CREATE TABLE IF NOT EXISTS custom_workout_instances (
             await db.execute('CREATE INDEX IF NOT EXISTS idx_clifts_cw_pos ON custom_lifts(customWorkoutId, position);');
           } catch (_) {}
         }
+
+
+        if (oldV < 23) {
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS lift_catalog (
+  catalogId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  primaryGroup TEXT NOT NULL,
+  secondaryGroups TEXT,
+  equipment TEXT,
+  isBodyweightCapable INTEGER NOT NULL DEFAULT 0,
+  isDumbbellCapable INTEGER NOT NULL DEFAULT 0,
+  unilateral INTEGER NOT NULL DEFAULT 0,
+  youtubeUrl TEXT,
+  createdAt INTEGER NOT NULL,
+  updatedAt INTEGER NOT NULL
+);
+''');
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS lift_aliases (
+  aliasId INTEGER PRIMARY KEY AUTOINCREMENT,
+  catalogId INTEGER NOT NULL,
+  alias TEXT NOT NULL,
+  FOREIGN KEY(catalogId) REFERENCES lift_catalog(catalogId) ON DELETE CASCADE
+);
+''');
+          await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
+          await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
+        }
+
       },
     );
   }
@@ -485,6 +517,35 @@ CREATE TABLE IF NOT EXISTS custom_workout_instances (
     await db.execute('CREATE INDEX IF NOT EXISTS idx_cw_block_pos ON custom_workouts(customBlockId, position);');
     await db.execute('CREATE INDEX IF NOT EXISTS idx_clifts_cw_pos ON custom_lifts(customWorkoutId, position);');
 
+
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS lift_catalog (
+  catalogId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  primaryGroup TEXT NOT NULL,
+  secondaryGroups TEXT,
+  equipment TEXT,
+  isBodyweightCapable INTEGER NOT NULL DEFAULT 0,
+  isDumbbellCapable INTEGER NOT NULL DEFAULT 0,
+  unilateral INTEGER NOT NULL DEFAULT 0,
+  youtubeUrl TEXT,
+  createdAt INTEGER NOT NULL,
+  updatedAt INTEGER NOT NULL
+);
+''');
+
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS lift_aliases (
+  aliasId INTEGER PRIMARY KEY AUTOINCREMENT,
+  catalogId INTEGER NOT NULL,
+  alias TEXT NOT NULL,
+  FOREIGN KEY(catalogId) REFERENCES lift_catalog(catalogId) ON DELETE CASCADE
+);
+''');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
+
+
     await db.execute('''
       CREATE TABLE IF NOT EXISTS health_weight_samples (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -511,6 +572,51 @@ CREATE TABLE IF NOT EXISTS custom_workout_instances (
   // 🔄 INSERT DEFAULT DATA
   // ──────────────────────────────────────────────
   Future<void> _insertDefaultData(Database db) async {
+    final existing = await db.rawQuery('SELECT COUNT(1) AS c FROM lift_catalog;');
+    final count = (existing.first['c'] as int?) ?? 0;
+    if (count == 0) {
+      Future<int> ins(String name, String g,
+          {String? equip, int bw = 0, int dbb = 0, int uni = 0, String? y}) async {
+        return await db.insert('lift_catalog', {
+          'name': name,
+          'primaryGroup': g,
+          'equipment': equip ?? 'Other',
+          'isBodyweightCapable': bw,
+          'isDumbbellCapable': dbb,
+          'unilateral': uni,
+          'youtubeUrl': y,
+          'createdAt': DateTime.now().millisecondsSinceEpoch,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+        });
+      }
+
+      await ins('Barbell Bench Press', 'Chest', equip: 'Barbell');
+      await ins('Dumbbell Bench Press', 'Chest', equip: 'Dumbbell', dbb: 1);
+      await ins('Push-Up', 'Chest', equip: 'Bodyweight', bw: 1);
+
+      await ins('Overhead Press', 'Shoulder', equip: 'Barbell');
+      await ins('Dumbbell Shoulder Press', 'Shoulder', equip: 'Dumbbell', dbb: 1);
+      await ins('Lateral Raise', 'Shoulder', equip: 'Dumbbell', dbb: 1, uni: 1);
+
+      await ins('Barbell Row', 'Back', equip: 'Barbell');
+      await ins('Lat Pulldown', 'Back', equip: 'Machine');
+      await ins('Pull-Up', 'Back', equip: 'Bodyweight', bw: 1);
+
+      await ins('Back Squat', 'Legs', equip: 'Barbell');
+      await ins('Romanian Deadlift', 'Glute', equip: 'Barbell');
+      await ins('Walking Lunge', 'Legs', equip: 'Dumbbell', dbb: 1, uni: 1);
+
+      await ins('Barbell Curl', 'Biceps', equip: 'Barbell');
+      await ins('Dumbbell Curl', 'Biceps', equip: 'Dumbbell', dbb: 1, uni: 1);
+      await ins('Triceps Pushdown', 'Triceps', equip: 'Cable');
+
+      await ins('Hanging Leg Raise', 'Abs', equip: 'Bodyweight', bw: 1);
+      await ins('Standing Calf Raise', 'Calves', equip: 'Machine');
+      await ins('Wrist Curl', 'Forearm Flexors', equip: 'Dumbbell', dbb: 1);
+      await ins('Reverse Wrist Curl', 'Forearm Extensors', equip: 'Dumbbell', dbb: 1);
+      await ins('Neck Flexion', 'Neck Exercises');
+    }
+
     await _insertLifts(db);
     await _insertWorkouts(db);
     await _insertBlocks(db);
