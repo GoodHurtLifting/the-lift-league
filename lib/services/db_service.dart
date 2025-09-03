@@ -2356,6 +2356,14 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         // If schema lacks set index, skip pruning and rely on recalculation.
       }
     });
+
+    // Recompute score multiplier if the rep scheme changed for an active block.
+    if (blockInstanceId != null && (sets != null || repsPerSet != null)) {
+      await ScoreMultiplierService.computeAndApplyForCustomLift(
+        customLiftId: customLiftId,
+        blockInstanceId: blockInstanceId,
+      );
+    }
   }
 
   Future<void> syncBuilderEdits({
