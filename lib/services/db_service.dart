@@ -1756,6 +1756,7 @@ class DBService {
   }
 
   @Deprecated('Use loadCustomBlockForEdit instead')
+  // TODO: Remove after migrating all callers.
   Future<CustomBlockForEdit?> getCustomBlock(int id) =>
       loadCustomBlockForEdit(customBlockId: id);
 
@@ -1782,6 +1783,132 @@ class DBService {
       limit: 1,
     );
     return rows.isEmpty ? null : rows.first['blockInstanceId'] as int;
+  }
+
+  Future<void> syncBuilderEdits({
+    required int customBlockId,
+    int? blockInstanceId,
+    required int dayIndex,
+    required List<LiftDraft> lifts,
+    required List<Map<String, dynamic>> meta,
+  }) async {
+    final db = await database;
+    if (blockInstanceId != null) {
+      await db.transaction((txn) async {
+        final wRows = await txn.query(
+          'workout_instances',
+          columns: ['workoutInstanceId'],
+          where: 'blockInstanceId = ? AND dayIndex = ?',
+          whereArgs: [blockInstanceId, dayIndex],
+          limit: 1,
+        );
+        if (wRows.isEmpty) return;
+        final wid = wRows.first['workoutInstanceId'] as int;
+
+        final existing = await txn.query(
+          'lift_instances',
+          where: 'workoutInstanceId = ?',
+          whereArgs: [wid],
+        );
+        final byId = <int, Map<String, Object?>>{
+          for (final r in existing) r['liftInstanceId'] as int: r
+        };
+        final seen = <int>{};
+        for (int i = 0; i < lifts.length; i++) {
+          final l = lifts[i];
+          final m = i < meta.length ? meta[i] : const {};
+          final data = <String, Object?>{
+            'workoutInstanceId': wid,
+            'liftId': m['liftId'],
+            'liftName': l.name,
+            'sets': l.sets,
+            'repsPerSet': l.repsPerSet,
+            'scoreMultiplier': l.multiplier,
+            'scoreType': m['scoreType'],
+            'isDumbbellLift': l.isDumbbellLift ? 1 : 0,
+            'isBodyweight': l.isBodyweight ? 1 : 0,
+            'repScheme': m['repScheme'] ?? '${l.sets}x${l.repsPerSet}',
+            'youtubeUrl': m['youtubeUrl'],
+            'referenceLiftId': m['referenceLiftId'],
+            'percentOfReference': m['percentOfReference'],
+            'position': i,
+          };
+          if (l.id != null && byId.containsKey(l.id)) {
+            await txn.update('lift_instances', data,
+                where: 'liftInstanceId = ?', whereArgs: [l.id]);
+            seen.add(l.id!);
+          } else {
+            final newId = await txn.insert('lift_instances', data);
+            l.id = newId;
+            seen.add(newId);
+          }
+        }
+        for (final row in existing) {
+          final id = row['liftInstanceId'] as int;
+          if (!seen.contains(id)) {
+            await txn.update('lift_instances', {'archived': 1},
+                where: 'liftInstanceId = ?', whereArgs: [id]);
+          }
+        }
+      });
+    } else {
+      await db.transaction((txn) async {
+        final wRows = await txn.query(
+          'custom_workouts',
+          columns: ['id'],
+          where: 'blockId = ? AND dayIndex = ?',
+          whereArgs: [customBlockId, dayIndex],
+          limit: 1,
+        );
+        if (wRows.isEmpty) return;
+        final wid = wRows.first['id'] as int;
+
+        final existing = await txn.query(
+          'custom_lifts',
+          where: 'workoutId = ?',
+          whereArgs: [wid],
+        );
+        final byId = <int, Map<String, Object?>>{
+          for (final r in existing) r['id'] as int: r
+        };
+        final seen = <int>{};
+        for (int i = 0; i < lifts.length; i++) {
+          final l = lifts[i];
+          final m = i < meta.length ? meta[i] : const {};
+          final data = <String, Object?>{
+            'workoutId': wid,
+            'liftId': m['liftId'],
+            'name': l.name,
+            'sets': l.sets,
+            'repsPerSet': l.repsPerSet,
+            'multiplier': l.multiplier,
+            'scoreType': m['scoreType'],
+            'isDumbbellLift': l.isDumbbellLift ? 1 : 0,
+            'isBodyweight': l.isBodyweight ? 1 : 0,
+            'repScheme': m['repScheme'] ?? '${l.sets}x${l.repsPerSet}',
+            'youtubeUrl': m['youtubeUrl'],
+            'referenceLiftId': m['referenceLiftId'],
+            'percentOfReference': m['percentOfReference'],
+            'position': i,
+          };
+          if (l.id != null && byId.containsKey(l.id)) {
+            await txn.update('custom_lifts', data,
+                where: 'id = ?', whereArgs: [l.id]);
+            seen.add(l.id!);
+          } else {
+            final newId = await txn.insert('custom_lifts', data);
+            l.id = newId;
+            seen.add(newId);
+          }
+        }
+        for (final row in existing) {
+          final id = row['id'] as int;
+          if (!seen.contains(id)) {
+            await txn.delete('custom_lifts', where: 'id = ?', whereArgs: [id]);
+          }
+        }
+      });
+    }
   }
 
   Future<void> syncCustomBlocksFromFirestore() async {
@@ -1964,7 +2091,7 @@ class DBService {
           if (match == null) {
             final ins = <String, Object?>{
               'workoutInstanceId': wid,
-              'name': dl.name,
+              'liftName': dl.name,
               'sets': dl.sets,
               'repsPerSet': dl.repsPerSet,
               'scoreMultiplier': dl.multiplier,
@@ -1978,7 +2105,7 @@ class DBService {
           } else {
             final lid = match['liftInstanceId'] as int;
             final upd = <String, Object?>{
-              'name': dl.name,
+              'liftName': dl.name,
               'sets': dl.sets,
               'repsPerSet': dl.repsPerSet,
               'scoreMultiplier': dl.multiplier,
