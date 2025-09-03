@@ -1620,9 +1620,7 @@ class DBService {
     }
   }
 
-  // DEPRECATED: instance-only migration
-  Future<CustomBlock?> getCustomBlock(int id) async {
-    debugPrint('DEPRECATED: getCustomBlock called');
+  Future<CustomBlock?> loadCustomBlockForEdit(int id) async {
     final db = await database;
 
     // 1) Block row
@@ -1706,6 +1704,9 @@ class DBService {
       workouts: workouts,
     );
   }
+
+  @Deprecated('Use loadCustomBlockForEdit instead')
+  Future<CustomBlock?> getCustomBlock(int id) => loadCustomBlockForEdit(id);
 
   Future<int?> getCustomBlockIdForInstance(int blockInstanceId) async {
     final db = await database;
@@ -1838,7 +1839,7 @@ class DBService {
     final db = await database;
 
     // Load latest draft
-    final customBlock = await getCustomBlock(customBlockId);
+    final customBlock = await loadCustomBlockForEdit(customBlockId);
     if (customBlock == null || customBlock.workouts.isEmpty) return;
 
     await db.transaction((txn) async {
@@ -2355,7 +2356,7 @@ Future<void> updateWorkoutNameAcrossSlot(
   }
 
   Future<int> createBlockFromCustomBlockId(int customId, String userId) async {
-    final customBlock = await getCustomBlock(customId);
+    final customBlock = await loadCustomBlockForEdit(customId);
     if (customBlock == null) {
       throw Exception('Custom block not found: $customId');
     }

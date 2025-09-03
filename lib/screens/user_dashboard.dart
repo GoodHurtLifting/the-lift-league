@@ -86,7 +86,7 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   Future<void> _editCustomBlock(int id) async {
-    final block = await DBService().getCustomBlock(id);
+    final block = await DBService().loadCustomBlockForEdit(id);
     if (block == null) return;
     await Navigator.push(
       context,
