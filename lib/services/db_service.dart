@@ -12,6 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lift_league/services/user_stats_service.dart';
 import 'package:lift_league/services/badge_service.dart';
 import 'package:flutter/foundation.dart';
+import 'score_multiplier_service.dart';
 
 class DBService {
   static final DBService _instance = DBService._internal();
@@ -31,7 +32,7 @@ class DBService {
   // ──────────────────────────────────────────────────────────
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
-  static const _dbVersion = 21;   // bump any time the schema changes
+  static const _dbVersion = 23;   // bump any time the schema changes
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
     final rows = await db.rawQuery('PRAGMA table_info($table);');
@@ -167,6 +168,107 @@ class DBService {
           await db.execute(
               'CREATE INDEX IF NOT EXISTS idx_li_workout_archived_pos ON lift_instances (workoutInstanceId, archived, position);');
         }
+
+        if (oldV < 22) {
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS custom_blocks (
+  customBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  uniqueWorkoutCount INTEGER NOT NULL,
+  workoutsPerWeek INTEGER NOT NULL,
+  totalWeeks INTEGER NOT NULL,
+  ownerUid TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft',
+  createdAt INTEGER NOT NULL,
+  updatedAt INTEGER NOT NULL
+);
+''');
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS custom_workouts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customBlockId INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(customBlockId) REFERENCES custom_blocks(customBlockId) ON DELETE CASCADE
+);
+''');
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS custom_lifts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customWorkoutId INTEGER NOT NULL,
+  liftCatalogId INTEGER,
+  name TEXT NOT NULL,
+  repSchemeText TEXT,
+  sets INTEGER,
+  repsPerSet INTEGER,
+  scoreType INTEGER,
+  scoreMultiplier REAL,
+  isBodyweight INTEGER,
+  isDumbbell INTEGER,
+  position INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(customWorkoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
+);
+''');
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS custom_block_instances (
+  blockInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
+  customBlockId INTEGER NOT NULL,
+  runNumber INTEGER NOT NULL DEFAULT 1,
+  startDate INTEGER NULL,
+  endDate INTEGER NULL,
+  FOREIGN KEY(customBlockId) REFERENCES custom_blocks(customBlockId) ON DELETE CASCADE
+);
+''');
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS custom_workout_instances (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  blockInstanceId INTEGER NOT NULL,
+  customWorkoutId INTEGER NOT NULL,
+  week INTEGER NOT NULL,
+  slot INTEGER NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(blockInstanceId) REFERENCES custom_block_instances(blockInstanceId) ON DELETE CASCADE,
+  FOREIGN KEY(customWorkoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
+);
+''');
+          try {
+            await db.execute('CREATE INDEX IF NOT EXISTS idx_cwi_block_week_slot ON custom_workout_instances(blockInstanceId, week, slot);');
+          } catch (_) {}
+          try {
+            await db.execute('CREATE INDEX IF NOT EXISTS idx_cw_block_pos ON custom_workouts(customBlockId, position);');
+          } catch (_) {}
+          try {
+            await db.execute('CREATE INDEX IF NOT EXISTS idx_clifts_cw_pos ON custom_lifts(customWorkoutId, position);');
+          } catch (_) {}
+        }
+
+        if (oldV < 23) {
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS lift_catalog (
+  catalogId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  primaryGroup TEXT NOT NULL,
+  secondaryGroups TEXT,
+  equipment TEXT,
+  isBodyweightCapable INTEGER NOT NULL DEFAULT 0,
+  isDumbbellCapable INTEGER NOT NULL DEFAULT 0,
+  unilateral INTEGER NOT NULL DEFAULT 0,
+  youtubeUrl TEXT,
+  createdAt INTEGER NOT NULL,
+  updatedAt INTEGER NOT NULL
+);
+''');
+          await db.execute('''
+CREATE TABLE IF NOT EXISTS lift_aliases (
+  aliasId INTEGER PRIMARY KEY AUTOINCREMENT,
+  catalogId INTEGER NOT NULL,
+  alias TEXT NOT NULL,
+  FOREIGN KEY(catalogId) REFERENCES lift_catalog(catalogId) ON DELETE CASCADE
+);
+''');
+          await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
+          await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
+        }
       },
     );
   }
@@ -176,8 +278,10 @@ class DBService {
   // 🚀 DATABASE TABLE CREATION
   // ──────────────────────────────────────────────
   Future<void> _createTables(Database db) async {
+    await db.execute('PRAGMA foreign_keys = ON;');
+
     await db.execute('''
-      CREATE TABLE lifts (
+        CREATE TABLE lifts (
         liftId INTEGER PRIMARY KEY,
         liftName TEXT,
         repScheme TEXT,
@@ -340,43 +444,101 @@ class DBService {
     ''');
 
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS custom_blocks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        numWeeks INTEGER,
-        daysPerWeek INTEGER,
-        isDraft INTEGER DEFAULT 0,
-        coverImagePath TEXT
-      )
-    ''');
+CREATE TABLE IF NOT EXISTS custom_blocks (
+  customBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  uniqueWorkoutCount INTEGER NOT NULL,
+  workoutsPerWeek INTEGER NOT NULL,
+  totalWeeks INTEGER NOT NULL,
+  ownerUid TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft',
+  createdAt INTEGER NOT NULL,
+  updatedAt INTEGER NOT NULL
+);
+''');
 
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS custom_workouts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        blockId INTEGER,
-        dayIndex INTEGER,
-        name TEXT,
-        FOREIGN KEY (blockId) REFERENCES custom_blocks(id) ON DELETE CASCADE
-      )
-    ''');
+CREATE TABLE IF NOT EXISTS custom_workouts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customBlockId INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(customBlockId) REFERENCES custom_blocks(customBlockId) ON DELETE CASCADE
+);
+''');
 
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS custom_lifts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        workoutId INTEGER,
-        name TEXT,
-        sets INTEGER,
-        repsPerSet INTEGER,
-        multiplier REAL,
-        isBodyweight INTEGER,
-        isDumbbellLift INTEGER,
-        position INTEGER DEFAULT 0,
-        FOREIGN KEY (workoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
-      )
-    ''');
+CREATE TABLE IF NOT EXISTS custom_lifts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customWorkoutId INTEGER NOT NULL,
+  liftCatalogId INTEGER,
+  name TEXT NOT NULL,
+  repSchemeText TEXT,
+  sets INTEGER,
+  repsPerSet INTEGER,
+  scoreType INTEGER,
+  scoreMultiplier REAL,
+  isBodyweight INTEGER,
+  isDumbbell INTEGER,
+  position INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(customWorkoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
+);
+''');
 
-    await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_ld_workout_pos ON custom_lifts(workoutId, position);');
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS custom_block_instances (
+  blockInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
+  customBlockId INTEGER NOT NULL,
+  runNumber INTEGER NOT NULL DEFAULT 1,
+  startDate INTEGER NULL,
+  endDate INTEGER NULL,
+  FOREIGN KEY(customBlockId) REFERENCES custom_blocks(customBlockId) ON DELETE CASCADE
+);
+''');
+
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS custom_workout_instances (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  blockInstanceId INTEGER NOT NULL,
+  customWorkoutId INTEGER NOT NULL,
+  week INTEGER NOT NULL,
+  slot INTEGER NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(blockInstanceId) REFERENCES custom_block_instances(blockInstanceId) ON DELETE CASCADE,
+  FOREIGN KEY(customWorkoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
+);
+''');
+
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_cwi_block_week_slot ON custom_workout_instances(blockInstanceId, week, slot);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_cw_block_pos ON custom_workouts(customBlockId, position);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_clifts_cw_pos ON custom_lifts(customWorkoutId, position);');
+
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS lift_catalog (
+  catalogId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  primaryGroup TEXT NOT NULL,
+  secondaryGroups TEXT,
+  equipment TEXT,
+  isBodyweightCapable INTEGER NOT NULL DEFAULT 0,
+  isDumbbellCapable INTEGER NOT NULL DEFAULT 0,
+  unilateral INTEGER NOT NULL DEFAULT 0,
+  youtubeUrl TEXT,
+  createdAt INTEGER NOT NULL,
+  updatedAt INTEGER NOT NULL
+);
+''');
+
+    await db.execute('''
+CREATE TABLE IF NOT EXISTS lift_aliases (
+  aliasId INTEGER PRIMARY KEY AUTOINCREMENT,
+  catalogId INTEGER NOT NULL,
+  alias TEXT NOT NULL,
+  FOREIGN KEY(catalogId) REFERENCES lift_catalog(catalogId) ON DELETE CASCADE
+);
+''');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS health_weight_samples (
@@ -404,6 +566,51 @@ class DBService {
   // 🔄 INSERT DEFAULT DATA
   // ──────────────────────────────────────────────
   Future<void> _insertDefaultData(Database db) async {
+    final existing = await db.rawQuery('SELECT COUNT(1) AS c FROM lift_catalog;');
+    final count = (existing.first['c'] as int?) ?? 0;
+    if (count == 0) {
+      Future<int> ins(String name, String g,
+          {String? equip, int bw = 0, int dbb = 0, int uni = 0, String? y}) async {
+        return await db.insert('lift_catalog', {
+          'name': name,
+          'primaryGroup': g,
+          'equipment': equip ?? 'Other',
+          'isBodyweightCapable': bw,
+          'isDumbbellCapable': dbb,
+          'unilateral': uni,
+          'youtubeUrl': y,
+          'createdAt': DateTime.now().millisecondsSinceEpoch,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+        });
+      }
+
+      await ins('Barbell Bench Press', 'Chest', equip: 'Barbell');
+      await ins('Dumbbell Bench Press', 'Chest', equip: 'Dumbbell', dbb: 1);
+      await ins('Push-Up', 'Chest', equip: 'Bodyweight', bw: 1);
+
+      await ins('Overhead Press', 'Shoulder', equip: 'Barbell');
+      await ins('Dumbbell Shoulder Press', 'Shoulder', equip: 'Dumbbell', dbb: 1);
+      await ins('Lateral Raise', 'Shoulder', equip: 'Dumbbell', dbb: 1, uni: 1);
+
+      await ins('Barbell Row', 'Back', equip: 'Barbell');
+      await ins('Lat Pulldown', 'Back', equip: 'Machine');
+      await ins('Pull-Up', 'Back', equip: 'Bodyweight', bw: 1);
+
+      await ins('Back Squat', 'Legs', equip: 'Barbell');
+      await ins('Romanian Deadlift', 'Glute', equip: 'Barbell');
+      await ins('Walking Lunge', 'Legs', equip: 'Dumbbell', dbb: 1, uni: 1);
+
+      await ins('Barbell Curl', 'Biceps', equip: 'Barbell');
+      await ins('Dumbbell Curl', 'Biceps', equip: 'Dumbbell', dbb: 1, uni: 1);
+      await ins('Triceps Pushdown', 'Triceps', equip: 'Cable');
+
+      await ins('Hanging Leg Raise', 'Abs', equip: 'Bodyweight', bw: 1);
+      await ins('Standing Calf Raise', 'Calves', equip: 'Machine');
+      await ins('Wrist Curl', 'Forearm Flexors', equip: 'Dumbbell', dbb: 1);
+      await ins('Reverse Wrist Curl', 'Forearm Extensors', equip: 'Dumbbell', dbb: 1);
+      await ins('Neck Flexion', 'Neck Exercises');
+    }
+
     await _insertLifts(db);
     await _insertWorkouts(db);
     await _insertBlocks(db);
@@ -655,6 +862,167 @@ class DBService {
     return workouts;
   }
 
+  /// Builds workout instances and seeded lifts for a custom block.
+  Future<void> buildCustomBlockInstances({
+    required int customBlockId,
+    required int blockInstanceId,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final block = await txn.query(
+        'custom_blocks',
+        where: 'customBlockId = ?',
+        whereArgs: [customBlockId],
+        limit: 1,
+      );
+      if (block.isEmpty) return;
+      final uwc = (block.first['uniqueWorkoutCount'] as num).toInt();
+      final wpw = (block.first['workoutsPerWeek'] as num).toInt();
+      final weeks = (block.first['totalWeeks'] as num).toInt();
+
+      final wkts = await txn.query(
+        'custom_workouts',
+        where: 'customBlockId = ?',
+        whereArgs: [customBlockId],
+        orderBy: 'position ASC',
+      );
+      final week1 = wkts.take(uwc).toList();
+      if (week1.isEmpty) return;
+
+      // Clear any existing instances (cascade removes lifts)
+      await txn.delete(
+        'workout_instances',
+        where: 'blockInstanceId = ?',
+        whereArgs: [blockInstanceId],
+      );
+
+      final nameCol = await _liftNameColTx(txn);
+
+      for (int w = 1; w <= weeks; w++) {
+        for (int s = 1; s <= wpw; s++) {
+          final cw = week1[(s - 1) % week1.length];
+          final workoutInstanceId = await txn.insert('workout_instances', {
+            'blockInstanceId': blockInstanceId,
+            // Store the template workout id so later edits can
+            // propagate across all corresponding instances.
+            'workoutId': cw['id'],
+            'workoutName': cw['name'],
+            'week': w,
+            'slotIndex': s,
+            'completed': 0,
+          });
+
+          final lifts = await txn.query(
+            'custom_lifts',
+            where: 'customWorkoutId = ?',
+            whereArgs: [cw['id']],
+            orderBy: 'position ASC',
+          );
+
+          for (final l in lifts) {
+            final ins = {
+              'workoutInstanceId': workoutInstanceId,
+              'liftId': l['liftCatalogId'],
+              nameCol: l['name'],
+              'sets': l['sets'],
+              'repsPerSet': l['repsPerSet'],
+              'scoreMultiplier': l['scoreMultiplier'],
+              'isBodyweight': l['isBodyweight'],
+              'isDumbbellLift': l['isDumbbell'],
+              'position': (l['position'] as num?)?.toInt() ?? 0,
+              'archived': 0,
+            };
+            final newLid = await txn.insert('lift_instances', ins);
+            final sets = (l['sets'] as num?)?.toInt() ?? 0;
+            await _resizeEntriesForLiftInstanceTx(txn, newLid, sets);
+          }
+        }
+      }
+    });
+  }
+
+  /// Rebuilds workout instances after shape edits.
+  Future<void> rebuildCustomBlockInstances({
+    required int customBlockId,
+    required int blockInstanceId,
+  }) =>
+      buildCustomBlockInstances(
+        customBlockId: customBlockId,
+        blockInstanceId: blockInstanceId,
+      );
+
+  /// Updates the core shape of a custom block and rebuilds its instances.
+  Future<void> updateCustomBlockShape(
+      {required int customBlockId,
+      required int blockInstanceId,
+      required int uniqueWorkoutCount,
+      required int workoutsPerWeek,
+      required int totalWeeks}) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.update(
+        'custom_blocks',
+        {
+          'uniqueWorkoutCount': uniqueWorkoutCount,
+          'workoutsPerWeek': workoutsPerWeek,
+          'totalWeeks': totalWeeks,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
+        },
+        where: 'customBlockId = ?',
+        whereArgs: [customBlockId],
+      );
+
+      // Remove existing instances and related data for a clean rebuild.
+      await txn.delete(
+        'lift_entries',
+        where:
+            'workoutInstanceId IN (SELECT workoutInstanceId FROM workout_instances WHERE blockInstanceId = ?)',
+        whereArgs: [blockInstanceId],
+      );
+      await txn.delete(
+        'lift_totals',
+        where:
+            'workoutInstanceId IN (SELECT workoutInstanceId FROM workout_instances WHERE blockInstanceId = ?)',
+        whereArgs: [blockInstanceId],
+      );
+      await txn.delete(
+        'workout_totals',
+        where:
+            'workoutInstanceId IN (SELECT workoutInstanceId FROM workout_instances WHERE blockInstanceId = ?)',
+        whereArgs: [blockInstanceId],
+      );
+      await txn.delete('lift_instances',
+          where:
+              'workoutInstanceId IN (SELECT workoutInstanceId FROM workout_instances WHERE blockInstanceId = ?)',
+          whereArgs: [blockInstanceId]);
+      await txn.delete('workout_instances',
+          where: 'blockInstanceId = ?', whereArgs: [blockInstanceId]);
+    });
+
+    await buildCustomBlockInstances(
+        customBlockId: customBlockId, blockInstanceId: blockInstanceId);
+    await recalculateBlockTotals(blockInstanceId);
+  }
+
+  /// Reorders workouts within a custom block and rebuilds instances.
+  Future<void> reorderCustomWorkouts({
+    required int customBlockId,
+    required int blockInstanceId,
+    required List<int> orderedIds,
+  }) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (int i = 0; i < orderedIds.length; i++) {
+        await txn.update('custom_workouts', {'position': i + 1},
+            where: 'id = ?', whereArgs: [orderedIds[i]]);
+      }
+    });
+
+    await buildCustomBlockInstances(
+        customBlockId: customBlockId, blockInstanceId: blockInstanceId);
+    await recalculateBlockTotals(blockInstanceId);
+  }
+
   Future<void> ensureCustomLiftInstancesSeeded(int workoutInstanceId) async {
     final db = await database;
     await db.transaction((txn) async {
@@ -810,14 +1178,36 @@ class DBService {
   }
 
   // ──────────────────────────────────────────────
+  // 🔍 CUSTOM INSTANCE CHECK
+  // ──────────────────────────────────────────────
+  Future<bool> _isCustomInstance(int workoutInstanceId) async {
+    final db = await database;
+    final rows = await db.rawQuery('''
+      SELECT bi.customBlockId
+      FROM workout_instances wi
+      JOIN block_instances bi ON bi.blockInstanceId = wi.blockInstanceId
+      WHERE wi.workoutInstanceId = ?
+      LIMIT 1
+    ''', [workoutInstanceId]);
+    if (rows.isEmpty) return false;
+    return (rows.first['customBlockId'] as int?) != null;
+  }
+
+  // ──────────────────────────────────────────────
   // 🔍 FETCH LIFTS FOR A WORKOUT INSTANCE
   // ──────────────────────────────────────────────
   Future<List<Map<String, Object?>>> getLiftsForWorkoutInstance(
-      int workoutInstanceId,
-      ) async {
-    final db = await database;
+    int workoutInstanceId,
+  ) async {
+    if (!await _isCustomInstance(workoutInstanceId)) {
+      return _getLockedLiftsForInstance(workoutInstanceId);
+    }
+    return _getCustomLiftsForInstance(workoutInstanceId);
+  }
 
-    // Built-in workouts (have workoutId) → use lift_workouts → lifts (+ meta columns)
+  Future<List<Map<String, Object?>>> _getLockedLiftsForInstance(
+      int workoutInstanceId) async {
+    final db = await database;
     final meta = await db.query(
       'workout_instances',
       columns: ['workoutId'],
@@ -827,9 +1217,8 @@ class DBService {
     );
     if (meta.isEmpty) return [];
     final int? workoutId = meta.first['workoutId'] as int?;
-
-    if (workoutId != null) {
-      return await db.rawQuery('''
+    if (workoutId == null) return [];
+    return await db.rawQuery('''
       SELECT
         0 AS liftInstanceId,
         lw.liftId,
@@ -850,32 +1239,34 @@ class DBService {
       WHERE lw.workoutId = ?
       ORDER BY COALESCE(lw.position, lw.liftWorkoutId) ASC, lw.liftWorkoutId ASC
     ''', [workoutId]);
-    }
+  }
 
-    // Custom workouts → ensure instances exist, then read lift_instances (+ meta columns via LEFT JOIN lifts)
+  Future<List<Map<String, Object?>>> _getCustomLiftsForInstance(
+      int workoutInstanceId) async {
+    final db = await database;
     await ensureCustomLiftInstancesSeeded(workoutInstanceId);
     final liftNameCol = await _liftNameColTx(db);
     return await db.rawQuery('''
-    SELECT
-      li.liftInstanceId,
-      li.liftId,
-      $liftNameCol AS name,
-      li.sets,
-      li.repsPerSet,
-      li.scoreMultiplier,
-      COALESCE(li.isDumbbellLift,0) AS isDumbbellLift,
-      COALESCE(li.isBodyweight,0)   AS isBodyweight,
-      COALESCE(li.position,0)       AS position,
-      l.scoreType           AS scoreType,
-      l.youtubeUrl          AS youtubeUrl,
-      l.description         AS description,
-      l.referenceLiftId     AS referenceLiftId,
-      l.percentOfReference  AS percentOfReference
-    FROM lift_instances li
-    LEFT JOIN lifts l ON l.liftId = li.liftId
-    WHERE li.workoutInstanceId = ? AND COALESCE(li.archived,0) = 0
-    ORDER BY COALESCE(li.position,0) ASC, li.liftInstanceId ASC
-  ''', [workoutInstanceId]);
+      SELECT
+        li.liftInstanceId,
+        li.liftId,
+        $liftNameCol AS name,
+        li.sets,
+        li.repsPerSet,
+        li.scoreMultiplier,
+        COALESCE(li.isDumbbellLift,0) AS isDumbbellLift,
+        COALESCE(li.isBodyweight,0)   AS isBodyweight,
+        COALESCE(li.position,0)       AS position,
+        l.scoreType           AS scoreType,
+        l.youtubeUrl          AS youtubeUrl,
+        l.description         AS description,
+        l.referenceLiftId     AS referenceLiftId,
+        l.percentOfReference  AS percentOfReference
+      FROM lift_instances li
+      LEFT JOIN lifts l ON l.liftId = li.liftId
+      WHERE li.workoutInstanceId = ? AND COALESCE(li.archived,0) = 0
+      ORDER BY COALESCE(li.position,0) ASC, li.liftInstanceId ASC
+    ''', [workoutInstanceId]);
   }
 
 
@@ -1793,80 +2184,25 @@ class DBService {
     required List<Map<String, dynamic>> meta,
   }) async {
     final db = await database;
-    if (blockInstanceId != null) {
-      await db.transaction((txn) async {
-        final wRows = await txn.query(
-          'workout_instances',
-          columns: ['workoutInstanceId'],
-          where: 'blockInstanceId = ? AND dayIndex = ?',
-          whereArgs: [blockInstanceId, dayIndex],
-          limit: 1,
-        );
-        if (wRows.isEmpty) return;
-        final wid = wRows.first['workoutInstanceId'] as int;
 
-        final existing = await txn.query(
-          'lift_instances',
-          where: 'workoutInstanceId = ?',
-          whereArgs: [wid],
-        );
-        final byId = <int, Map<String, Object?>>{
-          for (final r in existing) r['liftInstanceId'] as int: r
-        };
-        final seen = <int>{};
-        for (int i = 0; i < lifts.length; i++) {
-          final l = lifts[i];
-          final m = i < meta.length ? meta[i] : const {};
-          final data = <String, Object?>{
-            'workoutInstanceId': wid,
-            'liftId': m['liftId'],
-            'liftName': l.name,
-            'sets': l.sets,
-            'repsPerSet': l.repsPerSet,
-            'scoreMultiplier': l.multiplier,
-            'scoreType': m['scoreType'],
-            'isDumbbellLift': l.isDumbbellLift ? 1 : 0,
-            'isBodyweight': l.isBodyweight ? 1 : 0,
-            'repScheme': m['repScheme'] ?? '${l.sets}x${l.repsPerSet}',
-            'youtubeUrl': m['youtubeUrl'],
-            'referenceLiftId': m['referenceLiftId'],
-            'percentOfReference': m['percentOfReference'],
-            'position': i,
-          };
-          if (l.id != null && byId.containsKey(l.id)) {
-            await txn.update('lift_instances', data,
-                where: 'liftInstanceId = ?', whereArgs: [l.id]);
-            seen.add(l.id!);
-          } else {
-            final newId = await txn.insert('lift_instances', data);
-            l.id = newId;
-            seen.add(newId);
-          }
-        }
-        for (final row in existing) {
-          final id = row['liftInstanceId'] as int;
-          if (!seen.contains(id)) {
-            await txn.update('lift_instances', {'archived': 1},
-                where: 'liftInstanceId = ?', whereArgs: [id]);
-          }
-        }
-      });
-    } else {
-      await db.transaction((txn) async {
-        final wRows = await txn.query(
-          'custom_workouts',
-          columns: ['id'],
-          where: 'blockId = ? AND dayIndex = ?',
-          whereArgs: [customBlockId, dayIndex],
-          limit: 1,
-        );
-        if (wRows.isEmpty) return;
-        final wid = wRows.first['id'] as int;
+    // Determine the template workout we're editing
+    final cwRows = await db.query(
+      'custom_workouts',
+      columns: ['id'],
+      where: 'customBlockId = ? AND position = ?',
+      whereArgs: [customBlockId, dayIndex],
+      limit: 1,
+    );
+    if (cwRows.isEmpty) return;
+    final customWorkoutId = cwRows.first['id'] as int;
 
+    if (blockInstanceId == null) {
+      // Draft-only path: update template lifts
+      await db.transaction((txn) async {
         final existing = await txn.query(
           'custom_lifts',
-          where: 'workoutId = ?',
-          whereArgs: [wid],
+          where: 'customWorkoutId = ?',
+          whereArgs: [customWorkoutId],
         );
         final byId = <int, Map<String, Object?>>{
           for (final r in existing) r['id'] as int: r
@@ -1876,19 +2212,17 @@ class DBService {
           final l = lifts[i];
           final m = i < meta.length ? meta[i] : const {};
           final data = <String, Object?>{
-            'workoutId': wid,
-            'liftId': m['liftId'],
+            'customWorkoutId': customWorkoutId,
+            'liftCatalogId': m['liftId'],
             'name': l.name,
+            'repSchemeText':
+                m['repScheme'] ?? '${l.sets}x${l.repsPerSet}',
             'sets': l.sets,
             'repsPerSet': l.repsPerSet,
-            'multiplier': l.multiplier,
             'scoreType': m['scoreType'],
-            'isDumbbellLift': l.isDumbbellLift ? 1 : 0,
+            'scoreMultiplier': l.multiplier,
             'isBodyweight': l.isBodyweight ? 1 : 0,
-            'repScheme': m['repScheme'] ?? '${l.sets}x${l.repsPerSet}',
-            'youtubeUrl': m['youtubeUrl'],
-            'referenceLiftId': m['referenceLiftId'],
-            'percentOfReference': m['percentOfReference'],
+            'isDumbbell': l.isDumbbellLift ? 1 : 0,
             'position': i,
           };
           if (l.id != null && byId.containsKey(l.id)) {
@@ -1908,7 +2242,93 @@ class DBService {
           }
         }
       });
+      return;
     }
+
+    // Active block path: propagate edits to all workout instances
+    await db.transaction((txn) async {
+      final baseRows = await txn.query(
+        'workout_instances',
+        columns: ['workoutInstanceId'],
+        where: 'blockInstanceId = ? AND slotIndex = ?',
+        whereArgs: [blockInstanceId, dayIndex],
+        limit: 1,
+      );
+      if (baseRows.isEmpty) return;
+      final baseWid = (baseRows.first['workoutInstanceId'] as num).toInt();
+
+      final existing = await txn.query(
+        'lift_instances',
+        where: 'workoutInstanceId = ? AND archived = 0',
+        whereArgs: [baseWid],
+      );
+      final byId = <int, Map<String, Object?>>{
+        for (final r in existing) r['liftInstanceId'] as int: r
+      };
+      final seen = <int>{};
+      final templateData = <Map<String, Object?>>[];
+
+      for (int i = 0; i < lifts.length; i++) {
+        final l = lifts[i];
+        final m = i < meta.length ? meta[i] : const {};
+
+        templateData.add({
+          'customWorkoutId': customWorkoutId,
+          'liftCatalogId': m['liftId'],
+          'name': l.name,
+          'repSchemeText': m['repScheme'] ?? '${l.sets}x${l.repsPerSet}',
+          'sets': l.sets,
+          'repsPerSet': l.repsPerSet,
+          'scoreType': m['scoreType'],
+          'scoreMultiplier': l.multiplier,
+          'isBodyweight': l.isBodyweight ? 1 : 0,
+          'isDumbbell': l.isDumbbellLift ? 1 : 0,
+          'position': i,
+        });
+
+        if (l.id != null && byId.containsKey(l.id)) {
+          await updateLiftAcrossSlot(
+            workoutInstanceId: baseWid,
+            liftInstanceId: l.id!,
+            name: l.name,
+            sets: l.sets,
+            repsPerSet: l.repsPerSet,
+            scoreMultiplier: l.multiplier,
+            isDumbbellLift: l.isDumbbellLift,
+            isBodyweight: l.isBodyweight,
+            position: i,
+            liftId: m['liftId'],
+          );
+          seen.add(l.id!);
+        } else {
+          await addLiftAcrossSlot(
+            workoutInstanceId: baseWid,
+            lift: l,
+            insertAt: i,
+            liftId: m['liftId'],
+          );
+        }
+      }
+
+      for (final row in existing) {
+        final id = row['liftInstanceId'] as int;
+        if (!seen.contains(id)) {
+          await removeLiftAcrossSlot(
+            workoutInstanceId: baseWid,
+            liftInstanceId: id,
+          );
+        }
+      }
+
+      // Replace template with new definition
+      await txn.delete('custom_lifts',
+          where: 'customWorkoutId = ?', whereArgs: [customWorkoutId]);
+      for (final data in templateData) {
+        await txn.insert('custom_lifts', data);
+      }
+    });
+
+    await recalculateBlockTotals(blockInstanceId);
   }
 
   Future<void> syncCustomBlocksFromFirestore() async {
@@ -2250,6 +2670,7 @@ Future<int> peerCountForWorkout(int workoutInstanceId) =>
     required int workoutInstanceId,
     required LiftDraft lift,
     required int insertAt,
+    int? liftId,
   }) async {
     final db = await database;
     await db.transaction((txn) async {
@@ -2265,6 +2686,7 @@ Future<int> peerCountForWorkout(int workoutInstanceId) =>
 
         final values = {
           'workoutInstanceId': wid,
+          'liftId': liftId,
           liftNameCol: lift.name,
           'sets': lift.sets,
           'repsPerSet': lift.repsPerSet,
@@ -2290,6 +2712,7 @@ Future<int> peerCountForWorkout(int workoutInstanceId) =>
     bool? isDumbbellLift,
     bool? isBodyweight,
     int? position,
+    int? liftId,
   }) async {
     final db = await database;
     await db.transaction((txn) async {
@@ -2337,6 +2760,7 @@ Future<int> peerCountForWorkout(int workoutInstanceId) =>
           upd['isBodyweight'] = isBodyweight ? 1 : 0;
         }
         if (position != null) upd['position'] = position;
+        if (liftId != null) upd['liftId'] = liftId;
         if (upd.isEmpty) continue;
 
         await txn.update('lift_instances', upd,
@@ -2948,6 +3372,7 @@ Future<void> updateWorkoutNameAcrossSlot(
 
     // ✅ Update lift totals in the database
     await updateLiftTotals(workoutInstanceId, liftId);
+    await _maybeRecomputeCustomMultiplier(workoutInstanceId, liftId);
   }
 
   Future<void> upsertLiftTotals({
@@ -3038,6 +3463,55 @@ Future<void> updateWorkoutNameAcrossSlot(
 
     print(
         "✅ Updated Lift Totals — Lift ID: $liftId | Reps: $liftReps | Workload: $liftWorkload | Score: $liftScore");
+  }
+
+  Future<void> _maybeRecomputeCustomMultiplier(
+      int workoutInstanceId, int liftId) async {
+    final db = await database;
+    // Detect custom block and gather context
+    final ctx = await db.rawQuery('''
+      SELECT wi.blockInstanceId, wi.workoutId, li.liftInstanceId, li.sets,
+             li.position, COALESCE(li.isBodyweight,0) AS isBodyweight
+      FROM lift_instances li
+      JOIN workout_instances wi ON wi.workoutInstanceId = li.workoutInstanceId
+      JOIN block_instances bi ON bi.blockInstanceId = wi.blockInstanceId
+      WHERE li.workoutInstanceId = ? AND (li.liftInstanceId = ? OR li.liftId = ?)
+        AND bi.customBlockId IS NOT NULL
+      LIMIT 1
+    ''', [workoutInstanceId, liftId, liftId]);
+
+    if (ctx.isEmpty) return; // not custom or lift not found
+    final row = ctx.first;
+    if ((row['isBodyweight'] as int? ?? 0) == 1) return; // skip bodyweight
+
+    final liftInstanceId = (row['liftInstanceId'] as num).toInt();
+    final sets = (row['sets'] as num?)?.toInt() ?? 0;
+    if (sets <= 0) return;
+
+    final completed = await db.rawQuery('''
+      SELECT COUNT(*) AS c
+      FROM lift_entries
+      WHERE liftInstanceId = ? AND (reps > 0 OR weight > 0)
+    ''', [liftInstanceId]);
+    final logged = (completed.first['c'] as num?)?.toInt() ?? 0;
+    if (logged < sets) return; // not yet complete
+
+    final blockInstanceId = (row['blockInstanceId'] as num).toInt();
+    final customWorkoutId = (row['workoutId'] as num).toInt();
+    final position = (row['position'] as num?)?.toInt() ?? 0;
+
+    final template = await db.query('custom_lifts',
+        columns: ['id'],
+        where: 'customWorkoutId = ? AND position = ?',
+        whereArgs: [customWorkoutId, position],
+        limit: 1);
+    if (template.isEmpty) return;
+    final customLiftId = (template.first['id'] as num).toInt();
+
+    await ScoreMultiplierService.computeAndApplyForCustomLift(
+      customLiftId: customLiftId,
+      blockInstanceId: blockInstanceId,
+    );
   }
 
   Future<void> insertLiftsForWorkoutInstance(int workoutInstanceId) async {
@@ -3582,6 +4056,7 @@ Future<void> updateWorkoutNameAcrossSlot(
     final blockId = blockData.first['blockId'] as int;
     final blockName =
         blockData.first['blockName']?.toString() ?? 'Unknown Block';
+    final int? customBlockId = blockData.first['customBlockId'] as int?;
 
     // 🧠 Collect workouts and reduce redundancy
     final workouts = await getWorkoutInstancesByBlock(blockInstanceId);
@@ -3598,9 +4073,52 @@ Future<void> updateWorkoutNameAcrossSlot(
       final upperName = workoutName.toString().toUpperCase();
       if (upperName.contains("RECOVERY")) continue;
 
-      final totals = await getWorkoutTotals(workoutInstanceId, userId);
-      final score = (totals?['workoutScore'] as num?)?.toDouble() ?? 0.0;
-      final workload = (totals?['workoutWorkload'] as num?)?.toDouble() ?? 0.0;
+      double score = 0.0;
+      double workload = 0.0;
+
+      if (customBlockId != null) {
+        // Recompute lift totals for each lift in this custom workout.
+        final lifts = await getLiftsForWorkoutInstance(workoutInstanceId);
+        double totalScore = 0.0;
+        double totalWorkload = 0.0;
+        int liftCount = 0;
+        for (final l in lifts) {
+          final int? lid = l['liftId'] as int?;
+          if (lid == null) continue;
+          await updateLiftTotals(workoutInstanceId, lid);
+          final lt = await db.query('lift_totals',
+              columns: ['liftScore', 'liftWorkload'],
+              where: 'workoutInstanceId = ? AND liftId = ? AND userId = ?',
+              whereArgs: [workoutInstanceId, lid, userId],
+              limit: 1);
+          if (lt.isNotEmpty) {
+            totalScore += (lt.first['liftScore'] as num?)?.toDouble() ?? 0.0;
+            totalWorkload +=
+                (lt.first['liftWorkload'] as num?)?.toDouble() ?? 0.0;
+            liftCount++;
+          }
+        }
+        workload = totalWorkload;
+        score = liftCount > 0 ? totalScore / liftCount : 0.0;
+
+        await upsertWorkoutTotals(
+          workoutInstanceId: workoutInstanceId,
+          userId: userId,
+          blockInstanceId: blockInstanceId,
+          workoutWorkload: workload,
+          workoutScore: score,
+        );
+        await updateWorkoutTotals(
+          workoutInstanceId: workoutInstanceId,
+          userId: userId,
+          workoutWorkload: workload,
+          workoutScore: score,
+        );
+      } else {
+        final totals = await getWorkoutTotals(workoutInstanceId, userId);
+        score = (totals?['workoutScore'] as num?)?.toDouble() ?? 0.0;
+        workload = (totals?['workoutWorkload'] as num?)?.toDouble() ?? 0.0;
+      }
 
       totalBlockWorkload += workload;
 
