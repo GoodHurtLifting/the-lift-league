@@ -1352,7 +1352,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         CASE WHEN li.isBodyweight = 1 THEN $SCORE_TYPE_BODYWEIGHT ELSE $SCORE_TYPE_MULTIPLIER END AS scoreType,
         li.scoreMultiplier,
         li.isBodyweight,
-        li.isDumbbellLift AS isDumbbell,
+        li.isDumbbellLift,
         COALESCE(li.position,0) AS position
       FROM lift_instances li
       WHERE li.workoutInstanceId = ? AND COALESCE(li.archived,0) = 0
