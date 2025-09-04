@@ -367,24 +367,13 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       onPressed: isSaving || selected == null
                           ? null
                           : () async {
-                              final sheetNav = Navigator.of(ctx);
-
-                              final idRaw =
-                                  selected?['catalogId'] ?? selected?['id'];
-                              if (idRaw == null) {
-                                debugPrint(
-                                    '[AddLift] Missing catalog id in selected=$selected');
-                                return;
-                              }
-                              final liftId = (idRaw as num).toInt();
-                              final name =
-                                  (selected?['name'] as String? ?? '').trim();
-
-                              final sets =
-                                  int.tryParse(setsCtrl.text.trim()) ?? 3;
-                              final reps =
-                                  int.tryParse(repsCtrl.text.trim()) ?? 10;
-                              final repText = '${sets}x$reps';
+                              final idVal = selected?['catalogId'];
+                              if (idVal == null) return;
+                              final liftId = (idVal as num).toInt();
+                              final name = selected?['name']?.toString() ?? '';
+                              final sets = int.tryParse(setsCtrl.text) ?? 3;
+                              final reps = int.tryParse(repsCtrl.text) ?? 10;
+                              final repText = '${sets}x${reps}';
 
                               final newLift = LiftDraft(
                                 name: name,
@@ -405,7 +394,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                     : SCORE_TYPE_MULTIPLIER;
 
                                 await DBService.instance.addLiftToCustomWorkout(
-                                  customWorkoutId: widget.workout.id,
+                                  customBlockId: widget.customBlockId,
+                                  dayIndex: widget.workout.dayIndex,
+                                  workoutName: widget.workout.name,
                                   liftCatalogId: liftId,
                                   // include 'name' here only if your DB method expects it
                                   repSchemeText: repText,
