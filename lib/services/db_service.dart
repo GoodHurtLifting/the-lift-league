@@ -2146,7 +2146,9 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   }
 
   Future<int> addLiftToCustomWorkout({
-    required int customWorkoutId,
+    required int customBlockId,
+    required int dayIndex,
+    required String workoutName,
     required int liftCatalogId,
     required String repSchemeText,
     required int sets,
@@ -2156,6 +2158,26 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     required String scoreType,
   }) async {
     final db = await database;
+
+    // Resolve or create the custom_workouts row for this block/day
+    int customWorkoutId;
+    final cwRows = await db.query(
+      'custom_workouts',
+      columns: ['id'],
+      where: 'customBlockId = ? AND position = ?',
+      whereArgs: [customBlockId, dayIndex],
+      limit: 1,
+    );
+    if (cwRows.isNotEmpty) {
+      customWorkoutId = cwRows.first['id'] as int;
+    } else {
+      customWorkoutId = await db.insert('custom_workouts', {
+        'customBlockId': customBlockId,
+        'name': workoutName,
+        'position': dayIndex,
+      });
+    }
+
     final posRows = await db.rawQuery(
       'SELECT COALESCE(MAX(position), -1) + 1 AS pos FROM custom_lifts WHERE customWorkoutId = ?',
       [customWorkoutId],
