@@ -2252,7 +2252,6 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   Future<int> addLiftToCustomWorkout({
     required int customWorkoutId,
     required int liftCatalogId,
-    required String name,
     required String repSchemeText,
     required int sets,
     required int repsPerSet,
@@ -2266,10 +2265,23 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       [customWorkoutId],
     );
     final position = (posRows.first['pos'] as num).toInt();
+
+    String? liftName;
+    final nameRows = await db.query(
+      'lift_catalog',
+      columns: ['name'],
+      where: 'catalogId = ?',
+      whereArgs: [liftCatalogId],
+      limit: 1,
+    );
+    if (nameRows.isNotEmpty) {
+      liftName = nameRows.first['name'] as String?;
+    }
+
     return await db.insert('custom_lifts', {
       'customWorkoutId': customWorkoutId,
       'liftCatalogId': liftCatalogId,
-      'name': name,
+      'name': liftName,
       'repSchemeText': repSchemeText,
       'sets': sets,
       'repsPerSet': repsPerSet,
