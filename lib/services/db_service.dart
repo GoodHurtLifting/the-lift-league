@@ -1432,26 +1432,43 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   Future<int> upsertCustomBlock(CustomBlock block) async {
     final db = await database;
 
-    await db.insert(
-      'custom_blocks',
-      {
-        'id': block.id,
-        'name': block.name,
-        'numWeeks': block.numWeeks,
-        'daysPerWeek': block.daysPerWeek,
-        'isDraft': block.isDraft ? 1 : 0,
-        'coverImagePath': block.coverImagePath,
-        'scheduleType': block.scheduleType,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
+    await db.rawInsert(
+      '''
+      INSERT OR REPLACE INTO custom_blocks (
+        customBlockId,
+        name,
+        totalWeeks,
+        workoutsPerWeek,
+        uniqueWorkoutCount,
+        isDraft,
+        coverImagePath,
+        scheduleType
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        block.id,
+        block.name,
+        block.numWeeks,
+        block.daysPerWeek,
+        block.workouts.length,
+        block.isDraft ? 1 : 0,
+        block.coverImagePath,
+        block.scheduleType,
+      ],
     );
 
     await db.transaction((txn) async {
-      await txn.delete('custom_lifts',
-          where: 'workoutId IN (SELECT id FROM custom_workouts WHERE blockId = ?)',
-          whereArgs: [block.id]);
-      await txn.delete('custom_workouts',
-          where: 'blockId = ?', whereArgs: [block.id]);
+      await txn.delete(
+        'custom_lifts',
+        where:
+            'customWorkoutId IN (SELECT id FROM custom_workouts WHERE customBlockId = ?)',
+        whereArgs: [block.id],
+      );
+      await txn.delete(
+        'custom_workouts',
+        where: 'customBlockId = ?',
+        whereArgs: [block.id],
+      );
 
       final expanded = List<WorkoutDraft>.from(block.workouts)
         ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
@@ -1462,8 +1479,8 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
           'custom_workouts',
           {
             'id': w.id,
-            'blockId': block.id,
-            'dayIndex': i,
+            'customBlockId': block.id,
+            'position': i,
             'name': w.name,
           },
           conflictAlgorithm: ConflictAlgorithm.replace,
@@ -1472,13 +1489,15 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         for (var j = 0; j < w.lifts.length; j++) {
           final l = w.lifts[j];
           await txn.insert('custom_lifts', {
-            'workoutId': wid,
+            'customWorkoutId': wid,
             'name': l.name,
             'sets': l.sets,
             'repsPerSet': l.repsPerSet,
-            'multiplier': l.multiplier,
+            'scoreMultiplier': l.multiplier,
+            'scoreType':
+                l.isBodyweight ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER,
             'isBodyweight': l.isBodyweight ? 1 : 0,
-            'isDumbbellLift': l.isDumbbellLift ? 1 : 0,
+            'isDumbbell': l.isDumbbellLift ? 1 : 0,
             'position': l.position,
           });
         }
