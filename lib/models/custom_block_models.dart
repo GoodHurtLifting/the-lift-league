@@ -1,12 +1,7 @@
 class CustomBlock {
   final int id;
   final String name;
-  /// Duration of the block in weeks. When persisted to the database this is
-  /// stored in the `totalWeeks` column of the `custom_blocks` table.
   final int numWeeks;
-
-  /// Number of workouts per week. When persisted to the database this maps to
-  /// the `workoutsPerWeek` column of the `custom_blocks` table.
   final int daysPerWeek;
   final bool isDraft;
   final String scheduleType;

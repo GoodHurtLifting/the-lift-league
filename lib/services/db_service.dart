@@ -39,7 +39,7 @@ class DBService {
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
 
-  static const _dbVersion = 24;   // bump any time the schema changes
+  static const _dbVersion = 25;   // bump any time the schema changes
 
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
@@ -188,7 +188,8 @@ class DBService {
             ownerUid TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'draft',
             createdAt INTEGER NOT NULL,
-            updatedAt INTEGER NOT NULL
+            updatedAt INTEGER NOT NULL,
+            isDraft INTEGER NOT NULL DEFAULT 1
           );
           ''');
           await db.execute('''
@@ -462,7 +463,8 @@ CREATE TABLE IF NOT EXISTS custom_blocks (
   ownerUid TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'draft',
   createdAt INTEGER NOT NULL,
-  updatedAt INTEGER NOT NULL
+  updatedAt INTEGER NOT NULL,
+  isDraft INTEGER NOT NULL DEFAULT 1
 );
 ''');
 
@@ -577,50 +579,6 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   // 🔄 INSERT DEFAULT DATA
   // ──────────────────────────────────────────────
   Future<void> _insertDefaultData(Database db) async {
-    final existing = await db.rawQuery('SELECT COUNT(1) AS c FROM lift_catalog;');
-    final count = (existing.first['c'] as int?) ?? 0;
-    if (count == 0) {
-      Future<int> ins(String name, String g,
-          {String? equip, int bw = 0, int dbb = 0, int uni = 0, String? y}) async {
-        return await db.insert('lift_catalog', {
-          'name': name,
-          'primaryGroup': g,
-          'equipment': equip ?? 'Other',
-          'isBodyweightCapable': bw,
-          'isDumbbellCapable': dbb,
-          'unilateral': uni,
-          'youtubeUrl': y,
-          'createdAt': DateTime.now().millisecondsSinceEpoch,
-          'updatedAt': DateTime.now().millisecondsSinceEpoch,
-        });
-      }
-
-      await ins('Barbell Bench Press', 'Chest', equip: 'Barbell');
-      await ins('Dumbbell Bench Press', 'Chest', equip: 'Dumbbell', dbb: 1);
-      await ins('Push-Up', 'Chest', equip: 'Bodyweight', bw: 1);
-
-      await ins('Overhead Press', 'Shoulder', equip: 'Barbell');
-      await ins('Dumbbell Shoulder Press', 'Shoulder', equip: 'Dumbbell', dbb: 1);
-      await ins('Lateral Raise', 'Shoulder', equip: 'Dumbbell', dbb: 1, uni: 1);
-
-      await ins('Barbell Row', 'Back', equip: 'Barbell');
-      await ins('Lat Pulldown', 'Back', equip: 'Machine');
-      await ins('Pull-Up', 'Back', equip: 'Bodyweight', bw: 1);
-
-      await ins('Back Squat', 'Legs', equip: 'Barbell');
-      await ins('Romanian Deadlift', 'Glute', equip: 'Barbell');
-      await ins('Walking Lunge', 'Legs', equip: 'Dumbbell', dbb: 1, uni: 1);
-
-      await ins('Barbell Curl', 'Biceps', equip: 'Barbell');
-      await ins('Dumbbell Curl', 'Biceps', equip: 'Dumbbell', dbb: 1, uni: 1);
-      await ins('Triceps Pushdown', 'Triceps', equip: 'Cable');
-
-      await ins('Hanging Leg Raise', 'Abs', equip: 'Bodyweight', bw: 1);
-      await ins('Standing Calf Raise', 'Calves', equip: 'Machine');
-      await ins('Wrist Curl', 'Forearm Flexors', equip: 'Dumbbell', dbb: 1);
-      await ins('Reverse Wrist Curl', 'Forearm Extensors', equip: 'Dumbbell', dbb: 1);
-      await ins('Neck Flexion', 'Neck Exercises');
-    }
 
     await _insertLifts(db);
     await _insertWorkouts(db);
@@ -682,68 +640,6 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       print("❌ Lift not found: Lift ID $liftId");
       return null;
     }
-  }
-
-  // ──────────────────────────────────────────────
-  // 🔍 SEARCH LIFT CATALOG
-  // ──────────────────────────────────────────────
-  Future<List<String>> getLiftGroups() async {
-    final db = await database;
-    final rows = await db.rawQuery(
-        'SELECT DISTINCT primaryGroup FROM lift_catalog ORDER BY primaryGroup ASC');
-    return rows.map((e) => e['primaryGroup'] as String).toList();
-  }
-
-  // ──────────────────────────────────────────────
-  // 🔍 FILTERED LIFT QUERY
-  // ──────────────────────────────────────────────
-  Future<List<Map<String, Object?>>> getLiftCatalog({
-    String? group,          // exact group name or null
-    String? queryText,      // name/alias contains
-    bool? bodyweightCapable,
-    bool? dumbbellCapable,
-    int limit = 100,
-    int offset = 0,
-  }) async {
-    final db = await database;
-    final where = <String>[];
-    final args = <Object?>[];
-    if (group != null && group.isNotEmpty) {
-      where.add('lc.primaryGroup = ?');
-      args.add(group);
-    }
-    if (bodyweightCapable != null) {
-      where.add('lc.isBodyweightCapable = ?');
-      args.add(bodyweightCapable ? 1 : 0);
-    }
-    if (dumbbellCapable != null) {
-      where.add('lc.isDumbbellCapable = ?');
-      args.add(dumbbellCapable ? 1 : 0);
-    }
-
-    String whereSql = where.isEmpty ? '' : 'WHERE ' + where.join(' AND ');
-
-    // name or alias search
-    String searchJoin = '';
-    if (queryText != null && queryText.trim().isNotEmpty) {
-      searchJoin = '''
-      LEFT JOIN lift_aliases la ON la.catalogId = lc.catalogId
-    ''';
-      final q = '%${queryText.trim()}%';
-      whereSql += (whereSql.isEmpty ? 'WHERE ' : ' AND ') +
-          '(lc.name LIKE ? OR la.alias LIKE ?)';
-      args..add(q)..add(q);
-    }
-
-    final rows = await db.rawQuery('''
-    SELECT DISTINCT lc.*
-    FROM lift_catalog lc
-    $searchJoin
-    $whereSql
-    ORDER BY lc.primaryGroup ASC, lc.name ASC
-    LIMIT $limit OFFSET $offset
-  ''', args);
-    return rows;
   }
 
   Future<void> resetDevDatabase() async {

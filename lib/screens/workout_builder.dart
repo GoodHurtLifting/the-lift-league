@@ -5,6 +5,8 @@ import 'package:lift_league/models/custom_block_models.dart';
 import 'package:lift_league/services/db_service.dart'
     show DBService, SCORE_TYPE_BODYWEIGHT, SCORE_TYPE_MULTIPLIER;
 import 'package:lift_league/widgets/confirmation_dialog.dart';
+import 'package:lift_league/services/lift_catalog_service.dart';
+
 
 class WorkoutBuilder extends StatefulWidget {
   final WorkoutDraft workout;
@@ -159,39 +161,37 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   }
 
   Future<Map<String, Object?>?> _pickFromCatalog(BuildContext context) async {
-    final groups = await DBService.instance.getLiftGroups();
+    // Seed once (no-op if already populated)
+    await LiftCatalogService.instance.ensureSeeded();
+
+    final groups = await LiftCatalogService.instance.getGroups();
+
     String? group;
     String search = '';
     bool? bw;
     bool? dbb;
-    List<Map<String, Object?>> results = [];
 
-    Future<void> load() async {
-      results = await DBService.instance.getLiftCatalog(
+    Future<List<Map<String, Object?>>> _fetch() {
+      return LiftCatalogService.instance.query(
         group: group,
-        queryText: search,
+        queryText: search.isEmpty ? null : search,
         bodyweightCapable: bw,
         dumbbellCapable: dbb,
-        limit: 100,
+        limit: 200,
       );
     }
 
-    await load();
     return showModalBottomSheet<Map<String, Object?>>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) {
+      builder: (sheetCtx) {
         return SafeArea(
           child: StatefulBuilder(
-            builder: (ctx, setModalState) {
-              Future<void> refresh() async {
-                await load();
-                setModalState(() {});
-              }
-
+            builder: (ctx, setSheetState) {
               return Padding(
                 padding: EdgeInsets.fromLTRB(
-                    16, 16, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom),
+                  16, 16, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -199,28 +199,15 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       value: group,
                       isExpanded: true,
                       hint: const Text('Muscle Group'),
-                      items: [
-                        const DropdownMenuItem<String?>(
-                            value: null, child: Text('All')),
-                        ...groups.map(
-                          (g) => DropdownMenuItem<String?>(
-                            value: g,
-                            child: Text(g),
-                          ),
-                        ),
+                      items: <DropdownMenuItem<String?>>[
+                        const DropdownMenuItem(value: null, child: Text('All')),
+                        ...groups.map((g) => DropdownMenuItem<String?>(value: g, child: Text(g))),
                       ],
-                      onChanged: (v) {
-                        group = v;
-                        refresh();
-                      },
+                      onChanged: (v) => setSheetState(() => group = v),
                     ),
                     TextField(
-                      decoration:
-                          const InputDecoration(labelText: 'Search'),
-                      onChanged: (v) {
-                        search = v;
-                        refresh();
-                      },
+                      decoration: const InputDecoration(labelText: 'Search'),
+                      onChanged: (v) => setSheetState(() => search = v),
                     ),
                     Row(
                       children: [
@@ -230,10 +217,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Bodyweight-capable'),
                             value: bw ?? false,
-                            onChanged: (v) {
-                              bw = v == true ? true : null;
-                              refresh();
-                            },
+                            onChanged: (v) => setSheetState(() => bw = v == true ? true : null),
                           ),
                         ),
                         Expanded(
@@ -242,25 +226,36 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Dumbbell-capable'),
                             value: dbb ?? false,
-                            onChanged: (v) {
-                              dbb = v == true ? true : null;
-                              refresh();
-                            },
+                            onChanged: (v) => setSheetState(() => dbb = v == true ? true : null),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
-                      height: 300,
-                      child: ListView.builder(
-                        itemCount: results.length,
-                        itemBuilder: (ctx, i) {
-                          final r = results[i];
-                          return ListTile(
-                            title: Text(r['name']?.toString() ?? ''),
-                            subtitle: Text(r['primaryGroup']?.toString() ?? ''),
-                            onTap: () => Navigator.of(ctx).pop(r),
+                      height: 320,
+                      child: FutureBuilder<List<Map<String, Object?>>>(
+                        future: _fetch(),
+                        builder: (ctx, snap) {
+                          if (snap.connectionState != ConnectionState.done) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final results = snap.data ?? const [];
+                          if (results.isEmpty) {
+                            return const Center(child: Text('No lifts match your filters.'));
+                          }
+                          return ListView.builder(
+                            itemCount: results.length,
+                            itemBuilder: (ctx, i) {
+                              final r = results[i];
+                              final name = (r['name'] ?? '').toString();
+                              final grp  = (r['primaryGroup'] ?? '').toString();
+                              return ListTile(
+                                title: Text(name),
+                                subtitle: Text(grp),
+                                onTap: () => Navigator.of(sheetCtx).pop(r),
+                              );
+                            },
                           );
                         },
                       ),
@@ -274,6 +269,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
       },
     );
   }
+
 
   void _showAddLiftSheet() {
     final setsCtrl = TextEditingController(text: '3');
