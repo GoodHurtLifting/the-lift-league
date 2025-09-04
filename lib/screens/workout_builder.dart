@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:lift_league/models/custom_block_models.dart';
-import 'package:lift_league/services/db_service.dart';
+import 'package:lift_league/services/db_service.dart'
+    show DBService, SCORE_TYPE_BODYWEIGHT, SCORE_TYPE_MULTIPLIER;
 import 'package:lift_league/widgets/confirmation_dialog.dart';
 
 class WorkoutBuilder extends StatefulWidget {
@@ -355,19 +356,25 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       onPressed: _isSaving || selected == null
                           ? null
                           : () async {
-                              final sets = int.tryParse(setsCtrl.text) ?? 3;
-                              final reps = int.tryParse(repsCtrl.text) ?? 10;
-                              final sets = int.tryParse(setsCtrl.text);
-                              final reps = int.tryParse(repsCtrl.text);
-                              final repText =
-                                  (sets != null && reps != null)
-                                      ? '${sets}x${reps}'
-                                      : null;
+                              final int setsVal =
+                                  int.tryParse(setsCtrl.text.trim()) ?? 3;
+                              final int repsVal =
+                                  int.tryParse(repsCtrl.text.trim()) ?? 10;
+
+                              final String repText =
+                                  '${setsVal}x${repsVal}';
+
+                              final int? catalogId =
+                                  (selected?['catalogId'] as num?)?.toInt();
+
+                              final int scoreType = isBodyweight
+                                  ? SCORE_TYPE_BODYWEIGHT
+                                  : SCORE_TYPE_MULTIPLIER;
 
                               final newLift = LiftDraft(
                                 name: selected!['name'] as String,
-                                sets: sets ?? 0,
-                                repsPerSet: reps ?? 0,
+                                sets: setsVal,
+                                repsPerSet: repsVal,
                                 multiplier: 0,
                                 isBodyweight: isBodyweight,
                                 isDumbbellLift: isDumbbellLift,
@@ -379,24 +386,20 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
 
                               setLocalState(() => _isSaving = true);
                               try {
-                                final scoreType = isBodyweight
-                                    ? SCORE_TYPE_BODYWEIGHT
-                                    : SCORE_TYPE_MULTIPLIER;
                                 await DBService.instance.addLiftToCustomWorkout(
                                   customWorkoutId: widget.workout.id,
-                                  liftCatalogId:
-                                      selected!['catalogId'] as int?,
+                                  liftCatalogId: catalogId,
                                   name: selected!['name'] as String,
                                   repSchemeText: repText,
-                                  sets: sets,
-                                  repsPerSet: reps,
+                                  sets: setsVal,
+                                  repsPerSet: repsVal,
                                   isBodyweight: isBodyweight ? 1 : 0,
                                   isDumbbell: isDumbbellLift ? 1 : 0,
                                   scoreType: scoreType,
                                 );
                                 widget.workout.lifts.add(newLift);
                                 _liftMeta.add({
-                                  'liftId': selected!['catalogId'],
+                                  'liftId': catalogId,
                                   'repScheme': repText,
                                   'scoreType': scoreType,
                                 });
