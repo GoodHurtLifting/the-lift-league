@@ -365,7 +365,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       onPressed: isSaving || selected == null
                           ? null
                           : () async {
-                              final idVal = selected?['catalogId'] ?? selected?['id'];
+                              final idVal = selected?['catalogId'];
                               if (idVal == null) return;
                               final liftId = (idVal as num).toInt();
                               final name = selected?['name']?.toString() ?? '';
