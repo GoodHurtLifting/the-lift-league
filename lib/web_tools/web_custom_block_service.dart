@@ -290,6 +290,7 @@ class WebCustomBlockService {
 
   /// Public wrapper for [_generateWebWorkoutDistribution] so UI components
   /// can preview schedules without duplicating the logic.
+  @Deprecated('Legacy shadow distribution') // TODO: Delete once custom scheduling is stable.
   List<Map<String, dynamic>> previewDistribution(
     List<CustomWorkout> workouts,
     int weeks,
@@ -312,6 +313,7 @@ class WebCustomBlockService {
   /// Only the `standard` and `ab_alternate` schedule types are supported. The
   /// `weeks` parameter must be between 3 and 6 inclusive and `daysPerWeek` must
   /// be between 2 and 6 inclusive.
+  @Deprecated('Legacy shadow distribution') // TODO: Delete once custom scheduling is stable.
   List<Map<String, dynamic>> _generateWebWorkoutDistribution(
       List<CustomWorkout> workouts,
       int weeks,
