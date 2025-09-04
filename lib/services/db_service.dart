@@ -110,14 +110,14 @@ class DBService {
 
           // Ensure workouts_blocks exists with correct schema (no rebuild)
           await db.execute('''
-      CREATE TABLE IF NOT EXISTS workouts_blocks (
-        workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
-        blockId INTEGER NOT NULL,
-        workoutId INTEGER NOT NULL,
-        FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
-        FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
-      );
-    ''');
+          CREATE TABLE IF NOT EXISTS workouts_blocks (
+            workoutBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
+            blockId INTEGER NOT NULL,
+            workoutId INTEGER NOT NULL,
+            FOREIGN KEY (blockId) REFERENCES blocks(blockId) ON DELETE CASCADE,
+            FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE
+          );
+        ''');
           await db.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_wb_block_workout ON workouts_blocks(blockId, workoutId);');
 
           // slotIndex on workout_instances
@@ -157,88 +157,88 @@ class DBService {
 
         if (oldV < 21) {
           await db.execute('''
-      CREATE TABLE IF NOT EXISTS lift_instances (
-        liftInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
-        workoutInstanceId INTEGER,
-        liftId INTEGER,
-        liftName TEXT,
-        sets INTEGER,
-        repsPerSet INTEGER,
-        scoreMultiplier REAL,
-        isDumbbellLift INTEGER,
-        isBodyweight INTEGER,
-        position INTEGER DEFAULT 0,
-        archived INTEGER DEFAULT 0,
-        FOREIGN KEY (workoutInstanceId) REFERENCES workout_instances(workoutInstanceId) ON DELETE CASCADE,
-        FOREIGN KEY (liftId) REFERENCES lifts(liftId)
-      )
-    ''');
+          CREATE TABLE IF NOT EXISTS lift_instances (
+            liftInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
+            workoutInstanceId INTEGER,
+            liftId INTEGER,
+            liftName TEXT,
+            sets INTEGER,
+            repsPerSet INTEGER,
+            scoreMultiplier REAL,
+            isDumbbellLift INTEGER,
+            isBodyweight INTEGER,
+            position INTEGER DEFAULT 0,
+            archived INTEGER DEFAULT 0,
+            FOREIGN KEY (workoutInstanceId) REFERENCES workout_instances(workoutInstanceId) ON DELETE CASCADE,
+            FOREIGN KEY (liftId) REFERENCES lifts(liftId)
+          )
+        ''');
           await db.execute(
               'CREATE INDEX IF NOT EXISTS idx_li_workout_archived_pos ON lift_instances (workoutInstanceId, archived, position);');
         }
 
         if (oldV < 22) {
           await db.execute('''
-CREATE TABLE IF NOT EXISTS custom_blocks (
-  customBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  uniqueWorkoutCount INTEGER NOT NULL,
-  workoutsPerWeek INTEGER NOT NULL,
-  totalWeeks INTEGER NOT NULL,
-  ownerUid TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'draft',
-  createdAt INTEGER NOT NULL,
-  updatedAt INTEGER NOT NULL
-);
-''');
+          CREATE TABLE IF NOT EXISTS custom_blocks (
+            customBlockId INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            uniqueWorkoutCount INTEGER NOT NULL,
+            workoutsPerWeek INTEGER NOT NULL,
+            totalWeeks INTEGER NOT NULL,
+            ownerUid TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'draft',
+            createdAt INTEGER NOT NULL,
+            updatedAt INTEGER NOT NULL
+          );
+          ''');
           await db.execute('''
-CREATE TABLE IF NOT EXISTS custom_workouts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  customBlockId INTEGER NOT NULL,
-  name TEXT NOT NULL,
-  position INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY(customBlockId) REFERENCES custom_blocks(customBlockId) ON DELETE CASCADE
-);
-''');
+          CREATE TABLE IF NOT EXISTS custom_workouts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customBlockId INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            position INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY(customBlockId) REFERENCES custom_blocks(customBlockId) ON DELETE CASCADE
+          );
+          ''');
           await db.execute('''
-CREATE TABLE IF NOT EXISTS custom_lifts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  customWorkoutId INTEGER NOT NULL,
-  liftCatalogId INTEGER,
-  name TEXT NOT NULL,
-  repSchemeText TEXT,
-  sets INTEGER,
-  repsPerSet INTEGER,
-  scoreType INTEGER,
-  scoreMultiplier REAL,
-  isBodyweight INTEGER,
-  isDumbbell INTEGER,
-  position INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY(customWorkoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
-);
-''');
+          CREATE TABLE IF NOT EXISTS custom_lifts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customWorkoutId INTEGER NOT NULL,
+            liftCatalogId INTEGER,
+            name TEXT NOT NULL,
+            repSchemeText TEXT,
+            sets INTEGER,
+            repsPerSet INTEGER,
+            scoreType INTEGER,
+            scoreMultiplier REAL,
+            isBodyweight INTEGER,
+            isDumbbell INTEGER,
+            position INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY(customWorkoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
+          );
+          ''');
           await db.execute('''
-CREATE TABLE IF NOT EXISTS custom_block_instances (
-  blockInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
-  customBlockId INTEGER NOT NULL,
-  runNumber INTEGER NOT NULL DEFAULT 1,
-  startDate INTEGER NULL,
-  endDate INTEGER NULL,
-  FOREIGN KEY(customBlockId) REFERENCES custom_blocks(customBlockId) ON DELETE CASCADE
-);
-''');
+          CREATE TABLE IF NOT EXISTS custom_block_instances (
+            blockInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
+            customBlockId INTEGER NOT NULL,
+            runNumber INTEGER NOT NULL DEFAULT 1,
+            startDate INTEGER NULL,
+            endDate INTEGER NULL,
+            FOREIGN KEY(customBlockId) REFERENCES custom_blocks(customBlockId) ON DELETE CASCADE
+          );
+          ''');
           await db.execute('''
-CREATE TABLE IF NOT EXISTS custom_workout_instances (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  blockInstanceId INTEGER NOT NULL,
-  customWorkoutId INTEGER NOT NULL,
-  week INTEGER NOT NULL,
-  slot INTEGER NOT NULL,
-  position INTEGER NOT NULL DEFAULT 0,
-  FOREIGN KEY(blockInstanceId) REFERENCES custom_block_instances(blockInstanceId) ON DELETE CASCADE,
-  FOREIGN KEY(customWorkoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
-);
-''');
+          CREATE TABLE IF NOT EXISTS custom_workout_instances (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            blockInstanceId INTEGER NOT NULL,
+            customWorkoutId INTEGER NOT NULL,
+            week INTEGER NOT NULL,
+            slot INTEGER NOT NULL,
+            position INTEGER NOT NULL DEFAULT 0,
+            FOREIGN KEY(blockInstanceId) REFERENCES custom_block_instances(blockInstanceId) ON DELETE CASCADE,
+            FOREIGN KEY(customWorkoutId) REFERENCES custom_workouts(id) ON DELETE CASCADE
+          );
+          ''');
           try {
             await db.execute('CREATE INDEX IF NOT EXISTS idx_cwi_block_week_slot ON custom_workout_instances(blockInstanceId, week, slot);');
           } catch (_) {}
@@ -253,32 +253,31 @@ CREATE TABLE IF NOT EXISTS custom_workout_instances (
 
         if (oldV < 23) {
           await db.execute('''
-CREATE TABLE IF NOT EXISTS lift_catalog (
-  catalogId INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL,
-  primaryGroup TEXT NOT NULL,
-  secondaryGroups TEXT,
-  equipment TEXT,
-  isBodyweightCapable INTEGER NOT NULL DEFAULT 0,
-  isDumbbellCapable INTEGER NOT NULL DEFAULT 0,
-  unilateral INTEGER NOT NULL DEFAULT 0,
-  youtubeUrl TEXT,
-  createdAt INTEGER NOT NULL,
-  updatedAt INTEGER NOT NULL
-);
-''');
+          CREATE TABLE IF NOT EXISTS lift_catalog (
+            catalogId INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            primaryGroup TEXT NOT NULL,
+            secondaryGroups TEXT,
+            equipment TEXT,
+            isBodyweightCapable INTEGER NOT NULL DEFAULT 0,
+            isDumbbellCapable INTEGER NOT NULL DEFAULT 0,
+            unilateral INTEGER NOT NULL DEFAULT 0,
+            youtubeUrl TEXT,
+            createdAt INTEGER NOT NULL,
+            updatedAt INTEGER NOT NULL
+          );
+          ''');
           await db.execute('''
-CREATE TABLE IF NOT EXISTS lift_aliases (
-  aliasId INTEGER PRIMARY KEY AUTOINCREMENT,
-  catalogId INTEGER NOT NULL,
-  alias TEXT NOT NULL,
-  FOREIGN KEY(catalogId) REFERENCES lift_catalog(catalogId) ON DELETE CASCADE
-);
-''');
+          CREATE TABLE IF NOT EXISTS lift_aliases (
+            aliasId INTEGER PRIMARY KEY AUTOINCREMENT,
+            catalogId INTEGER NOT NULL,
+            alias TEXT NOT NULL,
+            FOREIGN KEY(catalogId) REFERENCES lift_catalog(catalogId) ON DELETE CASCADE
+          );
+          ''');
           await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
           await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
         }
-
       },
     );
   }

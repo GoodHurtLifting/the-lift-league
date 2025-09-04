@@ -358,15 +358,12 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           : () async {
                               final sets = int.tryParse(setsCtrl.text) ?? 3;
                               final reps = int.tryParse(repsCtrl.text) ?? 10;
-                              final repText =
-                                  (sets != null && reps != null)
-                                      ? '${sets}x${reps}'
-                                      : null;
+                              final repText =  '${sets}x${reps}';
 
                               final newLift = LiftDraft(
                                 name: selected!['name'] as String,
-                                sets: sets ?? 0,
-                                repsPerSet: reps ?? 0,
+                                sets: sets,
+                                repsPerSet: reps,
                                 multiplier: 0,
                                 isBodyweight: isBodyweight,
                                 isDumbbellLift: isDumbbellLift,
@@ -394,7 +391,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                 );
                                 widget.workout.lifts.add(newLift);
                                 _liftMeta.add({
-                                  'liftId': selected!['catalogId'],
+                                  'liftId': 'catalogId',
                                   'repScheme': repText,
                                   'scoreType': scoreType,
                                 });
