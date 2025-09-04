@@ -71,7 +71,7 @@ class LiftCatalogService {
     if (dumbbellCapable == true)  where.add('isDumbbellCapable = 1');
 
     final sql = '''
-      SELECT id AS catalogId,
+      SELECT catalogId,
              name,
              primaryGroup,
              equipment,

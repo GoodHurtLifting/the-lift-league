@@ -365,7 +365,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       onPressed: isSaving || selected == null
                           ? null
                           : () async {
-                              final idVal = selected?['catalogId'] ?? selected?['id'];
+                              final idVal = selected?['catalogId'];
                               if (idVal == null) return;
                               final liftId = (idVal as num).toInt();
                               final name = selected?['name']?.toString() ?? '';
@@ -392,7 +392,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                     ? SCORE_TYPE_BODYWEIGHT
                                     : SCORE_TYPE_MULTIPLIER;
                                 await DBService.instance.addLiftToCustomWorkout(
-                                  customWorkoutId: widget.workout.id,
+                                  customBlockId: widget.customBlockId,
+                                  dayIndex: widget.workout.dayIndex,
+                                  workoutName: widget.workout.name,
                                   liftCatalogId: liftId,
                                   repSchemeText: repText,
                                   sets: sets,
