@@ -3450,6 +3450,7 @@ Future<void> updateWorkoutNameAcrossSlot(
 // ──────────────────────────────────────────────
 // 🔄 GENERATE WORKOUT DISTRIBUTION BASED ON SCHEDULE TYPE
 // ──────────────────────────────────────────────
+  @Deprecated('Legacy shadow distribution') // TODO: Delete once custom scheduling is stable.
   Future<List<Map<String, dynamic>>> generateWorkoutDistribution(
       List<Map<String, dynamic>> workouts, String scheduleType) async {
     final int numWorkouts = workouts.length;
