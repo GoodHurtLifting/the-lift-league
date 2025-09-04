@@ -7,7 +7,6 @@ import 'package:lift_league/services/db_service.dart'
 import 'package:lift_league/widgets/confirmation_dialog.dart';
 import 'package:lift_league/services/lift_catalog_service.dart';
 
-
 class WorkoutBuilder extends StatefulWidget {
   final WorkoutDraft workout;
   final List<WorkoutDraft> allWorkouts;
@@ -71,7 +70,6 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     });
   }
 
-
   @override
   void initState() {
     super.initState();
@@ -115,8 +113,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
       return;
     }
 
-    final inst =
-        await DBService().getWorkoutInstanceById(widget.workout.id);
+    final inst = await DBService().getWorkoutInstanceById(widget.workout.id);
     if (!mounted || inst == null) return;
 
     final lifts =
@@ -135,11 +132,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
               name: (m['name'] as String?) ?? '',
               sets: (m['sets'] as num?)?.toInt() ?? 0,
               repsPerSet: (m['repsPerSet'] as num?)?.toInt() ?? 0,
-              multiplier:
-                  ((m['scoreMultiplier'] as num?) ?? 0).toDouble(),
+              multiplier: ((m['scoreMultiplier'] as num?) ?? 0).toDouble(),
               isBodyweight: (m['isBodyweight'] as num?)?.toInt() == 1,
-              isDumbbellLift:
-                  (m['isDumbbellLift'] as num?)?.toInt() == 1,
+              isDumbbellLift: (m['isDumbbellLift'] as num?)?.toInt() == 1,
               position: (m['position'] as num?)?.toInt() ?? 0,
             )));
       _liftMeta = lifts
@@ -147,11 +142,10 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                 'liftId': (m['liftId'] as num?)?.toInt(),
                 'repScheme': (m['repScheme'] as String?) ??
                     '${m['sets'] ?? 0}x${m['repsPerSet'] ?? 0}',
-                'scoreType': (m['scoreType'] as num?)?.toInt() ??
-                    SCORE_TYPE_MULTIPLIER,
+                'scoreType':
+                    (m['scoreType'] as num?)?.toInt() ?? SCORE_TYPE_MULTIPLIER,
                 'youtubeUrl': m['youtubeUrl']?.toString() ?? '',
-                'referenceLiftId':
-                    (m['referenceLiftId'] as num?)?.toInt(),
+                'referenceLiftId': (m['referenceLiftId'] as num?)?.toInt(),
                 'percentOfReference':
                     (m['percentOfReference'] as num?)?.toDouble(),
               })
@@ -190,7 +184,10 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             builder: (ctx, setSheetState) {
               return Padding(
                 padding: EdgeInsets.fromLTRB(
-                  16, 16, 16, 16 + MediaQuery.of(ctx).viewInsets.bottom,
+                  16,
+                  16,
+                  16,
+                  16 + MediaQuery.of(ctx).viewInsets.bottom,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -201,7 +198,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       hint: const Text('Muscle Group'),
                       items: <DropdownMenuItem<String?>>[
                         const DropdownMenuItem(value: null, child: Text('All')),
-                        ...groups.map((g) => DropdownMenuItem<String?>(value: g, child: Text(g))),
+                        ...groups.map((g) => DropdownMenuItem<String?>(
+                            value: g, child: Text(g))),
                       ],
                       onChanged: (v) => setSheetState(() => group = v),
                     ),
@@ -217,7 +215,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Bodyweight-capable'),
                             value: bw ?? false,
-                            onChanged: (v) => setSheetState(() => bw = v == true ? true : null),
+                            onChanged: (v) => setSheetState(
+                                () => bw = v == true ? true : null),
                           ),
                         ),
                         Expanded(
@@ -226,7 +225,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Dumbbell-capable'),
                             value: dbb ?? false,
-                            onChanged: (v) => setSheetState(() => dbb = v == true ? true : null),
+                            onChanged: (v) => setSheetState(
+                                () => dbb = v == true ? true : null),
                           ),
                         ),
                       ],
@@ -238,18 +238,20 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                         future: _fetch(),
                         builder: (ctx, snap) {
                           if (snap.connectionState != ConnectionState.done) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                                child: CircularProgressIndicator());
                           }
                           final results = snap.data ?? const [];
                           if (results.isEmpty) {
-                            return const Center(child: Text('No lifts match your filters.'));
+                            return const Center(
+                                child: Text('No lifts match your filters.'));
                           }
                           return ListView.builder(
                             itemCount: results.length,
                             itemBuilder: (ctx, i) {
                               final r = results[i];
                               final name = (r['name'] ?? '').toString();
-                              final grp  = (r['primaryGroup'] ?? '').toString();
+                              final grp = (r['primaryGroup'] ?? '').toString();
                               return ListTile(
                                 title: Text(name),
                                 subtitle: Text(grp),
@@ -269,7 +271,6 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
       },
     );
   }
-
 
   void _showAddLiftSheet() {
     final setsCtrl = TextEditingController(text: '3');
@@ -297,7 +298,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListTile(
-                      title: Text(selected?['name']?.toString() ?? 'Select lift'),
+                      title:
+                          Text(selected?['name']?.toString() ?? 'Select lift'),
                       trailing: const Icon(Icons.search),
                       onTap: () async {
                         final res = await _pickFromCatalog(ctx);
@@ -365,13 +367,24 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                       onPressed: isSaving || selected == null
                           ? null
                           : () async {
-                              final idVal = selected?['catalogId'];
-                              if (idVal == null) return;
-                              final liftId = (idVal as num).toInt();
-                              final name = selected?['name']?.toString() ?? '';
-                              final sets = int.tryParse(setsCtrl.text) ?? 3;
-                              final reps = int.tryParse(repsCtrl.text) ?? 10;
-                              final repText = '${sets}x${reps}';
+                              final sheetNav = Navigator.of(ctx);
+
+                              final idRaw =
+                                  selected?['catalogId'] ?? selected?['id'];
+                              if (idRaw == null) {
+                                debugPrint(
+                                    '[AddLift] Missing catalog id in selected=$selected');
+                                return;
+                              }
+                              final liftId = (idRaw as num).toInt();
+                              final name =
+                                  (selected?['name'] as String? ?? '').trim();
+
+                              final sets =
+                                  int.tryParse(setsCtrl.text.trim()) ?? 3;
+                              final reps =
+                                  int.tryParse(repsCtrl.text.trim()) ?? 10;
+                              final repText = '${sets}x$reps';
 
                               final newLift = LiftDraft(
                                 name: name,
@@ -383,45 +396,54 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                 position: widget.workout.lifts.length,
                               );
 
-                              final sheetNav = Navigator.of(ctx);
                               FocusScope.of(ctx).unfocus();
-
                               setLocalState(() => isSaving = true);
+
                               try {
-                                final scoreType = isBodyweight
+                                final scoreTypeLocal = isBodyweight
                                     ? SCORE_TYPE_BODYWEIGHT
                                     : SCORE_TYPE_MULTIPLIER;
+
                                 await DBService.instance.addLiftToCustomWorkout(
                                   customWorkoutId: widget.workout.id,
                                   liftCatalogId: liftId,
+                                  // include 'name' here only if your DB method expects it
                                   repSchemeText: repText,
                                   sets: sets,
                                   repsPerSet: reps,
                                   isBodyweight: isBodyweight ? 1 : 0,
                                   isDumbbell: isDumbbellLift ? 1 : 0,
-                                  scoreType:
-                                      isBodyweight ? 'bodyweight' : 'multiplier',
+                                  scoreType: isBodyweight
+                                      ? 'bodyweight'
+                                      : 'multiplier', // or int if your API uses ints
                                 );
+                                debugPrint(
+                                    '[AddLift] DB insert OK (id=$liftId, "$name", $repText)');
+
                                 if (mounted) {
                                   setState(() {
                                     widget.workout.lifts.add(newLift);
                                     _liftMeta.add({
                                       'liftId': liftId,
                                       'repScheme': repText,
-                                      'scoreType': scoreType,
+                                      'scoreType': scoreTypeLocal
                                     });
                                   });
                                 }
                                 _applyEditsSoon();
-                                setLocalState(() => isSaving = false);
                                 sheetNav.pop();
-                              } catch (_) {
-                                if (!mounted) return;
-                                setLocalState(() => isSaving = false);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Failed to save lift')),
-                                );
+                              } catch (e, st) {
+                                debugPrint('[AddLift] ERROR: $e\n$st');
+                                if (mounted) {
+                                  setLocalState(() => isSaving = false);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Failed to save lift')),
+                                  );
+                                }
+                              } finally {
+                                if (mounted)
+                                  setLocalState(() => isSaving = false);
                               }
                             },
                       child: isSaving
@@ -473,7 +495,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListTile(
-                      title: Text(selected['name']?.toString() ?? 'Select lift'),
+                      title:
+                          Text(selected['name']?.toString() ?? 'Select lift'),
                       trailing: const Icon(Icons.search),
                       onTap: () async {
                         final res = await _pickFromCatalog(ctx);
@@ -543,8 +566,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                           : () async {
                               final sets =
                                   int.tryParse(setsCtrl.text) ?? lift.sets;
-                              final reps =
-                                  int.tryParse(repsCtrl.text) ?? lift.repsPerSet;
+                              final reps = int.tryParse(repsCtrl.text) ??
+                                  lift.repsPerSet;
                               final repText = '${sets}x${reps}';
 
                               setLocalState(() => _isSaving = true);
@@ -559,7 +582,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                 ..isBodyweight = isBodyweight
                                 ..isDumbbellLift = isDumbbellLift;
                               _liftMeta[index] = {
-                                'liftId': (selected['catalogId'] as num).toInt(),
+                                'liftId':
+                                    (selected['catalogId'] as num).toInt(),
                                 'repScheme': repText,
                                 'scoreType': scoreType,
                               };
@@ -660,7 +684,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
             children: [
               // LEFT: vertical icon rail
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
@@ -685,7 +710,9 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     // Next Workout OR Build Block (icon-only)
                     IconButton(
                       tooltip: widget.isLast ? 'Build block' : 'Next workout',
-                      icon: Icon(widget.isLast ? Icons.construction : Icons.arrow_forward),
+                      icon: Icon(widget.isLast
+                          ? Icons.construction
+                          : Icons.arrow_forward),
                       onPressed: () async {
                         if (widget.workout.name != _nameController.text) {
                           widget.workout.name = _nameController.text;
@@ -712,18 +739,22 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
                       itemCount: widget.workout.lifts.length,
                       itemBuilder: (context, index) {
                         final lift = widget.workout.lifts[index];
                         return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 6, horizontal: 4),
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 12),
                             title: Text(
                               'Lift ${index + 1}: ${lift.name}',
                               textAlign: TextAlign.center,
-                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w600),
                             ),
                             subtitle: Text(
                               '${lift.sets} x ${lift.repsPerSet}',
