@@ -132,6 +132,7 @@ flutter:
     - assets/schedules/shat.png
     - assets/sounds/chime.wav
     - assets/images/pinkAlpha.png
+    - assets/lift_catalog.generated.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
