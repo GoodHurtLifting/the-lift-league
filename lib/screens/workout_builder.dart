@@ -177,7 +177,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     }
 
     await load();
-    return await showModalBottomSheet<Map<String, Object?>>(
+    return showModalBottomSheet<Map<String, Object?>>(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
@@ -276,9 +276,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   }
 
   void _showAddLiftSheet() {
-    final setsCtrl = TextEditingController(text: '');
-    final repsCtrl = TextEditingController(text: '');
-
+    final setsCtrl = TextEditingController(text: '3');
+    final repsCtrl = TextEditingController(text: '10');
     bool isBodyweight = false;
     bool isDumbbellLift = false;
     Map<String, Object?>? selected;
@@ -288,7 +287,6 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
       isScrollControlled: true,
       builder: (ctx) {
         bool isSaving = false;
-
         return Padding(
           padding: EdgeInsets.fromLTRB(
             16,
@@ -368,15 +366,19 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: isSaving || selected == null || selected['catalogId'] == null
+                      onPressed: isSaving || selected == null
                           ? null
                           : () async {
+                              final idVal = selected?['catalogId'] ?? selected?['id'];
+                              if (idVal == null) return;
+                              final liftId = (idVal as num).toInt();
+                              final name = selected?['name']?.toString() ?? '';
                               final sets = int.tryParse(setsCtrl.text) ?? 3;
                               final reps = int.tryParse(repsCtrl.text) ?? 10;
                               final repText = '${sets}x${reps}';
 
                               final newLift = LiftDraft(
-                                name: selected!['name'] as String,
+                                name: name,
                                 sets: sets,
                                 repsPerSet: reps,
                                 multiplier: 0,
@@ -395,24 +397,29 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                     : SCORE_TYPE_MULTIPLIER;
                                 await DBService.instance.addLiftToCustomWorkout(
                                   customWorkoutId: widget.workout.id,
-                                  liftCatalogId: (selected!['catalogId'] as num).toInt(),
+                                  liftCatalogId: liftId,
                                   repSchemeText: repText,
                                   sets: sets,
                                   repsPerSet: reps,
                                   isBodyweight: isBodyweight ? 1 : 0,
                                   isDumbbell: isDumbbellLift ? 1 : 0,
-                                  scoreType: isBodyweight ? 'bodyweight' : 'multiplier',
+                                  scoreType:
+                                      isBodyweight ? 'bodyweight' : 'multiplier',
                                 );
-                                widget.workout.lifts.add(newLift);
-                                _liftMeta.add({
-                                  'liftId': (selected!['catalogId'] as num).toInt(),
-                                  'repScheme': repText,
-                                  'scoreType': scoreType,
-                                });
+                                if (mounted) {
+                                  setState(() {
+                                    widget.workout.lifts.add(newLift);
+                                    _liftMeta.add({
+                                      'liftId': liftId,
+                                      'repScheme': repText,
+                                      'scoreType': scoreType,
+                                    });
+                                  });
+                                }
                                 _applyEditsSoon();
                                 setLocalState(() => isSaving = false);
                                 sheetNav.pop();
-                              } catch (e) {
+                              } catch (_) {
                                 if (!mounted) return;
                                 setLocalState(() => isSaving = false);
                                 ScaffoldMessenger.of(context).showSnackBar(
