@@ -44,6 +44,21 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   void _applyEditsSoon() {
     _applyDebounce?.cancel();
     _applyDebounce = Timer(const Duration(milliseconds: 400), () {
+      // Drop any lifts lacking a catalog selection to enforce catalog-only entries.
+      final filteredLifts = <LiftDraft>[];
+      final filteredMeta = <Map<String, dynamic>>[];
+      for (int i = 0; i < widget.workout.lifts.length; i++) {
+        if (i < _liftMeta.length && _liftMeta[i]['liftId'] != null) {
+          filteredLifts.add(widget.workout.lifts[i]);
+          filteredMeta.add(_liftMeta[i]);
+        }
+      }
+
+      widget.workout.lifts
+        ..clear()
+        ..addAll(filteredLifts);
+      _liftMeta = filteredMeta;
+
       DBService().syncBuilderEdits(
         customBlockId: widget.customBlockId,
         blockInstanceId: widget.activeBlockInstanceId,
@@ -353,12 +368,12 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: isSaving || selected == null
+                      onPressed: isSaving || selected == null || selected['catalogId'] == null
                           ? null
                           : () async {
                               final sets = int.tryParse(setsCtrl.text) ?? 3;
                               final reps = int.tryParse(repsCtrl.text) ?? 10;
-                              final repText =  '${sets}x${reps}';
+                              final repText = '${sets}x${reps}';
 
                               final newLift = LiftDraft(
                                 name: selected!['name'] as String,
@@ -381,8 +396,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                 await DBService.instance.addLiftToCustomWorkout(
                                   customWorkoutId: widget.workout.id,
                                   liftCatalogId: (selected!['catalogId'] as num).toInt(),
-                                  name: selected!['name'] as String,
-                                  repSchemeText: repText ?? '',
+                                  repSchemeText: repText,
                                   sets: sets,
                                   repsPerSet: reps,
                                   isBodyweight: isBodyweight ? 1 : 0,
@@ -391,7 +405,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                 );
                                 widget.workout.lifts.add(newLift);
                                 _liftMeta.add({
-                                  'liftId': 'catalogId',
+                                  'liftId': (selected!['catalogId'] as num).toInt(),
                                   'repScheme': repText,
                                   'scoreType': scoreType,
                                 });
@@ -434,7 +448,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     bool isDumbbellLift = lift.isDumbbellLift;
     Map<String, Object?> selected = {
       'catalogId': _liftMeta[index]['liftId'],
-      'name': lift.name,
+      'name': _liftMeta[index]['liftId'] != null ? lift.name : null,
     };
 
     showModalBottomSheet(
@@ -521,7 +535,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: _isSaving
+                      onPressed: _isSaving || selected['catalogId'] == null
                           ? null
                           : () async {
                               final sets =
@@ -542,7 +556,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                 ..isBodyweight = isBodyweight
                                 ..isDumbbellLift = isDumbbellLift;
                               _liftMeta[index] = {
-                                'liftId': selected['catalogId'],
+                                'liftId': (selected['catalogId'] as num).toInt(),
                                 'repScheme': repText,
                                 'scoreType': scoreType,
                               };
