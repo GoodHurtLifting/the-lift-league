@@ -2159,6 +2159,25 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   }) async {
     final db = await database;
 
+    // Ensure parent custom_blocks row exists to satisfy FK constraint.
+    // If the row already exists this insert is ignored.
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final now = DateTime.now().millisecondsSinceEpoch;
+    await db.insert(
+      'custom_blocks',
+      {
+        'customBlockId': customBlockId,
+        'name': 'Untitled Block',
+        'uniqueWorkoutCount': 1,
+        'workoutsPerWeek': 1,
+        'totalWeeks': 1,
+        'ownerUid': uid,
+        'createdAt': now,
+        'updatedAt': now,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+
     // Resolve or create the custom_workouts row for this block/day
     int customWorkoutId;
     final cwRows = await db.query(
