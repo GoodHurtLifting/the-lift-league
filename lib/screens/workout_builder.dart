@@ -422,7 +422,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                   });
                                 }
                                 _applyEditsSoon();
-                                sheetNav.pop();
+                                Navigator.of(ctx).pop();
                               } catch (e, st) {
                                 debugPrint('[AddLift] ERROR: $e\n$st');
                                 if (mounted) {
