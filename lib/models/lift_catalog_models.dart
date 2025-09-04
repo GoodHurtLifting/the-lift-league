@@ -18,7 +18,7 @@ class LiftCatalogItem {
   });
 
   factory LiftCatalogItem.fromRow(Map<String, Object?> r) => LiftCatalogItem(
-    id: (r['catalogId'] ?? r['id']) as int,
+    id: r['catalogId'] as int,
     name: r['name'] as String,
     primaryGroup: (r['primaryGroup'] as String?) ?? '',
     equipment: r['equipment'] as String?,
