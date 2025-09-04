@@ -1,6 +1,8 @@
+import 'dart:convert';
+
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:sqflite/sqflite.dart';
 import 'package:lift_league/services/db_service.dart';
-import 'package:lift_league/data/lift_catalog_seed.dart';
 
 class LiftCatalogService {
   LiftCatalogService._();
@@ -16,18 +18,26 @@ class LiftCatalogService {
     ) ?? 0;
     if (c > 0) return;
 
+    final jsonStr = await rootBundle.loadString('assets/lift_catalog.generated.json');
+    final data = jsonDecode(jsonStr) as List<dynamic>;
+
     final ts = DateTime.now().millisecondsSinceEpoch;
     final batch = db.batch();
-    for (final r in kLiftCatalogSeed) {
+    for (final entry in data) {
+      final r = entry as Map<String, dynamic>;
       batch.insert('lift_catalog', {
         'name': r['name'],
         'primaryGroup': r['primaryGroup'],
+        'secondaryGroups': r['secondaryGroups'] == null
+            ? null
+            : jsonEncode(r['secondaryGroups']),
         'equipment': r['equipment'],
         'isBodyweightCapable': (r['isBodyweightCapable'] ?? 0) as int,
         'isDumbbellCapable': (r['isDumbbellCapable'] ?? 0) as int,
         'unilateral': (r['unilateral'] ?? 0) as int,
-        'createdAt': ts,
-        'updatedAt': ts,
+        'youtubeUrl': r['youtubeUrl'],
+        'createdAt': r['createdAt'] ?? ts,
+        'updatedAt': r['updatedAt'] ?? ts,
       });
     }
     await batch.commit(noResult: true);
