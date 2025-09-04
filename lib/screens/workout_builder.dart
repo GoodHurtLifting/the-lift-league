@@ -272,7 +272,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
-        bool _isSaving = false;
+        bool isSaving = false;
 
         return Padding(
           padding: EdgeInsets.fromLTRB(
@@ -353,28 +353,20 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton(
-                      onPressed: _isSaving || selected == null
+                      onPressed: isSaving || selected == null
                           ? null
                           : () async {
-                              final int setsVal =
-                                  int.tryParse(setsCtrl.text.trim()) ?? 3;
-                              final int repsVal =
-                                  int.tryParse(repsCtrl.text.trim()) ?? 10;
-
-                              final String repText =
-                                  '${setsVal}x${repsVal}';
-
-                              final int? catalogId =
-                                  (selected?['catalogId'] as num?)?.toInt();
-
-                              final int scoreType = isBodyweight
-                                  ? SCORE_TYPE_BODYWEIGHT
-                                  : SCORE_TYPE_MULTIPLIER;
+                              final sets = int.tryParse(setsCtrl.text) ?? 3;
+                              final reps = int.tryParse(repsCtrl.text) ?? 10;
+                              final repText =
+                                  (sets != null && reps != null)
+                                      ? '${sets}x${reps}'
+                                      : null;
 
                               final newLift = LiftDraft(
                                 name: selected!['name'] as String,
-                                sets: setsVal,
-                                repsPerSet: repsVal,
+                                sets: sets ?? 0,
+                                repsPerSet: reps ?? 0,
                                 multiplier: 0,
                                 isBodyweight: isBodyweight,
                                 isDumbbellLift: isDumbbellLift,
@@ -384,38 +376,41 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                               final sheetNav = Navigator.of(ctx);
                               FocusScope.of(ctx).unfocus();
 
-                              setLocalState(() => _isSaving = true);
+                              setLocalState(() => isSaving = true);
                               try {
+                                final scoreType = isBodyweight
+                                    ? SCORE_TYPE_BODYWEIGHT
+                                    : SCORE_TYPE_MULTIPLIER;
                                 await DBService.instance.addLiftToCustomWorkout(
                                   customWorkoutId: widget.workout.id,
-                                  liftCatalogId: catalogId,
+                                  liftCatalogId: (selected!['catalogId'] as num).toInt(),
                                   name: selected!['name'] as String,
-                                  repSchemeText: repText,
-                                  sets: setsVal,
-                                  repsPerSet: repsVal,
+                                  repSchemeText: repText ?? '',
+                                  sets: sets,
+                                  repsPerSet: reps,
                                   isBodyweight: isBodyweight ? 1 : 0,
                                   isDumbbell: isDumbbellLift ? 1 : 0,
-                                  scoreType: scoreType,
+                                  scoreType: isBodyweight ? 'bodyweight' : 'multiplier',
                                 );
                                 widget.workout.lifts.add(newLift);
                                 _liftMeta.add({
-                                  'liftId': catalogId,
+                                  'liftId': selected!['catalogId'],
                                   'repScheme': repText,
                                   'scoreType': scoreType,
                                 });
                                 _applyEditsSoon();
-                                setLocalState(() => _isSaving = false);
+                                setLocalState(() => isSaving = false);
                                 sheetNav.pop();
                               } catch (e) {
                                 if (!mounted) return;
-                                setLocalState(() => _isSaving = false);
+                                setLocalState(() => isSaving = false);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                       content: Text('Failed to save lift')),
                                 );
                               }
                             },
-                      child: _isSaving
+                      child: isSaving
                           ? const SizedBox(
                               height: 16,
                               width: 16,

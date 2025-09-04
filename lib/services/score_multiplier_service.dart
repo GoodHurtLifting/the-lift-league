@@ -102,7 +102,8 @@ class ScoreMultiplierService {
 
       // Update all lift_instances in the block to use the new multiplier.
       if (occ.isNotEmpty) {
-        final ids = occ.map((r) => (r['liftInstanceId'] as num).toInt()).toList();
+        final ids =
+            occ.map((r) => (r['liftInstanceId'] as num).toInt()).toList();
         final placeholders = List.filled(ids.length, '?').join(',');
         await txn.rawUpdate(
           'UPDATE lift_instances SET scoreMultiplier = ? WHERE liftInstanceId IN ($placeholders)',

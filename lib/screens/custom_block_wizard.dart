@@ -50,9 +50,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     if (widget.initialBlock != null) {
       final block = widget.initialBlock!;
 
-      blockName     = block.name;
-      numWeeks      = block.numWeeks;
-      daysPerWeek   = block.daysPerWeek;
+      blockName = block.name;
+      numWeeks = block.numWeeks;
+      daysPerWeek = block.daysPerWeek;
       _scheduleType = block.scheduleType;
 
       final firstWeekWorkouts = _firstWeekTemplateFromBlock(block);
@@ -61,22 +61,22 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       if (block.workouts.isNotEmpty && firstWeekWorkouts.isNotEmpty) {
         workouts = firstWeekWorkouts
             .map((w) => WorkoutDraft(
-          id: w.id,
-          dayIndex: w.dayIndex,
-          name: w.name,
-          lifts: w.lifts
-              .map((l) => LiftDraft(
-            name: l.name,
-            sets: l.sets,
-            repsPerSet: l.repsPerSet,
-            multiplier: l.multiplier,
-            isBodyweight: l.isBodyweight,
-            isDumbbellLift: l.isDumbbellLift,
-            position: l.position,
-          ))
-              .toList(),
-          isPersisted: true,
-        ))
+                  id: w.id,
+                  dayIndex: w.dayIndex,
+                  name: w.name,
+                  lifts: w.lifts
+                      .map((l) => LiftDraft(
+                            name: l.name,
+                            sets: l.sets,
+                            repsPerSet: l.repsPerSet,
+                            multiplier: l.multiplier,
+                            isBodyweight: l.isBodyweight,
+                            isDumbbellLift: l.isDumbbellLift,
+                            position: l.position,
+                          ))
+                      .toList(),
+                  isPersisted: true,
+                ))
             .toList();
 
         _coverImagePath = block.coverImagePath;
@@ -127,7 +127,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     final baseId = DateTime.now().millisecondsSinceEpoch;
     workouts = List.generate(
       count,
-          (i) => WorkoutDraft(
+      (i) => WorkoutDraft(
         id: baseId + i,
         dayIndex: i,
         name: 'Workout ${i + 1}',
@@ -154,12 +154,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   }
 
   List<WorkoutDraft> _firstWeekTemplateFromList(
-      List<WorkoutDraft> all, {
-        required int daysPerWeek,
-      }) {
-    final firstWeek = all
-        .where((w) => w.dayIndex < daysPerWeek)
-        .toList()
+    List<WorkoutDraft> all, {
+    required int daysPerWeek,
+  }) {
+    final firstWeek = all.where((w) => w.dayIndex < daysPerWeek).toList()
       ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
 
     final seen = <String>{};
@@ -188,8 +186,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
     final bytes = await File(cropped.path).readAsBytes();
     final dir = await getApplicationDocumentsDirectory();
-    final file =
-    File('${dir.path}/custom_block_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    final file = File(
+        '${dir.path}/custom_block_${DateTime.now().millisecondsSinceEpoch}.jpg');
     await file.writeAsBytes(bytes);
     if (!mounted) return;
     setState(() {
@@ -230,7 +228,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                 dense: true,
                 title: Text(
                   'Week ${item['week']} – Day ${item['dayIndex'] + 1}: '
-                      '${w.name.isEmpty ? 'Workout ${w.id + 1}' : w.name}',
+                  '${w.name.isEmpty ? 'Workout ${w.id + 1}' : w.name}',
                 ),
               );
             },
@@ -257,15 +255,14 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         return StatefulBuilder(
           builder: (overlayCtx, setOverlayState) {
             void _setIndex(int i) {
-              setOverlayState(() => localIndex = i);   // update dialog UI
-              setState(() => _workoutIndex = i);       // keep wizard in sync
+              setOverlayState(() => localIndex = i); // update dialog UI
+              setState(() => _workoutIndex = i); // keep wizard in sync
             }
 
             // ---- Build first-week template (unique by name) ----
-            List<WorkoutDraft> _toTemplate(List<WorkoutDraft> all, int dPerWeek) {
-              final firstWeek = all
-                  .where((w) => w.dayIndex < dPerWeek)
-                  .toList()
+            List<WorkoutDraft> _toTemplate(
+                List<WorkoutDraft> all, int dPerWeek) {
+              final firstWeek = all.where((w) => w.dayIndex < dPerWeek).toList()
                 ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
               final seen = <String>{};
               final uniques = <WorkoutDraft>[];
@@ -278,7 +275,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
             final int dPerWeek = (daysPerWeek ?? 3).clamp(1, 7);
             final List<WorkoutDraft> template =
-            _toTemplate(workouts, dPerWeek); // safe if already template
+                _toTemplate(workouts, dPerWeek); // safe if already template
 
             // Clamp index in case template length changed
             if (template.isNotEmpty && localIndex >= template.length) {
@@ -305,50 +302,52 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                 child: template.isEmpty
                     ? const SizedBox.shrink()
                     : WorkoutBuilder(
-                  key: ValueKey<int>(template[localIndex].id),
-                  workout: template[localIndex],
-                  allWorkouts: template,             // ← pass only template
-                  currentIndex: localIndex,
-                  onSelectWorkout: _setIndex,        // reactive chip switching
-                  isLast: localIndex == template.length - 1,
-                  onComplete: () async {
-                    if (localIndex < template.length - 1) {
-                      _setIndex(localIndex + 1);
-                      return;
-                    }
+                        key: ValueKey<int>(template[localIndex].id),
+                        workout: template[localIndex],
+                        allWorkouts: template, // ← pass only template
+                        currentIndex: localIndex,
+                        onSelectWorkout: _setIndex, // reactive chip switching
+                        isLast: localIndex == template.length - 1,
+                        onComplete: () async {
+                          if (localIndex < template.length - 1) {
+                            _setIndex(localIndex + 1);
+                            return;
+                          }
 
-                    if (widget.blockInstanceId != null) {
-                      final ok = await showConfirmDialog(
-                        context,
-                        title: 'Build Block?',
-                        message:
-                            'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
-                      );
-                      if (!ok) return;
-                    }
+                          if (widget.blockInstanceId != null) {
+                            final ok = await showConfirmDialog(
+                              context,
+                              title: 'Build Block?',
+                              message:
+                                  'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
+                            );
+                            if (!ok) return;
+                          }
 
-                    final nav = Navigator.of(context, rootNavigator: true);
-                    final int? id = await _finish();
-                    if (!mounted) return;
+                          final nav =
+                              Navigator.of(context, rootNavigator: true);
+                          final int? id = await _finish();
+                          if (!mounted) return;
 
-                    Navigator.of(ctx).pop(); // close full-screen editor
+                          Navigator.of(ctx).pop(); // close full-screen editor
 
-                    if (id != null) {
-                      nav.pushReplacement(
-                        MaterialPageRoute(
-                          builder: (_) => BlockDashboard(blockInstanceId: id),
-                        ),
-                        result: true,
-                      );
-                    } else {
-                      nav.pop(false);
-                    }
-                  },
-                  showDumbbellOption: true,
-                  customBlockId: widget.customBlockId,
-                  activeBlockInstanceId: widget.blockInstanceId,
-                  onPreviewSchedule: _previewSchedule,
-                ),
+                          if (id != null) {
+                            nav.pushReplacement(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    BlockDashboard(blockInstanceId: id),
+                              ),
+                              result: true,
+                            );
+                          } else {
+                            nav.pop(false);
+                          }
+                        },
+                        showDumbbellOption: true,
+                        customBlockId: widget.customBlockId,
+                        activeBlockInstanceId: widget.blockInstanceId,
+                        onPreviewSchedule: _previewSchedule,
+                      ),
               ),
             );
           },
@@ -359,7 +358,8 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
   Future<int?> _finish() async {
     // Validate inputs
-    if (blockName.trim().isEmpty || daysPerWeek == null || numWeeks == null) return null;
+    if (blockName.trim().isEmpty || daysPerWeek == null || numWeeks == null)
+      return null;
     if (workouts.isEmpty) return null;
 
     // 1) Expand the template across the full run
@@ -428,7 +428,6 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
     return newInstanceId;
   }
 
-
   /// Applies custom block edits to the user's active block instance (if any).
   /// Returns the blockInstanceId if edits were applied; otherwise null.
   /// Applies edits to an existing instance in priority order:
@@ -463,7 +462,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
         final fileName =
             '${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final ref =
-        FirebaseStorage.instance.ref().child('block_covers/$fileName');
+            FirebaseStorage.instance.ref().child('block_covers/$fileName');
         final task = await ref.putFile(file);
         imageUrl = await task.ref.getDownloadURL();
       }
@@ -481,20 +480,20 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       'source': 'mobile_custom_builder',
       'workouts': block.workouts
           .map((w) => {
-        'id': w.id,
-        'dayIndex': w.dayIndex,
-        'name': w.name,
-        'lifts': w.lifts
-            .map((l) => {
-          'name': l.name,
-          'sets': l.sets,
-          'repsPerSet': l.repsPerSet,
-          'multiplier': l.multiplier,
-          'isBodyweight': l.isBodyweight,
-          'isDumbbellLift': l.isDumbbellLift,
-        })
-            .toList(),
-      })
+                'id': w.id,
+                'dayIndex': w.dayIndex,
+                'name': w.name,
+                'lifts': w.lifts
+                    .map((l) => {
+                          'name': l.name,
+                          'sets': l.sets,
+                          'repsPerSet': l.repsPerSet,
+                          'multiplier': l.multiplier,
+                          'isBodyweight': l.isBodyweight,
+                          'isDumbbellLift': l.isDumbbellLift,
+                        })
+                    .toList(),
+              })
           .toList(),
     };
     // Save to user's personal collection (for backwards compatibility)
@@ -615,8 +614,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                   ),
                 ElevatedButton(
                   onPressed: _pickCoverImage,
-                  child: Text(
-                      _coverImageBytes == null ? 'Select Image' : 'Change Image'),
+                  child: Text(_coverImageBytes == null
+                      ? 'Select Image'
+                      : 'Change Image'),
                 ),
               ],
             ),
@@ -625,9 +625,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           Step(
             title: const Text('# Unique Workouts'),
             content: DropdownButton<int>(
-              value: _uniqueCount,
+              value: (_uniqueCount != null && _uniqueCount! >= 1 && _uniqueCount! <= 6)
+                  ? _uniqueCount
+                  : null, // <-- guard invalid (e.g., 0) to null
               hint: const Text('Select Count'),
-              items: List.generate(5, (i) => i + 2)
+              items: List.generate(6, (i) => i + 1)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                   .toList(),
               onChanged: (v) async {
@@ -659,7 +661,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           Step(
             title: const Text('Days per week?'),
             content: DropdownButton<int>(
-              value: daysPerWeek,
+              value: (daysPerWeek != null && daysPerWeek! >= 2 && daysPerWeek! <= 6)
+                  ? daysPerWeek
+                  : null, // <-- guard
               hint: const Text('Select Days'),
               items: List.generate(5, (i) => i + 2)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
@@ -693,7 +697,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
           Step(
             title: const Text('How many weeks?'),
             content: DropdownButton<int>(
-              value: numWeeks,
+              value: (numWeeks != null && numWeeks! >= 3 && numWeeks! <= 6)
+                  ? numWeeks
+                  : null, // <-- guard
               hint: const Text('Select Weeks'),
               items: List.generate(4, (i) => i + 3)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
