@@ -1008,6 +1008,9 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   }
 
   Future<void> ensureCustomLiftInstancesSeeded(int workoutInstanceId) async {
+    // Skip for non-custom instances to avoid treating them as custom
+    if (!await _isCustomInstance(workoutInstanceId)) return;
+
     final db = await database;
     await db.transaction((txn) async {
       final existing = await txn.query(
@@ -1020,15 +1023,13 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
       final meta = await txn.query(
         'workout_instances',
-        columns: ['workoutId', 'blockInstanceId', 'slotIndex'],
+        columns: ['blockInstanceId', 'slotIndex'],
         where: 'workoutInstanceId = ?',
         whereArgs: [workoutInstanceId],
         limit: 1,
       );
       if (meta.isEmpty) return;
       final row = meta.first;
-      final int? workoutId = row['workoutId'] as int?;
-      if (workoutId != null) return; // built-in
 
       final int blockInstanceId = (row['blockInstanceId'] as num).toInt();
       final int? slotIndex = (row['slotIndex'] as num?)?.toInt();
@@ -1089,18 +1090,18 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
             customRow.isNotEmpty ? customRow.first['customBlockId'] as int? : null;
         if (customBlockId != null) {
           final draftWorkout = await txn.rawQuery(
-            'SELECT id FROM custom_workouts WHERE blockId = ? ORDER BY COALESCE(dayIndex,0) ASC, id ASC LIMIT 1 OFFSET ?',
+            'SELECT id FROM custom_workouts WHERE customBlockId = ? ORDER BY COALESCE(dayIndex,0) ASC, id ASC LIMIT 1 OFFSET ?',
             [customBlockId, slotIndex],
           );
           if (draftWorkout.isNotEmpty) {
             final dwid = (draftWorkout.first['id'] as num).toInt();
             final drafts = await txn.rawQuery('''
               SELECT name, COALESCE(sets,0) AS sets, COALESCE(repsPerSet,0) AS repsPerSet,
-                     COALESCE(multiplier,0.0) AS scoreMultiplier,
-                     COALESCE(isDumbbellLift,0) AS isDumbbellLift,
+                     COALESCE(scoreMultiplier,0.0) AS scoreMultiplier,
+                     COALESCE(isDumbbell,0) AS isDumbbell,
                      COALESCE(isBodyweight,0) AS isBodyweight
               FROM custom_lifts
-              WHERE workoutId = ?
+              WHERE customWorkoutId = ?
               ORDER BY position ASC, id ASC
             ''', [dwid]);
             int pos = 0;
@@ -1121,7 +1122,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
                   'repScheme': '${d['sets']}x${d['repsPerSet']}',
                   'numSets': d['sets'],
                   'scoreMultiplier': (d['scoreMultiplier'] as num?)?.toDouble(),
-                  'isDumbbellLift': d['isDumbbellLift'],
+                  'isDumbbellLift': d['isDumbbell'],
                   'scoreType': 'standard',
                   'youtubeUrl': null,
                   'description': null,
@@ -1146,7 +1147,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
                 'sets': d['sets'],
                 'repsPerSet': d['repsPerSet'],
                 'scoreMultiplier': d['scoreMultiplier'],
-                'isDumbbellLift': d['isDumbbellLift'],
+                'isDumbbellLift': d['isDumbbell'],
                 'isBodyweight': d['isBodyweight'],
                 'position': pos++,
                 'archived': 0,
