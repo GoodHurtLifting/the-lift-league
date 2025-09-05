@@ -20,4 +20,12 @@ void main() {
     final result = await db2.rawQuery('SELECT 1');
     expect(result, isNotEmpty);
   });
+
+  test('resetDevDatabase reinitializes and allows queries', () async {
+    final service = DBService.instance;
+
+    await service.resetDevDatabase();
+
+    await expectLater(service.getBlockInstanceById(1), completes);
+  });
 }

@@ -671,7 +671,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     await deleteDatabase(path);
 
     // Reinitialize (will now trigger onCreate and create all tables)
-    await _initDatabase();
+    _database = await _initDatabase();
   }
 
   // ──────────────────────────────────────────────
