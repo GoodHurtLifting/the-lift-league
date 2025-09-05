@@ -273,8 +273,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   }
 
   void _showAddLiftSheet() {
-    final setsCtrl = TextEditingController(text: '3');
-    final repsCtrl = TextEditingController(text: '10');
+    final setsCtrl = TextEditingController();
+    final repsCtrl = TextEditingController();
     bool isBodyweight = false;
     bool isDumbbellLift = false;
     Map<String, Object?>? selected;
