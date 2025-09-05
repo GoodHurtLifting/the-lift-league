@@ -39,7 +39,7 @@ class DBService {
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
 
-  static const _dbVersion = 25;   // bump any time the schema changes
+  static const _dbVersion = 26;   // bump any time the schema changes
 
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
@@ -96,7 +96,7 @@ class DBService {
             if (name == null) continue;
             final custom = await db.query('custom_blocks', where: 'name = ?', whereArgs: [name], limit: 1);
             if (custom.isNotEmpty) {
-              await db.update('block_instances', {'customBlockId': custom.first['id']},
+              await db.update('block_instances', {'customBlockId': custom.first['customBlockId']},
                   where: 'blockInstanceId = ?', whereArgs: [inst['blockInstanceId']]);
             }
           }
@@ -189,7 +189,9 @@ class DBService {
             status TEXT NOT NULL DEFAULT 'draft',
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL,
-            isDraft INTEGER NOT NULL DEFAULT 1
+            isDraft INTEGER NOT NULL DEFAULT 1,
+            coverImagePath TEXT,
+            scheduleType TEXT NOT NULL DEFAULT 'standard'
           );
           ''');
           await db.execute('''
@@ -278,6 +280,17 @@ class DBService {
           ''');
           await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
           await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
+        }
+
+        if (oldV < 26) {
+          if (!await _hasColumn(db, 'custom_blocks', 'coverImagePath')) {
+            await db.execute(
+                "ALTER TABLE custom_blocks ADD COLUMN coverImagePath TEXT;");
+          }
+          if (!await _hasColumn(db, 'custom_blocks', 'scheduleType')) {
+            await db.execute(
+                "ALTER TABLE custom_blocks ADD COLUMN scheduleType TEXT NOT NULL DEFAULT 'standard';");
+          }
         }
       },
     );
@@ -464,7 +477,9 @@ CREATE TABLE IF NOT EXISTS custom_blocks (
   status TEXT NOT NULL DEFAULT 'draft',
   createdAt INTEGER NOT NULL,
   updatedAt INTEGER NOT NULL,
-  isDraft INTEGER NOT NULL DEFAULT 1
+  isDraft INTEGER NOT NULL DEFAULT 1,
+  coverImagePath TEXT,
+  scheduleType TEXT NOT NULL DEFAULT 'standard'
 );
 ''');
 
@@ -1431,6 +1446,8 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   // ──────────────────────────────────────────────
   Future<int> upsertCustomBlock(CustomBlock block) async {
     final db = await database;
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     await db.rawInsert(
       '''
@@ -1440,20 +1457,26 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         totalWeeks,
         workoutsPerWeek,
         uniqueWorkoutCount,
+        ownerUid,
         isDraft,
         coverImagePath,
-        scheduleType
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ''',
+        scheduleType,
+        createdAt,
+        updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ''' ,
       [
         block.id,
         block.name,
         block.numWeeks,
         block.daysPerWeek,
         block.workouts.length,
+        uid,
         block.isDraft ? 1 : 0,
         block.coverImagePath,
         block.scheduleType,
+        now,
+        now,
       ],
     );
 
@@ -1842,10 +1865,14 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       await txn.insert(
         'custom_blocks',
         {
-          'id': blockId,
+          'customBlockId': blockId,
           'name': 'Untitled Block',
-          'numWeeks': 1,
-          'daysPerWeek': 1,
+          'uniqueWorkoutCount': 1,
+          'workoutsPerWeek': 1,
+          'totalWeeks': 1,
+          'ownerUid': FirebaseAuth.instance.currentUser?.uid ?? '',
+          'createdAt': DateTime.now().millisecondsSinceEpoch,
+          'updatedAt': DateTime.now().millisecondsSinceEpoch,
           'isDraft': 1,
           'coverImagePath': null,
         },
@@ -1857,9 +1884,9 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         'custom_workouts',
         {
           'id': id,
-          'blockId': blockId,
+          'customBlockId': blockId,
           'name': name,
-          'dayIndex': dayIndex,
+          'position': dayIndex,
         },
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
@@ -1869,7 +1896,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         'custom_workouts',
         {
           'name': name,
-          'dayIndex': dayIndex,
+          'position': dayIndex,
         },
         where: 'id = ?',
         whereArgs: [id],
@@ -1887,15 +1914,15 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       // Ensure parent exists (keeps things consistent if called early)
       await txn.insert(
         'custom_workouts',
-        {'id': workoutId, 'name': '', 'dayIndex': 0},
+        {'id': workoutId, 'customBlockId': 0, 'name': '', 'position': 0},
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      await txn.delete('custom_lifts', where: 'workoutId = ?', whereArgs: [workoutId]);
+      await txn.delete('custom_lifts', where: 'customWorkoutId = ?', whereArgs: [workoutId]);
       for (var i = 0; i < lifts.length; i++) {
         final lift = lifts[i];
         await txn.insert('custom_lifts', {
-          'workoutId': workoutId,
+          'customWorkoutId': workoutId,
           'name': lift.name,
           'sets': lift.sets,
           'repsPerSet': lift.repsPerSet,
@@ -1987,7 +2014,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
   Future<void> deleteCustomBlock(int id) async {
     final db = await database;
-    await db.delete('custom_blocks', where: 'id = ?', whereArgs: [id]);
+    await db.delete('custom_blocks', where: 'customBlockId = ?', whereArgs: [id]);
 
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -2015,7 +2042,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     // 1) Block shell
     final blockRows = await db.query(
       'custom_blocks',
-      where: 'id = ?',
+      where: 'customBlockId = ?',
       whereArgs: [customBlockId],
       limit: 1,
     );
@@ -2027,9 +2054,9 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     if (blockInstanceId == null) {
       wRows = await db.query(
         'custom_workouts',
-        where: 'blockId = ?',
+        where: 'customBlockId = ?',
         whereArgs: [customBlockId],
-        orderBy: 'COALESCE(dayIndex, 0) ASC, id ASC',
+        orderBy: 'position ASC, id ASC',
       );
     } else {
       final hasDayIndex = await _hasColumn(db, 'workout_instances', 'dayIndex');
@@ -2050,10 +2077,10 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
     if (wRows.isEmpty) {
       return CustomBlockForEdit(
-        id: b['id'] as int,
+        id: (b['customBlockId'] ?? b['id']) as int,
         name: (b['name'] as String?) ?? '',
-        numWeeks: (b['numWeeks'] as int?) ?? 4,
-        daysPerWeek: (b['daysPerWeek'] as int?) ?? 3,
+        numWeeks: (b['totalWeeks'] as int?) ?? (b['numWeeks'] as int?) ?? 4,
+        daysPerWeek: (b['workoutsPerWeek'] as int?) ?? (b['daysPerWeek'] as int?) ?? 3,
         isDraft: ((b['isDraft'] as int?) ?? 0) == 1,
         coverImagePath: b['coverImagePath'] as String?,
         scheduleType: b['scheduleType']?.toString() ?? 'standard',
@@ -2067,7 +2094,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     final List<Map<String, Object?>> lRows;
     if (blockInstanceId == null) {
       lRows = await db.rawQuery(
-        'SELECT * FROM custom_lifts WHERE workoutId IN ($placeholders) ORDER BY position ASC, id ASC',
+        'SELECT * FROM custom_lifts WHERE customWorkoutId IN ($placeholders) ORDER BY position ASC, id ASC',
         workoutIds,
       );
     } else {
@@ -2080,7 +2107,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     final Map<int, List<LiftDraft>> liftsByWorkout = {};
     for (final l in lRows) {
       final wid = (blockInstanceId == null)
-          ? l['workoutId'] as int
+          ? l['customWorkoutId'] as int
           : l['workoutInstanceId'] as int;
       (liftsByWorkout[wid] ??= []).add(
         LiftDraft(
@@ -2109,7 +2136,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     final workouts = <WorkoutDraft>[];
     for (final w in wRows) {
       final wid = w['id'] as int;
-      final dayIdx = (w['dayIndex'] as int?) ?? (fallback++);
+      final dayIdx = (w['dayIndex'] as int?) ?? (w['position'] as int?) ?? (fallback++);
       workouts.add(
         WorkoutDraft(
           id: wid,
@@ -2123,10 +2150,10 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
     // 5) Return block
     return CustomBlockForEdit(
-      id: b['id'] as int,
+      id: (b['customBlockId'] ?? b['id']) as int,
       name: (b['name'] as String?) ?? '',
-      numWeeks: (b['numWeeks'] as int?) ?? 4,
-      daysPerWeek: (b['daysPerWeek'] as int?) ?? 3,
+      numWeeks: (b['totalWeeks'] as int?) ?? (b['numWeeks'] as int?) ?? 4,
+      daysPerWeek: (b['workoutsPerWeek'] as int?) ?? (b['daysPerWeek'] as int?) ?? 3,
       isDraft: ((b['isDraft'] as int?) ?? 0) == 1,
       coverImagePath: b['coverImagePath'] as String?,
       scheduleType: b['scheduleType']?.toString() ?? 'standard',
@@ -2416,10 +2443,10 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       final id = int.tryParse(doc.id) ?? 0;
       final db = await database;
       final existing =
-      await db.query('custom_blocks', where: 'id = ?', whereArgs: [id]);
+      await db.query('custom_blocks', where: 'customBlockId = ?', whereArgs: [id]);
       if (existing.isNotEmpty) continue;
       final data = doc.data();
-      data['id'] = id;
+      data['customBlockId'] = id;
       await upsertCustomBlock(CustomBlock.fromMap(data));
     }
   }
@@ -3038,7 +3065,7 @@ Future<void> updateWorkoutNameAcrossSlot(
     );
 
     if (custom.isNotEmpty) {
-      final int customBlockId = custom.first['id'] as int;
+      final int customBlockId = custom.first['customBlockId'] as int;
 
       // Use the existing materializer if present. It creates:
       // - a new row in `blocks`
@@ -3173,8 +3200,10 @@ Future<void> updateWorkoutNameAcrossSlot(
       limit: 1,
     );
     final bool isCustomBlock = customBlock.isNotEmpty;
-    final int? customDaysPerWeek = isCustomBlock ? (customBlock.first['daysPerWeek'] as int?) : null;
-    final int? customNumWeeks    = isCustomBlock ? (customBlock.first['numWeeks'] as int?)    : null;
+    final int? customDaysPerWeek =
+        isCustomBlock ? (customBlock.first['workoutsPerWeek'] as int?) : null;
+    final int? customNumWeeks =
+        isCustomBlock ? (customBlock.first['totalWeeks'] as int?) : null;
     final int? customTotalLength = (customDaysPerWeek != null && customNumWeeks != null)
         ? customDaysPerWeek * customNumWeeks
         : null;
