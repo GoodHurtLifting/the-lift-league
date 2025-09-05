@@ -1260,7 +1260,10 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         COALESCE(lw.isDumbbellLift,0) AS isDumbbellLift,
         COALESCE(lw.isBodyweight,0)   AS isBodyweight,
         COALESCE(lw.position, lw.liftWorkoutId) AS position,
-        l.scoreType           AS scoreType,
+        CASE l.scoreType
+          WHEN 'bodyweight' THEN $SCORE_TYPE_BODYWEIGHT
+          ELSE $SCORE_TYPE_MULTIPLIER
+        END AS scoreType,
         l.youtubeUrl          AS youtubeUrl,
         l.description         AS description,
         l.referenceLiftId     AS referenceLiftId,
@@ -1288,7 +1291,10 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         COALESCE(li.isDumbbellLift,0) AS isDumbbellLift,
         COALESCE(li.isBodyweight,0)   AS isBodyweight,
         COALESCE(li.position,0)       AS position,
-        l.scoreType           AS scoreType,
+        CASE l.scoreType
+          WHEN 'bodyweight' THEN $SCORE_TYPE_BODYWEIGHT
+          ELSE $SCORE_TYPE_MULTIPLIER
+        END AS scoreType,
         l.youtubeUrl          AS youtubeUrl,
         l.description         AS description,
         l.referenceLiftId     AS referenceLiftId,
