@@ -22,7 +22,7 @@ class CustomBlock {
   factory CustomBlock.fromMap(Map<String, dynamic> data) {
     List<dynamic> workoutList = data['workouts'] ?? [];
     return CustomBlock(
-      id: data['id'] ?? 0,
+      id: data['id'] ?? data['customBlockId'] ?? 0,
       name: data['name'] ?? '',
       // Support both UI field names and DB column names for flexibility.
       numWeeks: data['numWeeks'] ?? data['totalWeeks'] ?? 1,
