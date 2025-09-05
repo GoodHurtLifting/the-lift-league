@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:sqflite/sqflite.dart';
 import 'package:lift_league/services/db_service.dart';
@@ -12,37 +13,45 @@ class LiftCatalogService {
 
   /// Seed the catalogue once (idempotent).
   Future<void> ensureSeeded() async {
-    final db = await _db;
-    final c = Sqflite.firstIntValue(
-      await db.rawQuery('SELECT COUNT(1) FROM lift_catalog'),
-    ) ?? 0;
-    if (c > 0) return;
+    try {
+      final db = await _db;
+      final c = Sqflite.firstIntValue(
+        await db.rawQuery('SELECT COUNT(1) FROM lift_catalog'),
+      ) ?? 0;
+      if (c > 0) return;
 
-    final jsonStr = await rootBundle.loadString('assets/lift_catalog.generated.json');
-    final data = jsonDecode(jsonStr) as List<dynamic>;
+      final jsonStr = await rootBundle.loadString('assets/lift_catalog.generated.json');
+      final data = jsonDecode(jsonStr) as List<dynamic>;
+      final ts = DateTime.now().millisecondsSinceEpoch;
 
-    final ts = DateTime.now().millisecondsSinceEpoch;
-    final batch = db.batch();
-    for (final entry in data) {
-      final r = entry as Map<String, dynamic>;
-      batch.insert('lift_catalog', {
-        'name': r['name'],
-        'primaryGroup': r['primaryGroup'],
-        'secondaryGroups': r['secondaryGroups'] == null
-            ? null
-            : jsonEncode(r['secondaryGroups']),
-        'equipment': r['equipment'],
-        'isBodyweightCapable': (r['isBodyweightCapable'] ?? 0) as int,
-        'isDumbbellCapable': (r['isDumbbellCapable'] ?? 0) as int,
-        'unilateral': (r['unilateral'] ?? 0) as int,
-        'youtubeUrl': r['youtubeUrl'],
-        'createdAt': r['createdAt'] ?? ts,
-        'updatedAt': r['updatedAt'] ?? ts,
+      await db.transaction((txn) async {
+        final batch = txn.batch();
+        for (final entry in data) {
+          final r = entry as Map<String, dynamic>;
+          batch.insert('lift_catalog', {
+            'name': r['name'],
+            'primaryGroup': r['primaryGroup'],
+            'secondaryGroups': r['secondaryGroups'] == null
+                ? null
+                : jsonEncode(r['secondaryGroups']),
+            'equipment': r['equipment'],
+            'isBodyweightCapable': (r['isBodyweightCapable'] ?? 0) as int,
+            'isDumbbellCapable': (r['isDumbbellCapable'] ?? 0) as int,
+            'unilateral': (r['unilateral'] ?? 0) as int,
+            'youtubeUrl': r['youtubeUrl'],
+            'createdAt': r['createdAt'] ?? ts,
+            'updatedAt': r['updatedAt'] ?? ts,
+          });
+        }
+        await batch.commit(noResult: true);
+        await txn.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
+        await txn.execute('CREATE INDEX IF NOT EXISTS idx_lc_name  ON lift_catalog(name);');
       });
+    } catch (e, st) {
+      debugPrint('Failed to seed lift catalog: $e');
+      debugPrint('$st');
+      rethrow;
     }
-    await batch.commit(noResult: true);
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
-    await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_name  ON lift_catalog(name);');
   }
 
   /// Distinct primary groups (e.g., Chest, Back, Legs…)

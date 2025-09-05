@@ -22,6 +22,7 @@ import 'package:lift_league/screens/custom_block_wizard.dart';
 import 'package:lift_league/screens/public_profile_screen.dart';
 import 'package:lift_league/services/notifications_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:lift_league/services/lift_catalog_service.dart';
 
 GoRouter createRouter() {
   return GoRouter(
@@ -146,6 +147,7 @@ void main() async {
     // 🔥 SETUP FCM PERMISSIONS AND LISTENERS
     await setupPushNotifications();
   }
+  await LiftCatalogService.instance.ensureSeeded();
 
   if (kIsWeb) {
     runApp(const POSSApp());
