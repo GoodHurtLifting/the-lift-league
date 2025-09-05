@@ -9,7 +9,20 @@ class LiftCatalogService {
   LiftCatalogService._();
   static final instance = LiftCatalogService._();
 
+  bool _initialized = false;
   Future<Database> get _db async => DBService.instance.database;
+
+  Future<void> _ensureInitialized() async {
+    if (_initialized) return;
+    final db = await _db;
+    final c = Sqflite.firstIntValue(
+          await db.rawQuery('SELECT COUNT(1) FROM lift_catalog'),
+        ) ?? 0;
+    if (c == 0) {
+      await ensureSeeded();
+    }
+    _initialized = true;
+  }
 
   /// Seed the catalogue once (idempotent).
   Future<void> ensureSeeded() async {
@@ -56,6 +69,7 @@ class LiftCatalogService {
 
   /// Distinct primary groups (e.g., Chest, Back, Legs…)
   Future<List<String>> getGroups() async {
+    await _ensureInitialized();
     final db = await _db;
     final rows = await db.rawQuery(
       'SELECT DISTINCT primaryGroup FROM lift_catalog ORDER BY primaryGroup',
@@ -75,6 +89,7 @@ class LiftCatalogService {
     int limit = 200,
     int offset = 0,
   }) async {
+    await _ensureInitialized();
     final db = await _db;
 
     final where = <String>[];
