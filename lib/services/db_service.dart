@@ -2358,12 +2358,15 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   }) async {
     final db = await database;
 
+    // dayIndex is 0-based in the UI but positions are 1-based in the DB
+    final schemaDayIndex = dayIndex + 1;
+
     // Determine the template workout we're editing
     final cwRows = await db.query(
       'custom_workouts',
       columns: ['id'],
       where: 'customBlockId = ? AND position = ?',
-      whereArgs: [customBlockId, dayIndex],
+      whereArgs: [customBlockId, schemaDayIndex],
       limit: 1,
     );
     if (cwRows.isEmpty) return;
@@ -2425,7 +2428,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         columns: ['workoutInstanceId'],
         // slotIndex is 1-based while dayIndex is 0-based in the UI
         where: 'blockInstanceId = ? AND slotIndex = ?',
-        whereArgs: [blockInstanceId, dayIndex + 1],
+        whereArgs: [blockInstanceId, schemaDayIndex],
         limit: 1,
       );
       if (baseRows.isEmpty) return;
