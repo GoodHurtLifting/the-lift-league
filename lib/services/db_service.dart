@@ -1446,6 +1446,8 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   // ──────────────────────────────────────────────
   Future<int> upsertCustomBlock(CustomBlock block) async {
     final db = await database;
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     await db.rawInsert(
       '''
@@ -1455,20 +1457,26 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         totalWeeks,
         workoutsPerWeek,
         uniqueWorkoutCount,
+        ownerUid,
         isDraft,
         coverImagePath,
-        scheduleType
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ''',
+        scheduleType,
+        createdAt,
+        updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ''' ,
       [
         block.id,
         block.name,
         block.numWeeks,
         block.daysPerWeek,
         block.workouts.length,
+        uid,
         block.isDraft ? 1 : 0,
         block.coverImagePath,
         block.scheduleType,
+        now,
+        now,
       ],
     );
 
