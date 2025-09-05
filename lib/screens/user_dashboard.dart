@@ -72,7 +72,10 @@ class _UserDashboardState extends State<UserDashboard> {
     setState(() {
       customBlockNames =
           blocks.map((b) => b['name'].toString()).toList();
-      customBlockIds = blocks.map<int>((b) => b['id'] as int).toList();
+      customBlockIds = blocks
+          .map<int?>((b) => (b['id'] as int?) ?? (b['customBlockId'] as int?))
+          .whereType<int>()
+          .toList();
       customBlockImages = blocks
           .map<String>(
               (b) => b['coverImagePath']?.toString() ?? 'assets/logo25.jpg')
