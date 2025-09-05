@@ -245,6 +245,12 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
   }
 
   Future<void> _openWorkoutEditorFullscreen() async {
+    int? activeInstanceId = widget.blockInstanceId;
+    if (activeInstanceId == null) {
+      activeInstanceId =
+          await DBService().getBlockInstanceIdByCustomBlockId(widget.customBlockId);
+    }
+
     await showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -314,7 +320,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                             return;
                           }
 
-                          if (widget.blockInstanceId != null) {
+                          if (activeInstanceId != null) {
                             final ok = await showConfirmDialog(
                               context,
                               title: 'Build Block?',
@@ -345,7 +351,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                         },
                         showDumbbellOption: true,
                         customBlockId: widget.customBlockId,
-                        activeBlockInstanceId: widget.blockInstanceId,
+                        activeBlockInstanceId: activeInstanceId,
                         onPreviewSchedule: _previewSchedule,
                       ),
               ),

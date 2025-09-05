@@ -735,7 +735,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     final db = await database;
 
     return await db.rawQuery('''
-    SELECT DISTINCT blockInstanceId, blockName
+    SELECT DISTINCT blockInstanceId, blockName, customBlockId
     FROM block_instances
     WHERE userId = ?
     ORDER BY blockInstanceId ASC
@@ -861,6 +861,15 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       whereArgs: [blockName, userId],
       orderBy: 'blockInstanceId ASC',
     );
+  }
+
+  Future<int?> getBlockInstanceIdByCustomBlockId(int customBlockId) async {
+    final db = await database;
+    final rows = await db.rawQuery(
+        'SELECT blockInstanceId FROM block_instances WHERE customBlockId = ? LIMIT 1',
+        [customBlockId]);
+    if (rows.isEmpty) return null;
+    return (rows.first['blockInstanceId'] as num?)?.toInt();
   }
 
   // ──────────────────────────────────────────────
