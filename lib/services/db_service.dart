@@ -1767,24 +1767,30 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       }
     }
 
-    final current = rows.length;
-    if (current > newSetCount) {
-      await db.delete(
-        'lift_entries',
-        where: 'liftInstanceId = ? AND setIndex > ?',
-        whereArgs: [liftInstanceId, newSetCount],
-      );
-    } else if (current < newSetCount) {
-      for (int i = current + 1; i <= newSetCount; i++) {
-        await db.insert('lift_entries', {
-          'liftInstanceId': liftInstanceId,
-          if (workoutInstanceId != null) 'workoutInstanceId': workoutInstanceId,
-          if (liftId != null) 'liftId': liftId,
-          'setIndex': i,
-          'reps': 0,
-          'weight': 0.0,
-        });
-      }
+    // Track existing set indices to avoid duplicate inserts
+    final existingIndices = {
+      for (final r in rows)
+        (r['setIndex'] as num?)?.toInt() ?? 0,
+    };
+
+    // Trim any sets beyond the requested count
+    await db.delete(
+      'lift_entries',
+      where: 'liftInstanceId = ? AND setIndex > ?',
+      whereArgs: [liftInstanceId, newSetCount],
+    );
+
+    // Insert missing set rows up to the desired count
+    for (int i = 1; i <= newSetCount; i++) {
+      if (existingIndices.contains(i)) continue;
+      await db.insert('lift_entries', {
+        'liftInstanceId': liftInstanceId,
+        if (workoutInstanceId != null) 'workoutInstanceId': workoutInstanceId,
+        if (liftId != null) 'liftId': liftId,
+        'setIndex': i,
+        'reps': 0,
+        'weight': 0.0,
+      });
     }
   }
 
