@@ -161,9 +161,6 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   }
 
   Future<Map<String, Object?>?> _pickFromCatalog(BuildContext context) async {
-    // Seed once (no-op if already populated)
-    await LiftCatalogService.instance.ensureSeeded();
-
     final groups = await LiftCatalogService.instance.getGroups();
 
     String? group;
