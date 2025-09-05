@@ -1234,7 +1234,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       SELECT
         li.liftInstanceId,
         li.liftId,
-        $liftNameCol AS name,
+        li.$liftNameCol AS name,
         li.sets,
         li.repsPerSet,
         li.scoreMultiplier,
