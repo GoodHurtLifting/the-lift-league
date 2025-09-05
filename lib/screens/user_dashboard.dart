@@ -37,6 +37,7 @@ class _UserDashboardState extends State<UserDashboard> {
   final UserStatsService _userStatsService = UserStatsService();
 
   Map<String, int?> blockInstances = {}; // ✅ Store all block instance IDs
+  Map<int, int> customBlockInstanceIds = {}; // customBlockId -> blockInstanceId
   bool isBlockLoading = true; // ✅ Loading state
   List<String> customBlockNames = [];
   List<int> customBlockIds = [];
@@ -89,12 +90,7 @@ class _UserDashboardState extends State<UserDashboard> {
   }
 
   Future<bool?> _editCustomBlock(int id) async {
-    int? blockInstanceId;
-    final index = customBlockIds.indexOf(id);
-    if (index != -1) {
-      final name = customBlockNames[index];
-      blockInstanceId = blockInstances[name];
-    }
+    final int? blockInstanceId = customBlockInstanceIds[id];
 
     final block = await DBService().loadCustomBlockForEdit(
       customBlockId: id,
@@ -278,19 +274,23 @@ class _UserDashboardState extends State<UserDashboard> {
       blockInstancesFromDB = await db.getAllBlockInstances(user.uid);
     }
 
-    // ✅ Map block names to their instance IDs
-    Map<String, int> tempBlockInstances = {};
+    // ✅ Map block names to their instance IDs and custom block IDs
+    Map<String, int?> tempBlockInstances = {};
+    Map<int, int> tempCustomMap = {};
     for (var block in blockInstancesFromDB) {
       final String name = block['blockName']?.toString() ?? 'Unnamed Block';
       final int? instanceId = block['blockInstanceId'] as int?;
       if (instanceId != null) {
         tempBlockInstances[name] = instanceId;
+        final int? customId = block['customBlockId'] as int?;
+        if (customId != null) tempCustomMap[customId] = instanceId;
       }
     }
 
     if (!mounted) return;
     setState(() {
       blockInstances = tempBlockInstances;
+      customBlockInstanceIds = tempCustomMap;
       isBlockLoading = false;
     });
   }
@@ -664,6 +664,11 @@ class _UserDashboardState extends State<UserDashboard> {
                           onNewBlockInstanceCreated: (blockName, newId) {
                             setState(() {
                               blockInstances[blockName] = newId;
+                              final idx = customBlockNames.indexOf(blockName);
+                              if (idx != -1) {
+                                customBlockInstanceIds[customBlockIds[idx]] =
+                                    newId;
+                              }
                             });
                           },
                         ),
@@ -679,6 +684,11 @@ class _UserDashboardState extends State<UserDashboard> {
                             onNewBlockInstanceCreated: (blockName, newId) {
                               setState(() {
                                 blockInstances[blockName] = newId;
+                                final idx = customBlockNames.indexOf(blockName);
+                                if (idx != -1) {
+                                  customBlockInstanceIds[customBlockIds[idx]] =
+                                      newId;
+                                }
                               });
                             },
                             onDeleteCustomBlock: _deleteCustomBlock,
