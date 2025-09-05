@@ -432,6 +432,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
 
     int? targetInstanceId = widget.blockInstanceId;
 
+    // Prefer direct lookup by custom block ID if no instance was supplied
+    targetInstanceId ??=
+        await DBService().getBlockInstanceIdByCustomBlockId(block.id);
+
+    // Fallback to name-based lookups to handle legacy runs
     targetInstanceId ??=
         await DBService().findActiveInstanceIdByName(block.name, user.uid);
 
