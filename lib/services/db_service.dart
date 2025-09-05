@@ -2423,8 +2423,9 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       final baseRows = await txn.query(
         'workout_instances',
         columns: ['workoutInstanceId'],
+        // slotIndex is 1-based while dayIndex is 0-based in the UI
         where: 'blockInstanceId = ? AND slotIndex = ?',
-        whereArgs: [blockInstanceId, dayIndex],
+        whereArgs: [blockInstanceId, dayIndex + 1],
         limit: 1,
       );
       if (baseRows.isEmpty) return;

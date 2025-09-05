@@ -126,10 +126,15 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
         await DBService().getLiftsForWorkoutInstance(widget.workout.id);
     if (!mounted) return;
 
+    // dayIndex in the DB is 1-based; convert to 0-based for the UI
+    final int? dbDayIndex = inst['dayIndex'] as int?;
+    final int adjustedDayIndex =
+        dbDayIndex != null ? dbDayIndex - 1 : widget.workout.dayIndex;
+
     setState(() {
       widget.workout
         ..name = (inst['workoutName'] as String? ?? widget.workout.name)
-        ..dayIndex = (inst['dayIndex'] as int? ?? widget.workout.dayIndex)
+        ..dayIndex = adjustedDayIndex
         ..isPersisted = true;
       widget.workout.lifts
         ..clear()
