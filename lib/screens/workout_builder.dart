@@ -396,7 +396,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                     ? SCORE_TYPE_BODYWEIGHT
                                     : SCORE_TYPE_MULTIPLIER;
 
-                                await DBService.instance.addLiftToCustomWorkout(
+                                newLift.id = await DBService.instance
+                                    .addLiftToCustomWorkout(
                                   customBlockId: widget.customBlockId,
                                   dayIndex: widget.workout.dayIndex,
                                   workoutName: widget.workout.name,
@@ -412,7 +413,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                       : 'multiplier', // or int if your API uses ints
                                 );
                                 debugPrint(
-                                    '[AddLift] DB insert OK (id=$liftId, "$name", $repText)');
+                                    '[AddLift] DB insert OK (id=${newLift.id}, "$name", $repText)');
 
                                 if (mounted) {
                                   setState(() {
