@@ -39,7 +39,7 @@ class DBService {
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
 
-  static const _dbVersion = 25;   // bump any time the schema changes
+  static const _dbVersion = 26;   // bump any time the schema changes
 
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
@@ -189,7 +189,9 @@ class DBService {
             status TEXT NOT NULL DEFAULT 'draft',
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL,
-            isDraft INTEGER NOT NULL DEFAULT 1
+            isDraft INTEGER NOT NULL DEFAULT 1,
+            coverImagePath TEXT,
+            scheduleType TEXT NOT NULL DEFAULT 'standard'
           );
           ''');
           await db.execute('''
@@ -278,6 +280,17 @@ class DBService {
           ''');
           await db.execute('CREATE INDEX IF NOT EXISTS idx_lc_group ON lift_catalog(primaryGroup);');
           await db.execute('CREATE INDEX IF NOT EXISTS idx_la_alias ON lift_aliases(alias);');
+        }
+
+        if (oldV < 26) {
+          if (!await _hasColumn(db, 'custom_blocks', 'coverImagePath')) {
+            await db.execute(
+                "ALTER TABLE custom_blocks ADD COLUMN coverImagePath TEXT;");
+          }
+          if (!await _hasColumn(db, 'custom_blocks', 'scheduleType')) {
+            await db.execute(
+                "ALTER TABLE custom_blocks ADD COLUMN scheduleType TEXT NOT NULL DEFAULT 'standard';");
+          }
         }
       },
     );
@@ -464,7 +477,9 @@ CREATE TABLE IF NOT EXISTS custom_blocks (
   status TEXT NOT NULL DEFAULT 'draft',
   createdAt INTEGER NOT NULL,
   updatedAt INTEGER NOT NULL,
-  isDraft INTEGER NOT NULL DEFAULT 1
+  isDraft INTEGER NOT NULL DEFAULT 1,
+  coverImagePath TEXT,
+  scheduleType TEXT NOT NULL DEFAULT 'standard'
 );
 ''');
 
@@ -1431,6 +1446,8 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   // ──────────────────────────────────────────────
   Future<int> upsertCustomBlock(CustomBlock block) async {
     final db = await database;
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     await db.rawInsert(
       '''
@@ -1440,20 +1457,26 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         totalWeeks,
         workoutsPerWeek,
         uniqueWorkoutCount,
+        ownerUid,
         isDraft,
         coverImagePath,
-        scheduleType
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ''',
+        scheduleType,
+        createdAt,
+        updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ''' ,
       [
         block.id,
         block.name,
         block.numWeeks,
         block.daysPerWeek,
         block.workouts.length,
+        uid,
         block.isDraft ? 1 : 0,
         block.coverImagePath,
         block.scheduleType,
+        now,
+        now,
       ],
     );
 
