@@ -2204,75 +2204,76 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     required String scoreType,
   }) async {
     final db = await database;
+    return await db.transaction((txn) async {
+      // Ensure parent custom_blocks row exists to satisfy FK constraint.
+      // If the row already exists this insert is ignored.
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await txn.insert(
+        'custom_blocks',
+        {
+          'customBlockId': customBlockId,
+          'name': 'Untitled Block',
+          'uniqueWorkoutCount': 1,
+          'workoutsPerWeek': 1,
+          'totalWeeks': 1,
+          'ownerUid': uid,
+          'createdAt': now,
+          'updatedAt': now,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
 
-    // Ensure parent custom_blocks row exists to satisfy FK constraint.
-    // If the row already exists this insert is ignored.
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await db.insert(
-      'custom_blocks',
-      {
-        'customBlockId': customBlockId,
-        'name': 'Untitled Block',
-        'uniqueWorkoutCount': 1,
-        'workoutsPerWeek': 1,
-        'totalWeeks': 1,
-        'ownerUid': uid,
-        'createdAt': now,
-        'updatedAt': now,
-      },
-      conflictAlgorithm: ConflictAlgorithm.ignore,
-    );
+      // Resolve or create the custom_workouts row for this block/day
+      int customWorkoutId;
+      final cwRows = await txn.query(
+        'custom_workouts',
+        columns: ['id'],
+        where: 'customBlockId = ? AND position = ?',
+        whereArgs: [customBlockId, dayIndex],
+        limit: 1,
+      );
+      if (cwRows.isNotEmpty) {
+        customWorkoutId = cwRows.first['id'] as int;
+      } else {
+        customWorkoutId = await txn.insert('custom_workouts', {
+          'customBlockId': customBlockId,
+          'name': workoutName,
+          'position': dayIndex,
+        });
+      }
 
-    // Resolve or create the custom_workouts row for this block/day
-    int customWorkoutId;
-    final cwRows = await db.query(
-      'custom_workouts',
-      columns: ['id'],
-      where: 'customBlockId = ? AND position = ?',
-      whereArgs: [customBlockId, dayIndex],
-      limit: 1,
-    );
-    if (cwRows.isNotEmpty) {
-      customWorkoutId = cwRows.first['id'] as int;
-    } else {
-      customWorkoutId = await db.insert('custom_workouts', {
-        'customBlockId': customBlockId,
-        'name': workoutName,
-        'position': dayIndex,
+      final posRows = await txn.rawQuery(
+        'SELECT COALESCE(MAX(position), -1) + 1 AS pos FROM custom_lifts WHERE customWorkoutId = ?',
+        [customWorkoutId],
+      );
+      final position = (posRows.first['pos'] as num).toInt();
+
+      String? liftName;
+      final nameRows = await txn.query(
+        'lift_catalog',
+        columns: ['name'],
+        where: 'catalogId = ?',
+        whereArgs: [liftCatalogId],
+        limit: 1,
+      );
+      if (nameRows.isNotEmpty) {
+        liftName = nameRows.first['name'] as String?;
+      }
+
+      return await txn.insert('custom_lifts', {
+        'customWorkoutId': customWorkoutId,
+        'liftCatalogId': liftCatalogId,
+        'name': liftName,
+        'repSchemeText': repSchemeText,
+        'sets': sets,
+        'repsPerSet': repsPerSet,
+        'isBodyweight': isBodyweight,
+        'isDumbbell': isDumbbell,
+        'scoreType': scoreType,
+        'scoreMultiplier': null,
+        'position': position,
       });
-    }
-
-    final posRows = await db.rawQuery(
-      'SELECT COALESCE(MAX(position), -1) + 1 AS pos FROM custom_lifts WHERE customWorkoutId = ?',
-      [customWorkoutId],
-    );
-    final position = (posRows.first['pos'] as num).toInt();
-
-    String? liftName;
-    final nameRows = await db.query(
-      'lift_catalog',
-      columns: ['name'],
-      where: 'catalogId = ?',
-      whereArgs: [liftCatalogId],
-      limit: 1,
-    );
-    if (nameRows.isNotEmpty) {
-      liftName = nameRows.first['name'] as String?;
-    }
-
-    return await db.insert('custom_lifts', {
-      'customWorkoutId': customWorkoutId,
-      'liftCatalogId': liftCatalogId,
-      'name': liftName,
-      'repSchemeText': repSchemeText,
-      'sets': sets,
-      'repsPerSet': repsPerSet,
-      'isBodyweight': isBodyweight,
-      'isDumbbell': isDumbbell,
-      'scoreType': scoreType,
-      'scoreMultiplier': null,
-      'position': position,
     });
   }
 
