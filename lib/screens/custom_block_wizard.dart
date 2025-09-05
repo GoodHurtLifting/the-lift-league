@@ -265,25 +265,10 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               setState(() => _workoutIndex = i); // keep wizard in sync
             }
 
-            // ---- Build first-week template (unique by name) ----
-            List<WorkoutDraft> _toTemplate(
-                List<WorkoutDraft> all, int dPerWeek) {
-              final firstWeek = all.where((w) => w.dayIndex < dPerWeek).toList()
-                ..sort((a, b) => a.dayIndex.compareTo(b.dayIndex));
-              final seen = <String>{};
-              final uniques = <WorkoutDraft>[];
-              for (final w in firstWeek) {
-                final key = w.name.toLowerCase().trim();
-                if (seen.add(key)) uniques.add(w);
-              }
-              return uniques;
-            }
+            // Work directly on the primary workouts list so edits persist
+            final List<WorkoutDraft> template = workouts;
 
-            final int dPerWeek = (daysPerWeek ?? 3).clamp(1, 7);
-            final List<WorkoutDraft> template =
-                _toTemplate(workouts, dPerWeek); // safe if already template
-
-            // Clamp index in case template length changed
+            // Clamp index in case workout count changed
             if (template.isNotEmpty && localIndex >= template.length) {
               localIndex = template.length - 1;
             }
@@ -310,7 +295,7 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                     : WorkoutBuilder(
                         key: ValueKey<int>(template[localIndex].id),
                         workout: template[localIndex],
-                        allWorkouts: template, // ← pass only template
+                        allWorkouts: template, // operate on original list
                         currentIndex: localIndex,
                         onSelectWorkout: _setIndex, // reactive chip switching
                         isLast: localIndex == template.length - 1,
