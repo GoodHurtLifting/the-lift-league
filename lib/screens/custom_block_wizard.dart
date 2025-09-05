@@ -392,10 +392,28 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       isDraft: false,
       scheduleType: _scheduleType,
     );
-    // 3) Resolve target instance and apply edits if possible
+    // 3) Resolve target instance and apply structural edits only if needed
     final int? editedActiveInstanceId = await _resolveActiveInstanceId(block);
     if (editedActiveInstanceId != null) {
-      await DBService().applyCustomBlockEdits(block, editedActiveInstanceId);
+      bool needsStructuralSync = workouts.any((w) => !w.isPersisted);
+      if (widget.initialBlock != null) {
+        final initialCount =
+            _firstWeekTemplateFromBlock(widget.initialBlock!).length;
+        if (workouts.length != initialCount) needsStructuralSync = true;
+        if (block.numWeeks != widget.initialBlock!.numWeeks) {
+          needsStructuralSync = true;
+        }
+        if (block.daysPerWeek != widget.initialBlock!.daysPerWeek) {
+          needsStructuralSync = true;
+        }
+      }
+
+      if (needsStructuralSync) {
+        await DBService().applyCustomBlockEdits(block, editedActiveInstanceId);
+      } else {
+        // Only lift-level edits were made; syncBuilderEdits already handled them
+        await DBService().upsertCustomBlock(block);
+      }
     } else {
       // Ensure block is stored for future runs
       await DBService().upsertCustomBlock(block);
