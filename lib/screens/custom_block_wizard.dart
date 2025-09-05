@@ -384,45 +384,64 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
       );
     });
 
-    // 2) Build the CustomBlock
-    final int id = widget.initialBlock?.id ?? widget.customBlockId;
+      // 2) Build the CustomBlock
+      final int id = widget.initialBlock?.id ?? widget.customBlockId;
 
-    final block = CustomBlock(
-      id: id,
-      name: blockName,
-      numWeeks: numWeeks!,
-      daysPerWeek: daysPerWeek!,
-      coverImagePath: _coverImagePath ?? 'assets/logo25.jpg',
-      workouts: allWorkouts,
-      isDraft: false,
-      scheduleType: _scheduleType,
-    );
-    // 3) Resolve target instance and apply structural edits only if needed
-    final int? editedActiveInstanceId = await _resolveActiveInstanceId(block);
-    if (editedActiveInstanceId != null) {
-      bool needsStructuralSync = workouts.any((w) => !w.isPersisted);
+      final block = CustomBlock(
+        id: id,
+        name: blockName,
+        numWeeks: numWeeks!,
+        daysPerWeek: daysPerWeek!,
+        coverImagePath: _coverImagePath ?? 'assets/logo25.jpg',
+        workouts: allWorkouts,
+        isDraft: false,
+        scheduleType: _scheduleType,
+      );
+      // 3) Resolve target instance and apply structural edits only if needed
+      final int? editedActiveInstanceId = await _resolveActiveInstanceId(block);
+
+      bool shapeChanged = false;
       if (widget.initialBlock != null) {
         final initialCount =
             _firstWeekTemplateFromBlock(widget.initialBlock!).length;
-        if (workouts.length != initialCount) needsStructuralSync = true;
-        if (block.numWeeks != widget.initialBlock!.numWeeks) {
-          needsStructuralSync = true;
-        }
+        if (workouts.length != initialCount) shapeChanged = true;
+        if (block.numWeeks != widget.initialBlock!.numWeeks) shapeChanged = true;
         if (block.daysPerWeek != widget.initialBlock!.daysPerWeek) {
-          needsStructuralSync = true;
+          shapeChanged = true;
         }
       }
 
-      if (needsStructuralSync) {
-        await DBService().applyCustomBlockEdits(block, editedActiveInstanceId);
+      if (shapeChanged && editedActiveInstanceId != null) {
+        final ok = await showConfirmDialog(
+          context,
+          title: 'Apply Shape Changes?',
+          message:
+              'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
+        );
+        if (!ok) return null;
+        await DBService().updateCustomBlockShape(
+          customBlockId: block.id,
+          blockInstanceId: editedActiveInstanceId,
+          uniqueWorkoutCount: workouts.length,
+          workoutsPerWeek: block.daysPerWeek,
+          totalWeeks: block.numWeeks,
+        );
+      }
+
+      if (editedActiveInstanceId != null) {
+        bool needsStructuralSync =
+            shapeChanged || workouts.any((w) => !w.isPersisted);
+
+        if (needsStructuralSync) {
+          await DBService().applyCustomBlockEdits(block, editedActiveInstanceId);
+        } else {
+          // Only lift-level edits were made; syncBuilderEdits already handled them
+          await DBService().upsertCustomBlock(block);
+        }
       } else {
-        // Only lift-level edits were made; syncBuilderEdits already handled them
+        // Ensure block is stored for future runs
         await DBService().upsertCustomBlock(block);
       }
-    } else {
-      // Ensure block is stored for future runs
-      await DBService().upsertCustomBlock(block);
-    }
 
     // 4) Sync to Firestore (optional)
     await _uploadBlockToFirestore(block);
@@ -651,28 +670,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               items: List.generate(6, (i) => i + 1)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                   .toList(),
-              onChanged: (v) async {
+              onChanged: (v) {
                 if (v == null) return;
-                final newCount = v;
-                final canApply = widget.blockInstanceId != null &&
-                    newCount != null && daysPerWeek != null && numWeeks != null;
-                if (canApply) {
-                  final ok = await showConfirmDialog(
-                    context,
-                    title: 'Apply Shape Changes?',
-                    message:
-                        'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
-                  );
-                  if (!ok) return;
-                  await DBService().updateCustomBlockShape(
-                    customBlockId: widget.customBlockId,
-                    blockInstanceId: widget.blockInstanceId!,
-                    uniqueWorkoutCount: newCount,
-                    workoutsPerWeek: daysPerWeek!,
-                    totalWeeks: numWeeks!,
-                  );
-                }
-                setState(() => _uniqueCount = newCount);
+                setState(() => _uniqueCount = v);
               },
             ),
             isActive: _currentStep >= 2,
@@ -687,28 +687,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               items: List.generate(5, (i) => i + 2)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                   .toList(),
-              onChanged: (v) async {
+              onChanged: (v) {
                 if (v == null) return;
-                final newDays = v;
-                final canApply = widget.blockInstanceId != null &&
-                    _uniqueCount != null && newDays != null && numWeeks != null;
-                if (canApply) {
-                  final ok = await showConfirmDialog(
-                    context,
-                    title: 'Apply Shape Changes?',
-                    message:
-                        'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
-                  );
-                  if (!ok) return;
-                  await DBService().updateCustomBlockShape(
-                    customBlockId: widget.customBlockId,
-                    blockInstanceId: widget.blockInstanceId!,
-                    uniqueWorkoutCount: _uniqueCount!,
-                    workoutsPerWeek: newDays,
-                    totalWeeks: numWeeks!,
-                  );
-                }
-                setState(() => daysPerWeek = newDays);
+                setState(() => daysPerWeek = v);
               },
             ),
             isActive: _currentStep >= 3,
@@ -723,28 +704,9 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
               items: List.generate(4, (i) => i + 3)
                   .map((e) => DropdownMenuItem(value: e, child: Text('$e')))
                   .toList(),
-              onChanged: (v) async {
+              onChanged: (v) {
                 if (v == null) return;
-                final newWeeks = v;
-                final canApply = widget.blockInstanceId != null &&
-                    _uniqueCount != null && daysPerWeek != null && newWeeks != null;
-                if (canApply) {
-                  final ok = await showConfirmDialog(
-                    context,
-                    title: 'Apply Shape Changes?',
-                    message:
-                        'This will rebuild instances. Removed weeks/lifts and their logged data will be deleted permanently.',
-                  );
-                  if (!ok) return;
-                  await DBService().updateCustomBlockShape(
-                    customBlockId: widget.customBlockId,
-                    blockInstanceId: widget.blockInstanceId!,
-                    uniqueWorkoutCount: _uniqueCount!,
-                    workoutsPerWeek: daysPerWeek!,
-                    totalWeeks: newWeeks,
-                  );
-                }
-                setState(() => numWeeks = newWeeks);
+                setState(() => numWeeks = v);
               },
             ),
             isActive: _currentStep >= 4,
