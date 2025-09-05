@@ -39,7 +39,7 @@ class DBService {
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
 
-  static const _dbVersion = 26;   // bump any time the schema changes
+  static const _dbVersion = 27;   // bump any time the schema changes
 
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
@@ -310,6 +310,31 @@ class DBService {
                 "ALTER TABLE custom_blocks ADD COLUMN scheduleType TEXT NOT NULL DEFAULT 'standard';");
           }
         }
+
+        if (oldV < 27) {
+          await db.execute('ALTER TABLE lift_entries RENAME TO lift_entries_old;');
+          await db.execute('''
+          CREATE TABLE lift_entries (
+            liftEntryId INTEGER PRIMARY KEY AUTOINCREMENT,
+            liftInstanceId INTEGER,
+            workoutInstanceId INTEGER,
+            liftId INTEGER,
+            setIndex INTEGER,
+            reps INTEGER,
+            weight REAL,
+            userId TEXT,
+            FOREIGN KEY (workoutInstanceId) REFERENCES workout_instances(workoutInstanceId) ON DELETE CASCADE
+          );
+          ''');
+          await db.execute('''
+          INSERT INTO lift_entries (liftInstanceId, workoutInstanceId, liftId, setIndex, reps, weight, userId)
+          SELECT liftInstanceId, workoutInstanceId, liftId, setIndex, reps, weight, userId
+          FROM lift_entries_old;
+          ''');
+          await db.execute('DROP TABLE lift_entries_old;');
+          await db.execute(
+              'CREATE UNIQUE INDEX IF NOT EXISTS idx_le_instance_set ON lift_entries(liftInstanceId, setIndex);');
+        }
       },
     );
   }
@@ -435,7 +460,8 @@ class DBService {
 
     await db.execute('''
       CREATE TABLE lift_entries (
-        liftInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
+        liftEntryId INTEGER PRIMARY KEY AUTOINCREMENT,
+        liftInstanceId INTEGER,
         workoutInstanceId INTEGER,
         liftId INTEGER,
         setIndex INTEGER,
@@ -445,6 +471,8 @@ class DBService {
         FOREIGN KEY (workoutInstanceId) REFERENCES workout_instances(workoutInstanceId) ON DELETE CASCADE
       )
     ''');
+    await db.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_le_instance_set ON lift_entries(liftInstanceId, setIndex);');
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS lift_totals (
@@ -1232,7 +1260,10 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         COALESCE(lw.isDumbbellLift,0) AS isDumbbellLift,
         COALESCE(lw.isBodyweight,0)   AS isBodyweight,
         COALESCE(lw.position, lw.liftWorkoutId) AS position,
-        l.scoreType           AS scoreType,
+        CASE l.scoreType
+          WHEN 'bodyweight' THEN $SCORE_TYPE_BODYWEIGHT
+          ELSE $SCORE_TYPE_MULTIPLIER
+        END AS scoreType,
         l.youtubeUrl          AS youtubeUrl,
         l.description         AS description,
         l.referenceLiftId     AS referenceLiftId,
@@ -1260,7 +1291,10 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         COALESCE(li.isDumbbellLift,0) AS isDumbbellLift,
         COALESCE(li.isBodyweight,0)   AS isBodyweight,
         COALESCE(li.position,0)       AS position,
-        l.scoreType           AS scoreType,
+        CASE l.scoreType
+          WHEN 'bodyweight' THEN $SCORE_TYPE_BODYWEIGHT
+          ELSE $SCORE_TYPE_MULTIPLIER
+        END AS scoreType,
         l.youtubeUrl          AS youtubeUrl,
         l.description         AS description,
         l.referenceLiftId     AS referenceLiftId,
@@ -1733,24 +1767,30 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       }
     }
 
-    final current = rows.length;
-    if (current > newSetCount) {
-      await db.delete(
-        'lift_entries',
-        where: 'liftInstanceId = ? AND setIndex > ?',
-        whereArgs: [liftInstanceId, newSetCount],
-      );
-    } else if (current < newSetCount) {
-      for (int i = current + 1; i <= newSetCount; i++) {
-        await db.insert('lift_entries', {
-          'liftInstanceId': liftInstanceId,
-          if (workoutInstanceId != null) 'workoutInstanceId': workoutInstanceId,
-          if (liftId != null) 'liftId': liftId,
-          'setIndex': i,
-          'reps': 0,
-          'weight': 0.0,
-        });
-      }
+    // Track existing set indices to avoid duplicate inserts
+    final existingIndices = {
+      for (final r in rows)
+        (r['setIndex'] as num?)?.toInt() ?? 0,
+    };
+
+    // Trim any sets beyond the requested count
+    await db.delete(
+      'lift_entries',
+      where: 'liftInstanceId = ? AND setIndex > ?',
+      whereArgs: [liftInstanceId, newSetCount],
+    );
+
+    // Insert missing set rows up to the desired count
+    for (int i = 1; i <= newSetCount; i++) {
+      if (existingIndices.contains(i)) continue;
+      await db.insert('lift_entries', {
+        'liftInstanceId': liftInstanceId,
+        if (workoutInstanceId != null) 'workoutInstanceId': workoutInstanceId,
+        if (liftId != null) 'liftId': liftId,
+        'setIndex': i,
+        'reps': 0,
+        'weight': 0.0,
+      });
     }
   }
 

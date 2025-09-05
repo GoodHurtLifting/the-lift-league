@@ -133,17 +133,24 @@ class WorkoutLogScreenState extends State<WorkoutLogScreen> with SingleTickerPro
           ? '$sets sets x $repsPerSet reps'
           : (lift['repScheme'] as String? ?? ''); // rare legacy fallback
 
+      final int scoreTypeInt =
+          (lift['scoreType'] as num?)?.toInt() ?? SCORE_TYPE_MULTIPLIER;
+      final String scoreType =
+          scoreTypeInt == SCORE_TYPE_BODYWEIGHT ? 'bodyweight' : 'multiplier';
+
       orderedLifts.add(
         Liftinfo(
           liftId: (lift['liftId'] as num?)?.toInt() ?? 0,
           workoutInstanceId: widget.workoutInstanceId,
           // built-ins return "name"; legacy paths returned "liftName"
-          liftName: (lift['liftName'] as String?) ?? (lift['name'] as String?) ?? 'Unknown',
+          liftName: (lift['liftName'] as String?) ??
+              (lift['name'] as String?) ??
+              'Unknown',
           repScheme: repScheme,
           numSets: sets,
           scoreMultiplier: ((lift['scoreMultiplier'] as num?) ?? 1.0).toDouble(),
           isDumbbellLift: ((lift['isDumbbellLift'] as num?) ?? 0).toInt() == 1,
-          scoreType: (lift['scoreType'] as String?) ?? 'multiplier',
+          scoreType: scoreType,
           youtubeUrl: lift['youtubeUrl'] as String? ?? '',
           description: lift['description'] as String? ?? '',
           referenceLiftId: (lift['referenceLiftId'] as num?)?.toInt(),
