@@ -89,6 +89,10 @@ class _POSSBlockBuilderState extends State<POSSBlockBuilder> {
             ),
           )
           .toList();
+      // Normalize day indices to zero-based, sequential values
+      for (int i = 0; i < _workouts.length; i++) {
+        _workouts[i].dayIndex = i;
+      }
       _uniqueCount = _workouts.length;
       _coverImageUrl = block.coverImagePath;
       // Editing an existing block jumps directly to the workout builder step.

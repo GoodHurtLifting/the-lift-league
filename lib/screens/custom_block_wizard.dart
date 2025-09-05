@@ -79,6 +79,11 @@ class _CustomBlockWizardState extends State<CustomBlockWizard> {
                 ))
             .toList();
 
+        // Normalize day indices to zero-based, sequential values
+        for (int i = 0; i < workouts.length; i++) {
+          workouts[i].dayIndex = i;
+        }
+
         _coverImagePath = block.coverImagePath;
         if (_coverImagePath != null && File(_coverImagePath!).existsSync()) {
           _coverImageBytes = File(_coverImagePath!).readAsBytesSync();
