@@ -79,12 +79,28 @@ class DBService {
         }
 
         if (oldV < 17) {
-          await db.execute("ALTER TABLE custom_lifts ADD COLUMN isDumbbellLift INTEGER DEFAULT 0;");
-          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;"); } catch (_) {}
-          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;"); } catch (_) {}
-          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;"); } catch (_) {}
-          try { await db.execute("ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
-          try { await db.execute("ALTER TABLE custom_lifts ADD COLUMN isDumbbellLift INTEGER;"); } catch (_) {}
+          await db.execute(
+              "ALTER TABLE custom_lifts ADD COLUMN isDumbbell INTEGER DEFAULT 0;");
+          try {
+            await db
+                .execute("ALTER TABLE lift_workouts ADD COLUMN repsPerSet INTEGER;");
+          } catch (_) {}
+          try {
+            await db
+                .execute("ALTER TABLE lift_workouts ADD COLUMN multiplier REAL;");
+          } catch (_) {}
+          try {
+            await db
+                .execute("ALTER TABLE lift_workouts ADD COLUMN isBodyweight INTEGER;");
+          } catch (_) {}
+          try {
+            await db.execute(
+                "ALTER TABLE lift_workouts ADD COLUMN isDumbbellLift INTEGER;");
+          } catch (_) {}
+          try {
+            await db.execute(
+                "ALTER TABLE custom_lifts ADD COLUMN isDumbbell INTEGER;");
+          } catch (_) {}
         }
 
         if (oldV < 18) {
@@ -149,8 +165,10 @@ class DBService {
           } catch (_) {}
           try {
             if (!await _hasColumn(db, 'custom_lifts', 'position')) {
-              await db.execute('ALTER TABLE custom_lifts ADD COLUMN position INTEGER DEFAULT 0;');
-              await db.execute('CREATE INDEX IF NOT EXISTS idx_ld_workout_pos ON custom_lifts(workoutId, position);');
+              await db.execute(
+                  'ALTER TABLE custom_lifts ADD COLUMN position INTEGER DEFAULT 0;');
+              await db.execute(
+                  'CREATE INDEX IF NOT EXISTS idx_clifts_cw_pos ON custom_lifts(customWorkoutId, position);');
             }
           } catch (_) {}
         }
@@ -1738,17 +1756,17 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
   /// Loads a single [WorkoutDraft] with its associated lifts from the database.
   // DEPRECATED: instance-only migration
-  Future<WorkoutDraft?> fetchWorkoutDraft(int workoutId) async {
+  Future<WorkoutDraft?> fetchWorkoutDraft(int customWorkoutId) async {
     debugPrint('DEPRECATED: fetchWorkoutDraft called');
     final db = await database;
     final workoutRows = await db.query('custom_workouts',
-        where: 'id = ?', whereArgs: [workoutId], limit: 1);
+        where: 'id = ?', whereArgs: [customWorkoutId], limit: 1);
     if (workoutRows.isEmpty) return null;
     final w = workoutRows.first;
     final liftRows = await db.query(
       'custom_lifts',
-      where: 'workoutId = ?',
-      whereArgs: [workoutId],
+      where: 'customWorkoutId = ?',
+      whereArgs: [customWorkoutId],
       orderBy: 'position ASC',
     );
     final lifts = liftRows
@@ -1757,9 +1775,9 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
             name: l['name'] as String,
             sets: l['sets'] as int,
             repsPerSet: l['repsPerSet'] as int,
-            multiplier: (l['multiplier'] as num).toDouble(),
+            multiplier: (l['scoreMultiplier'] as num).toDouble(),
             isBodyweight: (l['isBodyweight'] as int) == 1,
-            isDumbbellLift: (l['isDumbbellLift'] as int) == 1,
+            isDumbbellLift: (l['isDumbbell'] as int) == 1,
             position: (l['position'] as int?) ?? 0,
           ),
         )
@@ -1802,19 +1820,21 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       );
 
       // Replace all lifts
-      await txn.delete('custom_lifts', where: 'workoutId = ?', whereArgs: [workout.id]);
-      print('[updateWorkoutDraft] workoutId=${workout.id} lifts=${workout.lifts.length}');
+      await txn.delete('custom_lifts',
+          where: 'customWorkoutId = ?', whereArgs: [workout.id]);
+      print(
+          '[updateWorkoutDraft] customWorkoutId=${workout.id} lifts=${workout.lifts.length}');
 
       for (var i = 0; i < workout.lifts.length; i++) {
         final lift = workout.lifts[i];
         await txn.insert('custom_lifts', {
-          'workoutId': workout.id,
+          'customWorkoutId': workout.id,
           'name': lift.name,
           'sets': lift.sets,
           'repsPerSet': lift.repsPerSet,
-          'multiplier': lift.multiplier,
+          'scoreMultiplier': lift.multiplier,
           'isBodyweight': lift.isBodyweight ? 1 : 0,
-          'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+          'isDumbbell': lift.isDumbbellLift ? 1 : 0,
           'position': lift.position,
         });
       }
@@ -1908,28 +1928,30 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
   /// Replaces all lift entries for a workout draft with [lifts]. This is used
   /// when editing or reordering lifts within a custom block draft.
   // DEPRECATED: instance-only migration
-  Future<void> updateWorkoutDraftLifts(int workoutId, List<LiftDraft> lifts) async {
+  Future<void> updateWorkoutDraftLifts(
+      int customWorkoutId, List<LiftDraft> lifts) async {
     debugPrint('DEPRECATED: updateWorkoutDraftLifts called');
     final db = await database;
     await db.transaction((txn) async {
       // Ensure parent exists (keeps things consistent if called early)
       await txn.insert(
         'custom_workouts',
-        {'id': workoutId, 'customBlockId': 0, 'name': '', 'position': 0},
+        {'id': customWorkoutId, 'customBlockId': 0, 'name': '', 'position': 0},
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      await txn.delete('custom_lifts', where: 'customWorkoutId = ?', whereArgs: [workoutId]);
+      await txn.delete('custom_lifts',
+          where: 'customWorkoutId = ?', whereArgs: [customWorkoutId]);
       for (var i = 0; i < lifts.length; i++) {
         final lift = lifts[i];
         await txn.insert('custom_lifts', {
-          'customWorkoutId': workoutId,
+          'customWorkoutId': customWorkoutId,
           'name': lift.name,
           'sets': lift.sets,
           'repsPerSet': lift.repsPerSet,
-          'multiplier': lift.multiplier,
+          'scoreMultiplier': lift.multiplier,
           'isBodyweight': lift.isBodyweight ? 1 : 0,
-          'isDumbbellLift': lift.isDumbbellLift ? 1 : 0,
+          'isDumbbell': lift.isDumbbellLift ? 1 : 0,
           'position': lift.position,
         });
       }
@@ -1938,11 +1960,11 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
   /// Updates the name of a workout draft in the database.
   // DEPRECATED: instance-only migration
-  Future<void> updateWorkoutDraftName(int workoutId, String name) async {
+  Future<void> updateWorkoutDraftName(int customWorkoutId, String name) async {
     debugPrint('DEPRECATED: updateWorkoutDraftName called');
     final db = await database;
     await db.update('custom_workouts', {'name': name},
-        where: 'id = ?', whereArgs: [workoutId]);
+        where: 'id = ?', whereArgs: [customWorkoutId]);
   }
 
   int? _findLiftIdByName(String name) {
