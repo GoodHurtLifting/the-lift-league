@@ -195,16 +195,17 @@ class BlockDashboardState extends State<BlockDashboard> {
     if (user == null) return; // Or handle accordingly
     // And in _loadBlockTotals():
     final totals = await db.getBlockTotals(currentBlockInstanceId, user.uid);
+    final double newScore =
+        (totals?['blockScore'] as num?)?.toDouble() ?? 0.0;
+
+    if (!mounted) return;
+    setState(() {
+      _blockScore = newScore;
+    });
 
     if (totals != null) {
-      setState(() {
-        _blockScore = (totals['blockScore'] as num?)?.toDouble() ?? 0.0;
-      });
       print("✅ Loaded block score from block_totals: $_blockScore");
     } else {
-      setState(() {
-        _blockScore = 0.0;
-      });
       print("⚠️ No block_totals entry found for Block $currentBlockInstanceId");
     }
   }
