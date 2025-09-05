@@ -42,32 +42,38 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
   Timer? _applyDebounce;
   List<Map<String, dynamic>> _liftMeta = [];
 
+  Future<void> _applyEditsNow() async {
+    _applyDebounce?.cancel();
+
+    // Drop any lifts lacking a catalog selection to enforce catalog-only
+    // entries.
+    final filteredLifts = <LiftDraft>[];
+    final filteredMeta = <Map<String, dynamic>>[];
+    for (int i = 0; i < widget.workout.lifts.length; i++) {
+      if (i < _liftMeta.length && _liftMeta[i]['liftId'] != null) {
+        filteredLifts.add(widget.workout.lifts[i]);
+        filteredMeta.add(_liftMeta[i]);
+      }
+    }
+
+    widget.workout.lifts
+      ..clear()
+      ..addAll(filteredLifts);
+    _liftMeta = filteredMeta;
+
+    await DBService().syncBuilderEdits(
+      customBlockId: widget.customBlockId,
+      blockInstanceId: widget.activeBlockInstanceId,
+      dayIndex: widget.workout.dayIndex,
+      lifts: widget.workout.lifts,
+      meta: _liftMeta,
+    );
+  }
+
   void _applyEditsSoon() {
     _applyDebounce?.cancel();
-    _applyDebounce = Timer(const Duration(milliseconds: 400), () {
-      // Drop any lifts lacking a catalog selection to enforce catalog-only entries.
-      final filteredLifts = <LiftDraft>[];
-      final filteredMeta = <Map<String, dynamic>>[];
-      for (int i = 0; i < widget.workout.lifts.length; i++) {
-        if (i < _liftMeta.length && _liftMeta[i]['liftId'] != null) {
-          filteredLifts.add(widget.workout.lifts[i]);
-          filteredMeta.add(_liftMeta[i]);
-        }
-      }
-
-      widget.workout.lifts
-        ..clear()
-        ..addAll(filteredLifts);
-      _liftMeta = filteredMeta;
-
-      DBService().syncBuilderEdits(
-        customBlockId: widget.customBlockId,
-        blockInstanceId: widget.activeBlockInstanceId,
-        dayIndex: widget.workout.dayIndex,
-        lifts: widget.workout.lifts,
-        meta: _liftMeta,
-      );
-    });
+    _applyDebounce =
+        Timer(const Duration(milliseconds: 400), () => _applyEditsNow());
   }
 
   @override
@@ -714,7 +720,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                             );
                           } catch (_) {}
                         }
-                        _applyEditsSoon();
+                        await _applyEditsNow();
                         await widget.onComplete();
                       },
                       iconSize: 28,
