@@ -39,7 +39,7 @@ class DBService {
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
 
-  static const _dbVersion = 26;   // bump any time the schema changes
+  static const _dbVersion = 27;   // bump any time the schema changes
 
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
@@ -310,6 +310,31 @@ class DBService {
                 "ALTER TABLE custom_blocks ADD COLUMN scheduleType TEXT NOT NULL DEFAULT 'standard';");
           }
         }
+
+        if (oldV < 27) {
+          await db.execute('ALTER TABLE lift_entries RENAME TO lift_entries_old;');
+          await db.execute('''
+          CREATE TABLE lift_entries (
+            liftEntryId INTEGER PRIMARY KEY AUTOINCREMENT,
+            liftInstanceId INTEGER,
+            workoutInstanceId INTEGER,
+            liftId INTEGER,
+            setIndex INTEGER,
+            reps INTEGER,
+            weight REAL,
+            userId TEXT,
+            FOREIGN KEY (workoutInstanceId) REFERENCES workout_instances(workoutInstanceId) ON DELETE CASCADE
+          );
+          ''');
+          await db.execute('''
+          INSERT INTO lift_entries (liftInstanceId, workoutInstanceId, liftId, setIndex, reps, weight, userId)
+          SELECT liftInstanceId, workoutInstanceId, liftId, setIndex, reps, weight, userId
+          FROM lift_entries_old;
+          ''');
+          await db.execute('DROP TABLE lift_entries_old;');
+          await db.execute(
+              'CREATE UNIQUE INDEX IF NOT EXISTS idx_le_instance_set ON lift_entries(liftInstanceId, setIndex);');
+        }
       },
     );
   }
@@ -435,7 +460,8 @@ class DBService {
 
     await db.execute('''
       CREATE TABLE lift_entries (
-        liftInstanceId INTEGER PRIMARY KEY AUTOINCREMENT,
+        liftEntryId INTEGER PRIMARY KEY AUTOINCREMENT,
+        liftInstanceId INTEGER,
         workoutInstanceId INTEGER,
         liftId INTEGER,
         setIndex INTEGER,
@@ -445,6 +471,8 @@ class DBService {
         FOREIGN KEY (workoutInstanceId) REFERENCES workout_instances(workoutInstanceId) ON DELETE CASCADE
       )
     ''');
+    await db.execute(
+        'CREATE UNIQUE INDEX IF NOT EXISTS idx_le_instance_set ON lift_entries(liftInstanceId, setIndex);');
 
     await db.execute('''
       CREATE TABLE IF NOT EXISTS lift_totals (
