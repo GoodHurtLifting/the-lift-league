@@ -1108,7 +1108,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
             customRow.isNotEmpty ? customRow.first['customBlockId'] as int? : null;
         if (customBlockId != null) {
           final draftWorkout = await txn.rawQuery(
-            'SELECT id FROM custom_workouts WHERE customBlockId = ? ORDER BY COALESCE(dayIndex,0) ASC, id ASC LIMIT 1 OFFSET ?',
+            'SELECT id FROM custom_workouts WHERE customBlockId = ? ORDER BY COALESCE(position,0) ASC, id ASC LIMIT 1 OFFSET ?',
             [customBlockId, slotIndex],
           );
           if (draftWorkout.isNotEmpty) {
@@ -1785,7 +1785,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
     return WorkoutDraft(
       id: w['id'] as int,
-      dayIndex: w['dayIndex'] as int,
+      dayIndex: (w['dayIndex'] as int?) ?? (w['position'] as int?) ?? 0,
       name: w['name'] as String? ?? '',
       lifts: lifts,
       isPersisted: true,
@@ -1805,7 +1805,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         {
           'id': workout.id,
           'name': workout.name,
-          'dayIndex': workout.dayIndex,
+          'position': workout.dayIndex,
         },
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
@@ -1813,7 +1813,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         'custom_workouts',
         {
           'name': workout.name,
-          'dayIndex': workout.dayIndex,
+          'position': workout.dayIndex,
         },
         where: 'id = ?',
         whereArgs: [workout.id],
@@ -1855,7 +1855,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       {
         'id': id,
         'name': name,
-        'dayIndex': dayIndex,
+        'position': dayIndex,
       },
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
@@ -1864,7 +1864,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
       'custom_workouts',
       {
         'name': name,
-        'dayIndex': dayIndex,
+        'position': dayIndex,
       },
       where: 'id = ?',
       whereArgs: [id],
