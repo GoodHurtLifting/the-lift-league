@@ -1593,16 +1593,25 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
         for (var j = 0; j < w.lifts.length; j++) {
           final l = w.lifts[j];
+          final bool isBw = l.isBodyweight;
+          final int scoreTypeInt =
+              isBw ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER;
+          final int logUni = l.isDumbbellLift ? 1 : 0;
+          final double? baseMul = isBw ? null : l.multiplier;
+
           await txn.insert('custom_lifts', {
             'customWorkoutId': wid,
+            'liftCatalogId': null,
             'name': l.name,
+            'repSchemeText': null,
             'sets': l.sets,
             'repsPerSet': l.repsPerSet,
-            'scoreMultiplier': l.multiplier,
-            'scoreType':
-                l.isBodyweight ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER,
-            'isBodyweight': l.isBodyweight ? 1 : 0,
-            'isDumbbell': l.isDumbbellLift ? 1 : 0,
+            'scoreType': scoreTypeInt,
+            'baseMultiplier': baseMul,
+            'logUnilaterally': logUni,
+            'scoreMultiplier': baseMul,
+            'isBodyweight': isBw ? 1 : 0,
+            'isDumbbell': logUni,
             'position': l.position,
           });
         }
@@ -1898,14 +1907,25 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
 
       for (var i = 0; i < workout.lifts.length; i++) {
         final lift = workout.lifts[i];
+        final bool isBw = lift.isBodyweight;
+        final int scoreTypeInt =
+            isBw ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER;
+        final int logUni = lift.isDumbbellLift ? 1 : 0;
+        final double? baseMul = isBw ? null : lift.multiplier;
+
         await txn.insert('custom_lifts', {
           'customWorkoutId': workout.id,
+          'liftCatalogId': null,
           'name': lift.name,
+          'repSchemeText': null,
           'sets': lift.sets,
           'repsPerSet': lift.repsPerSet,
-          'scoreMultiplier': lift.multiplier,
-          'isBodyweight': lift.isBodyweight ? 1 : 0,
-          'isDumbbell': lift.isDumbbellLift ? 1 : 0,
+          'scoreType': scoreTypeInt,
+          'baseMultiplier': baseMul,
+          'logUnilaterally': logUni,
+          'scoreMultiplier': baseMul,
+          'isBodyweight': isBw ? 1 : 0,
+          'isDumbbell': logUni,
           'position': lift.position,
         });
       }
@@ -2015,14 +2035,25 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
           where: 'customWorkoutId = ?', whereArgs: [customWorkoutId]);
       for (var i = 0; i < lifts.length; i++) {
         final lift = lifts[i];
+        final bool isBw = lift.isBodyweight;
+        final int scoreTypeInt =
+            isBw ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER;
+        final int logUni = lift.isDumbbellLift ? 1 : 0;
+        final double? baseMul = isBw ? null : lift.multiplier;
+
         await txn.insert('custom_lifts', {
           'customWorkoutId': customWorkoutId,
+          'liftCatalogId': null,
           'name': lift.name,
+          'repSchemeText': null,
           'sets': lift.sets,
           'repsPerSet': lift.repsPerSet,
-          'scoreMultiplier': lift.multiplier,
-          'isBodyweight': lift.isBodyweight ? 1 : 0,
-          'isDumbbell': lift.isDumbbellLift ? 1 : 0,
+          'scoreType': scoreTypeInt,
+          'baseMultiplier': baseMul,
+          'logUnilaterally': logUni,
+          'scoreMultiplier': baseMul,
+          'isBodyweight': isBw ? 1 : 0,
+          'isDumbbell': logUni,
           'position': lift.position,
         });
       }
@@ -2219,10 +2250,21 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
           sets: (l['sets'] as int?) ?? 0,
           repsPerSet: (l['repsPerSet'] as int?) ?? 0,
           multiplier: (blockInstanceId == null)
-              ? (l['multiplier'] as num?)?.toDouble() ?? 0.0
+              ? (l['baseMultiplier'] as num?)?.toDouble() ??
+                  (l['scoreMultiplier'] as num?)?.toDouble() ??
+                  0.0
               : (l['scoreMultiplier'] as num?)?.toDouble() ?? 0.0,
           isBodyweight: ((l['isBodyweight'] as int?) ?? 0) == 1,
-          isDumbbellLift: ((l['isDumbbellLift'] as int?) ?? 0) == 1,
+          isDumbbellLift: (blockInstanceId == null)
+              ? (((l['logUnilaterally'] as int?) ??
+                          (l['isDumbbell'] as int?) ??
+                          0) ==
+                      1)
+              : ((l['isDumbbellLift'] as int?) ??
+                      (l['logUnilaterally'] as int?) ??
+                      (l['isDumbbell'] as int?) ??
+                      0) ==
+                  1,
           position: (l['position'] as int?) ?? 0,
         ),
       );
@@ -2302,6 +2344,7 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
     required int isBodyweight,
     required int isDumbbell,
     required String scoreType,
+    double? multiplier,
   }) async {
     final db = await database;
     return await db.transaction((txn) async {
@@ -2361,6 +2404,13 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         liftName = nameRows.first['name'] as String?;
       }
 
+      final bool isBw =
+          isBodyweight == 1 || scoreType.toLowerCase() == 'bodyweight';
+      final int scoreTypeInt =
+          isBw ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER;
+      final int logUni = isDumbbell;
+      final double? baseMul = isBw ? null : multiplier;
+
       return await txn.insert('custom_lifts', {
         'customWorkoutId': customWorkoutId,
         'liftCatalogId': liftCatalogId,
@@ -2368,10 +2418,12 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         'repSchemeText': repSchemeText,
         'sets': sets,
         'repsPerSet': repsPerSet,
-        'isBodyweight': isBodyweight,
-        'isDumbbell': isDumbbell,
-        'scoreType': scoreType,
-        'scoreMultiplier': null,
+        'scoreType': scoreTypeInt,
+        'baseMultiplier': baseMul,
+        'logUnilaterally': logUni,
+        'scoreMultiplier': baseMul,
+        'isBodyweight': isBw ? 1 : 0,
+        'isDumbbell': logUni,
         'position': position,
       });
     });
@@ -2415,6 +2467,23 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         for (int i = 0; i < lifts.length; i++) {
           final l = lifts[i];
           final m = i < meta.length ? meta[i] : const {};
+          final dynamic metaScoreType = m['scoreType'];
+          int? rawScoreType;
+          if (metaScoreType is int) {
+            rawScoreType = metaScoreType;
+          } else if (metaScoreType is String) {
+            rawScoreType =
+                metaScoreType.toLowerCase() == 'bodyweight'
+                    ? SCORE_TYPE_BODYWEIGHT
+                    : SCORE_TYPE_MULTIPLIER;
+          }
+          final bool isBw =
+              l.isBodyweight || rawScoreType == SCORE_TYPE_BODYWEIGHT;
+          final int scoreTypeInt =
+              isBw ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER;
+          final int logUni = l.isDumbbellLift ? 1 : 0;
+          final double? baseMul = isBw ? null : l.multiplier;
+
           final data = <String, Object?>{
             'customWorkoutId': customWorkoutId,
             'liftCatalogId': m['liftId'],
@@ -2422,10 +2491,12 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
             'repSchemeText': m['repScheme'] ?? '${l.sets}x${l.repsPerSet}',
             'sets': l.sets,
             'repsPerSet': l.repsPerSet,
-            'scoreType': m['scoreType'],
-            'scoreMultiplier': l.multiplier,
-            'isBodyweight': l.isBodyweight ? 1 : 0,
-            'isDumbbell': l.isDumbbellLift ? 1 : 0,
+            'scoreType': scoreTypeInt,
+            'baseMultiplier': baseMul,
+            'logUnilaterally': logUni,
+            'scoreMultiplier': baseMul,
+            'isBodyweight': isBw ? 1 : 0,
+            'isDumbbell': logUni,
             'position': i,
           };
           if (l.id != null && byId.containsKey(l.id)) {
@@ -2476,6 +2547,23 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
         final l = lifts[i];
         final m = i < meta.length ? meta[i] : const {};
 
+        final dynamic metaScoreType = m['scoreType'];
+        int? rawScoreType;
+        if (metaScoreType is int) {
+          rawScoreType = metaScoreType;
+        } else if (metaScoreType is String) {
+          rawScoreType =
+              metaScoreType.toLowerCase() == 'bodyweight'
+                  ? SCORE_TYPE_BODYWEIGHT
+                  : SCORE_TYPE_MULTIPLIER;
+        }
+        final bool isBw =
+            l.isBodyweight || rawScoreType == SCORE_TYPE_BODYWEIGHT;
+        final int scoreTypeInt =
+            isBw ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER;
+        final int logUni = l.isDumbbellLift ? 1 : 0;
+        final double? baseMul = isBw ? null : l.multiplier;
+
         templateData.add({
           'customWorkoutId': customWorkoutId,
           'liftCatalogId': m['liftId'],
@@ -2483,10 +2571,12 @@ CREATE TABLE IF NOT EXISTS lift_aliases (
           'repSchemeText': m['repScheme'] ?? '${l.sets}x${l.repsPerSet}',
           'sets': l.sets,
           'repsPerSet': l.repsPerSet,
-          'scoreType': m['scoreType'],
-          'scoreMultiplier': l.multiplier,
-          'isBodyweight': l.isBodyweight ? 1 : 0,
-          'isDumbbell': l.isDumbbellLift ? 1 : 0,
+          'scoreType': scoreTypeInt,
+          'baseMultiplier': baseMul,
+          'logUnilaterally': logUni,
+          'scoreMultiplier': baseMul,
+          'isBodyweight': isBw ? 1 : 0,
+          'isDumbbell': logUni,
           'position': i,
         });
 
