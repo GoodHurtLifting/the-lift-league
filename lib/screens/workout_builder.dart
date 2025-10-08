@@ -173,7 +173,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
     bool? bw;
     bool? dbb;
 
-    Future<List<Map<String, Object?>>> _fetch() {
+    Future<List<Map<String, Object?>>> fetch() {
       return LiftCatalogService.instance.query(
         group: group,
         queryText: search.isEmpty ? null : search,
@@ -243,7 +243,7 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                     SizedBox(
                       height: 320,
                       child: FutureBuilder<List<Map<String, Object?>>>(
-                        future: _fetch(),
+                        future: fetch(),
                         builder: (ctx, snap) {
                           if (snap.connectionState != ConnectionState.done) {
                             return const Center(

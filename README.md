@@ -1,6 +1,6 @@
 # The Lift League
 
-Lift League is a Flutter-based strength training and workout tracking app. It lets users log lifts, join leagues, and monitor progress while keeping workouts in sync across devices through Firebase.
+Lift League is a Flutter-based strength training and workout tracking app. It lets users log lifts, join training circles, and monitor progress while keeping workouts in sync across devices through Firebase.
 
 ![App screenshot](flutter_01.png)
 

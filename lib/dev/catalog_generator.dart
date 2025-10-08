@@ -421,7 +421,7 @@ bool isDumbbellPrimary(String n, String equipment) {
 
 bool isUnilateral(String n) {
   final name = n.toLowerCase();
-  if (name.contains('one-arm') || name.contains('one-handed') || name.contains('single arm') ||
+  if (name.contains('one-arm') || name.contains('one-handed') || name.contains('wood chop') || name.contains('single arm') ||
       name.contains('single-leg') || name.contains('one-legged') || name.contains('unilateral'))
     return true;
 
