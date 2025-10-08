@@ -88,7 +88,10 @@ class ScoreMultiplierService {
 
       await txn.update(
         'custom_lifts',
-        {'scoreMultiplier': multiplier},
+        {
+          'scoreMultiplier': multiplier,
+          'baseMultiplier': multiplier,
+        },
         where: 'id = ?',
         whereArgs: [customLiftId],
       );
