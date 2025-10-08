@@ -1,9 +1,9 @@
 custom_block_builder.md
 
-Source of truth: docs/db.md (this file follows those contracts).
+Source of truth: docs/db.md
 Scope: UI + DB rules for creating/editing custom blocks. Stock templates are separate (lift_templates in db.md).
 
-1) Model contracts (UI)
+1) UI model contracts
 
 CustomBlock { id, name, numWeeks, daysPerWeek, isDraft, scheduleType='standard', coverImagePath?, workouts: List<WorkoutDraft> }
 
@@ -11,212 +11,119 @@ WorkoutDraft { id, dayIndex, name, lifts: List<LiftDraft>, isPersisted }
 
 LiftDraft { id?, name, sets, repsPerSet, multiplier, isBodyweight, isDumbbellLift, position }
 
-UI fields map to instance fields:
-multiplier → baseMultiplier (NULL for bodyweight),
-isDumbbellLift → logUnilaterally (0/1),
-isBodyweight → scoreType=1 else 0.
+Normalization (UI → DB fields)
 
-2) Tables in play
+isBodyweight == true → scoreType = 1 (BODYWEIGHT), baseMultiplier = NULL
 
-Stock (reference only): lift_templates(workoutId, catalogId, position, sets, repsPerSet, baseMultiplier, scoreType, logUnilaterally, instructions)
+else → scoreType = 0 (MULTIPLIER), baseMultiplier = multiplier
 
-Custom (builder’s template tables today): custom_blocks, custom_workouts, custom_lifts
+isDumbbellLift → logUnilaterally = 1 (else 0)
 
-Add (or use if present): custom_lifts.baseMultiplier REAL, custom_lifts.logUnilaterally INTEGER DEFAULT 0.
+Constants (db.md-compatible)
+SCORE_TYPE_MULTIPLIER = 0
+SCORE_TYPE_BODYWEIGHT = 1
 
-Instances (target): block_instances, workout_instances, lift_instances(liftName, sets, repsPerSet, baseMultiplier, scoreType, logUnilaterally, position, archived).
+2) Table usage (builder path today)
 
-3) Builder flow (current, template-first)
+custom_blocks(customBlockId, name, totalWeeks, workoutsPerWeek, …, scheduleType, coverImagePath, isDraft)
 
-Save/Update block: rewrite all workouts/lifts for that block (transaction).
+custom_workouts(id, customBlockId, name, position)
 
-Workouts: order by dayIndex → dense position 0..N−1.
+custom_lifts(id, customWorkoutId, liftCatalogId?, name, repSchemeText?, sets, repsPerSet, scoreType, baseMultiplier, logUnilaterally, position)
+(legacy mirrors may still exist: scoreMultiplier, isDumbbell — safe to ignore in new code)
 
-Lifts: keep incoming position; must be dense 0..M−1.
+Block field mappings (UI → DB)
 
-Score fields:
+numWeeks → custom_blocks.totalWeeks
 
-Bodyweight: scoreType=1, baseMultiplier=NULL, logUnilaterally from isDumbbellLift (usually 0).
+daysPerWeek → custom_blocks.workoutsPerWeek
 
-Multiplier: scoreType=0, baseMultiplier = multiplier, logUnilaterally = isDumbbellLift ? 1 : 0.
+workouts.length → custom_blocks.uniqueWorkoutCount
 
-4) Materialization (target, instance-first)
+name → custom_blocks.name
 
-Week-1 lift_instances are the live template (mirror lift_templates fields).
+scheduleType is label only (no runtime branching)
 
-Weeks 2–4 clone from week-1.
+Workout & Lift mappings
 
-On edit: overwrite all weeks from week-1; archive removed lifts if entries exist.
+Workout order: sort by dayIndex → write position = 0..N-1
 
-5) Validation
+Lift order: preserve incoming position = 0..M-1
 
-Unique dayIndex within a block.
+multiplier → baseMultiplier
 
-Non-empty lift.name; sets ≥ 0, repsPerSet ≥ 0.
+isDumbbellLift → logUnilaterally
 
-scoreType ∈ {0,1}. If scoreType=1, baseMultiplier MUST be NULL.
+isBodyweight → scoreType (1 for bodyweight, else 0)
 
-position dense per list (workouts and lifts).
+3) Builder flow
 
-6) Catalog usage
+Save/Update block (transaction):
 
-Prefer picking from lift_catalog; store liftCatalogId + name.
+Upsert custom_blocks
 
-Free text allowed; set liftCatalogId=NULL.
+Delete existing custom_workouts + custom_lifts for the block
 
-7) Scheduling
+Reinsert workouts and lifts with normalized scoring fields
 
-scheduleType is label only (no runtime branching).
+Load for edit:
 
-Instances fan out via slotIndex = weekIndex*weeklySlots + dayIndex.
+Template mode (blockInstanceId == null): read custom_workouts + custom_lifts
 
-8) Review checklist
+LiftDraft.id = custom_lifts.id
 
-Save rewrites workouts/lifts exactly as UI shows.
+Instance mode (blockInstanceId != null): read workout_instances + lift_instances (archived=0)
 
-scoreType/baseMultiplier/logUnilaterally normalized per §4.
+LiftDraft.id = lift_instances.liftInstanceId
 
-Positions are dense from 0; dayIndex unique.
+4) Validation
 
-Catalog lookups fill name if liftCatalogId given.
+Unique dayIndex within the block
 
-Transactions wrap delete-and-replace.
+Positions dense from 0 (for both workouts and lifts)
 
-Surgical diffs to align code with db.md (non-breaking)
-1) Add missing columns to custom_lifts (compat layer)
+Lift: non-empty name, sets ≥ 0, repsPerSet ≥ 0
 
-File / Anchor / Action / Snippet / Notes
+If scoreType = 1, baseMultiplier MUST be NULL
 
-File: lib/services/db_service.dart
+5) Catalog usage
 
-Anchor: onUpgrade (add a new block; bump _dbVersion to 28)
+Prefer selecting from lift_catalog: store liftCatalogId and resolved name
 
-Action: Add columns if missing.
+Free text allowed; set liftCatalogId = NULL
 
-Snippet:
+6) Scheduling (reference)
 
-if (oldV < 28) {
-try { await db.execute("ALTER TABLE custom_lifts ADD COLUMN baseMultiplier REAL;"); } catch (_) {}
-try { await db.execute("ALTER TABLE custom_lifts ADD COLUMN logUnilaterally INTEGER DEFAULT 0;"); } catch (_) {}
-}
+scheduleType is a label only
 
+Instance fan-out uses: slotIndex = weekIndex * daysPerWeek + dayIndex
 
-Notes: Keep legacy columns (scoreMultiplier, isDumbbell) for now.
+7) Review checklist
 
-2) Normalize writes in upsertCustomBlock (write both new + legacy)
+Save rewrites exactly what the UI shows
 
-File: lib/services/db_service.dart
+scoreType/baseMultiplier/logUnilaterally normalized on write
 
-Anchor: inside upsertCustomBlock → inner loop inserting into custom_lifts
+Dense positions; unique dayIndex
 
-Action: Compute normalized fields; write both sets.
+Catalog lookups fill name when liftCatalogId provided
 
-Snippet (replace the map body only):
+All writes inside a single transaction
 
-final isBw = l.isBodyweight;
-final scoreTypeInt = isBw ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER;
-final int logUni = l.isDumbbellLift ? 1 : 0;
-final double? baseMul = isBw ? null : l.multiplier;
+8) Implementation anchors (where code lives)
 
-await txn.insert('custom_lifts', {
-'customWorkoutId': wid,
-'liftCatalogId': null,           // keep if you have one; else null
-'name': l.name,
-'repSchemeText': null,           // keep if you use it; else null
-'sets': l.sets,
-'repsPerSet': l.repsPerSet,
-'scoreType': scoreTypeInt,
-'baseMultiplier': baseMul,       // NEW (db.md aligned)
-'logUnilaterally': logUni,       // NEW (db.md aligned)
+Persist: DBService.upsertCustomBlock(CustomBlock block)
 
-// Legacy writes (keep during transition)
-'scoreMultiplier': baseMul,      // legacy mirror
-'isBodyweight': isBw ? 1 : 0,
-'isDumbbell': logUni,            // legacy mirror of logUnilaterally
+Load (template/instance): DBService.loadCustomBlockForEdit({ customBlockId, blockInstanceId? })
 
-'position': l.position,
-});
+Add lift quickly: DBService.addLiftToCustomWorkout({... , double? multiplier})
 
+List/delete blocks: DBService.getCustomBlocks(), DBService.deleteCustomBlock(int id)
 
-Notes: Safe mirror so both old and new readers keep working.
+9) Future (instance-first authoring)
 
-3) Normalize addLiftToCustomWorkout (accept optional multiplier; write both)
+Week-1 lift_instances act as the live template; clone weeks 2–4
 
-File: lib/services/db_service.dart
+Edits overwrite other weeks from week-1; archive removed lifts if entries exist
 
-Anchor: method signature
-
-Action: add double? multiplier.
-
-Snippet (signature only):
-
-Future<int> addLiftToCustomWorkout({
-required int customBlockId,
-required int dayIndex,
-required String workoutName,
-required int liftCatalogId,
-required String repSchemeText,
-required int sets,
-required int repsPerSet,
-required int isBodyweight,
-required int isDumbbell,
-required String scoreType,
-double? multiplier, // NEW
-}) async {
-
-
-File: same method, before txn.insert('custom_lifts', ...)
-
-Action: compute normalized fields.
-
-Snippet:
-
-final bool isBw = isBodyweight == 1 || scoreType.toLowerCase() == 'bodyweight';
-final int scoreTypeInt = isBw ? SCORE_TYPE_BODYWEIGHT : SCORE_TYPE_MULTIPLIER;
-final int logUni = isDumbbell;
-final double? baseMul = isBw ? null : multiplier;
-
-
-File: same method, map passed to insert
-
-Action: write both new + legacy fields.
-
-Snippet (changed lines only):
-
-'scoreType': scoreTypeInt,
-'baseMultiplier': baseMul,     // NEW
-'logUnilaterally': logUni,     // NEW
-'scoreMultiplier': baseMul,    // legacy mirror
-'isBodyweight': isBw ? 1 : 0,
-'isDumbbell': logUni,
-
-4) Read path fallback in loadCustomBlockForEdit
-
-File: lib/services/db_service.dart
-
-Anchor: inside loadCustomBlockForEdit, template path (blockInstanceId == null) when building LiftDraft
-
-Action: prefer new columns; fallback to legacy.
-
-Snippet (replace the affected initializers):
-
-multiplier: (l['baseMultiplier'] as num?)?.toDouble()
-?? (l['scoreMultiplier'] as num?)?.toDouble()
-?? 0.0,
-isDumbbellLift: ((l['logUnilaterally'] as int?) ?? (l['isDumbbell'] as int?) ?? 0) == 1,
-
-5) Instances (when you switch)
-
-When you move the builder to write week-1 lift_instances directly, persist only:
-
-liftName, sets, repsPerSet, baseMultiplier, scoreType, logUnilaterally, position, archived=0.
-Then clone weeks 2–4. You can remove the custom_lifts mirror writes.
-
-6)
-**TODO:** What you can remove later
-
-Legacy columns usage in code: custom_lifts.scoreMultiplier, custom_lifts.isDumbbell.
-
-The compatibility reads in loadCustomBlockForEdit.
-
-Ultimately custom_lifts entirely, once instance-first editing is complete.
+When fully migrated, custom_lifts can be retired
