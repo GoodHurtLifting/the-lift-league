@@ -416,6 +416,8 @@ class _WorkoutBuilderState extends State<WorkoutBuilder> {
                                   scoreType: isBodyweight
                                       ? 'bodyweight'
                                       : 'multiplier', // or int if your API uses ints
+                                  multiplier:
+                                      isBodyweight ? null : newLift.multiplier,
                                 );
                                 debugPrint(
                                     '[AddLift] DB insert OK (id=${newLift.id}, "$name", $repText)');
