@@ -70,7 +70,7 @@
 - Image assets are configurable; IDs stable even if images move to Firestore.
 
 ## Implementation notes
-- Keep badge rule thresholds in a config map (not hardcoded in multiple places) - lib/services/badge.services.dart
+- Keep badge rule thresholds in a config map (not hardcoded in multiple places). - lib/services/badge.services.dart
 - Use a single `awardBadge(userId, badgeId, metadata)` that:
     - checks existence (idempotent),
     - writes the award,
