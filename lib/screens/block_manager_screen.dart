@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lift_league/services/db_service.dart';
 import 'package:lift_league/services/block_manager_service.dart';
-import 'package:lift_league/data/block_data.dart';
+import 'package:lift_league/dev/block_data.dart';
 import 'package:lift_league/utils/workout_utils.dart';
 
 class BlockManagerScreen extends StatefulWidget {

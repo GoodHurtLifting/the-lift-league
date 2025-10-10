@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:lift_league/data/lift_data.dart';
-import 'package:lift_league/data/workout_data.dart';
-import 'package:lift_league/data/block_data.dart';
+import 'package:lift_league/dev/lift_data.dart';
+import 'package:lift_league/dev/workout_data.dart';
+import 'package:lift_league/dev/block_data.dart';
 import 'package:lift_league/data/titles_data.dart';
 import 'package:lift_league/services/calculations.dart';
 import 'package:lift_league/models/custom_block_models.dart';
