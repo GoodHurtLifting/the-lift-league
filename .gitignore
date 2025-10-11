@@ -79,6 +79,7 @@ google-services.json
 devtools_options.yaml
 *.log
 *.db
+assets/db/*.db
 *.hprof
 /.metadatathethee
 /test/widget_test.dart
