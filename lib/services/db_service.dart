@@ -14,6 +14,8 @@ import 'package:lift_league/services/badge_service.dart';
 import 'package:flutter/foundation.dart';
 import 'score_multiplier_service.dart';
 
+const int CURRENT_DB_VERSION = 28; // bump any time the schema changes
+
 // Score type constants (use ints everywhere)
 const int SCORE_TYPE_MULTIPLIER = 0;
 const int SCORE_TYPE_BODYWEIGHT = 1;
@@ -39,7 +41,7 @@ class DBService {
   // 🔄 DATABASE INIT (v18, cleaned up)
   // ──────────────────────────────────────────────────────────
 
-  static const _dbVersion = 28; // bump any time the schema changes
+
 
   Future<bool> _hasColumn(DatabaseExecutor db, String table, String col) async {
     final rows = await db.rawQuery('PRAGMA table_info($table);');
@@ -56,7 +58,7 @@ class DBService {
 
     return openDatabase(
       path,
-      version: _dbVersion,
+      version: CURRENT_DB_VERSION,
       onCreate: (db, v) async {
         // Ensure FK cascades for the initial connection
         await db.execute('PRAGMA foreign_keys = ON;');

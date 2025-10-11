@@ -2,7 +2,7 @@
 // Source: lib/services/db_service.dart (onCreate + migrations)
 import 'package:lift_league/services/db_service.dart' show CURRENT_DB_VERSION;
 
-const int SCHEMA_USER_VERSION = 28;
+const int SCHEMA_USER_VERSION = CURRENT_DB_VERSION;
 
 // Exact CREATE TABLE statements in creation order:
 const List<String> schemaCreateStatements = [
