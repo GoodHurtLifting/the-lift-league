@@ -64,6 +64,8 @@ CREATE TABLE IF NOT EXISTS lift_templates (
   logUnilaterally  INTEGER NOT NULL DEFAULT 0,  -- doubles reps/workload/weightUsed for this lift
   groupKey         TEXT,               -- Optional unique identifier tying lifts that belong to the same superset or circuit
   instructions     TEXT,
+  referenceCatalogId INTEGER,    -- optional: which catalog lift this one references
+  percentOfReference REAL,       -- optional: e.g., 0.70 for 70%
   PRIMARY KEY (workoutId, catalogId),
   FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE,
   FOREIGN KEY (catalogId) REFERENCES lift_catalog(catalogId) ON DELETE CASCADE
@@ -134,7 +136,8 @@ CREATE TABLE IF NOT EXISTS lift_instances (
   scoreType          INTEGER NOT NULL,    -- 0=MULTIPLIER, 1=BODYWEIGHT
   baseMultiplier     REAL,                -- NULL for BODYWEIGHT
   logUnilaterally    INTEGER NOT NULL DEFAULT 0,  -- duplicates reps/workload/weightUsed
-
+  referenceLiftInstanceId INTEGER,  -- optional: resolved pointer at instance time
+  percentOfReference REAL,          -- carried over from template
   instructions       TEXT,
   archived           INTEGER NOT NULL DEFAULT 0,  -- safe removal flag
 
