@@ -1,67 +1,104 @@
-class StockSeed {
-  final List<Map<String, Object?>> blocks;
-  final List<Map<String, Object?>> workoutsBlocks;
-  final List<Map<String, Object?>> liftTemplates;
-  StockSeed({required this.blocks, required this.workoutsBlocks, required this.liftTemplates});
-}
-
-/// TODO: adapt to your exact table/column names.
-/// Assumes you already have `block_data.dart` and `workout_data.dart` moved into /dev.
-import '../dev/block_data.dart' as blocksSrc; // or just '../dev/block_data.dart'
+import 'package:lift_league/dev/block_data.dart' as blocksSrc;
+import 'package:lift_league/dev/lift_data.dart' as liftsSrc;
 import 'package:lift_league/dev/workout_data.dart' as workoutsSrc;
 
-StockSeed generateStockTemplates() {
-  // Build rows from your existing dev data files.
-  // Keep IDs stable (blockId, workoutId, catalogId).
-  final blocks = <Map<String, Object?>>[];
-  final workoutsBlocks = <Map<String, Object?>>[];
-  final liftTemplates = <Map<String, Object?>>[];
 
-  // Example sketch — replace with your real structures.
-  for (final b in blocksSrc.blockDataList) {
+class StockSeed {
+  final List<Map<String, Object?>> blocks;
+  final List<Map<String, Object?>> workouts;
+  final List<Map<String, Object?>> workoutsBlocks;
+  final List<Map<String, Object?>> liftWorkouts;
+
+  const StockSeed({
+    required this.blocks,
+    required this.workouts,
+    required this.workoutsBlocks,
+    required this.liftWorkouts,
+  });
+}
+
+int? _parseReps(String? scheme) {
+  if (scheme == null) return null;
+  final match = RegExp(r'(\d+)(?:\s*-\s*\d+)?\s*(?:reps|rep)', caseSensitive: false)
+      .firstMatch(scheme);
+  if (match != null) {
+    return int.tryParse(match.group(1)!);
+  }
+  return null;
+}
+
+int _scoreTypeToInt(String? value) {
+  switch (value?.toLowerCase()) {
+    case 'bodyweight':
+      return 1;
+    case 'multiplier':
+    default:
+      return 0;
+  }
+}
+
+StockSeed generateStockTemplates() {
+
+  final blocks = <Map<String, Object?>>[];
+  final workouts = <Map<String, Object?>>[];
+  final workoutsBlocks = <Map<String, Object?>>[];
+  final liftWorkouts = <Map<String, Object?>>[];
+
+  final liftsById = {
+    for (final lift in liftsSrc.liftDataList)
+      (lift['liftId'] as int): lift,
+  };
+
+  for (final block in blocksSrc.blockDataList) {
     blocks.add({
-      'blockId': b['blockId'],
-      'blockName': b['blockName'],
-      'numWeeks': b['numWeeks'] ?? 4,
-      'workoutsPerWeek': b['workoutsPerWeek'] ?? 3,
-      'scheduleType': b['scheduleType'] ?? 'standard',
-      'createdAt': DateTime.now().millisecondsSinceEpoch,
-      'updatedAt': DateTime.now().millisecondsSinceEpoch,
+      'blockId': block['blockId'],
+      'blockName': block['blockName'],
+      'scheduleType': block['scheduleType'],
+      'numWorkouts': block['numWorkouts'],
     });
 
-    // Link workouts to blocks with a `position`
-    final workoutIds = (b['workoutsIds'] as List).cast<int>();
-    for (var i = 0; i < workoutIds.length; i++) {
+    final workoutIds = (block['workoutsIds'] as List).cast<int>();
+    for (final workoutId in workoutIds) {
       workoutsBlocks.add({
-        'blockId': b['blockId'],
-        'workoutId': workoutIds[i],
-        'position': i,
+        'blockId': block['blockId'],
+        'workoutId': workoutId,
       });
     }
   }
 
-  // For each workout, emit its lift templates
-  for (final w in workoutsSrc.workoutDataList) {
-    final lifts = (w['lifts'] as List).cast<Map<String, Object?>>();
-    for (var pos = 0; pos < lifts.length; pos++) {
-      final l = lifts[pos];
-      liftTemplates.add({
-        'workoutId': w['workoutId'],
-        'catalogId': l['catalogId'],         // must map your lift names → catalogIds
-        'position': pos,
-        'sets': l['numSets'],
-        'repsPerSet': l['repsPerSet'],
-        'baseMultiplier': l['scoreMultiplier'],
-        'scoreType': l['scoreType'] ?? 0,    // 0=multiplier, 1=bodyweight (match your constants)
-        'logUnilaterally': l['isDumbbellLift'] ?? 0,
-        'instructions': l['instructions'] ?? '',
+  for (final workout in workoutsSrc.workoutDataList) {
+    workouts.add({
+      'workoutId': workout['workoutId'],
+      'workoutName': workout['workoutName'],
+    });
+
+    final liftIds = (workout['liftIds'] as List).cast<int>();
+    for (var index = 0; index < liftIds.length; index++) {
+      final liftId = liftIds[index];
+      final lift = liftsById[liftId];
+      final sets = (lift?['numSets'] as int?) ?? 3;
+      final reps = _parseReps(lift?['repScheme'] as String?);
+      final multiplier = (lift?['scoreMultiplier'] as num?)?.toDouble();
+      final isDumbbell = (lift?['isDumbbellLift'] as num?)?.toInt();
+      final scoreType = _scoreTypeToInt(lift?['scoreType'] as String?);
+
+      liftWorkouts.add({
+        'workoutId': workout['workoutId'],
+        'liftId': liftId,
+        'numSets': sets,
+        'position': index,
+        if (reps != null) 'repsPerSet': reps,
+        if (multiplier != null && scoreType == 0) 'multiplier': multiplier,
+        'isBodyweight': scoreType == 1 ? 1 : 0,
+        if (isDumbbell != null) 'isDumbbellLift': isDumbbell,
       });
     }
   }
 
   return StockSeed(
     blocks: blocks,
+    workouts: workouts,
     workoutsBlocks: workoutsBlocks,
-    liftTemplates: liftTemplates,
+    liftWorkouts: liftWorkouts,
   );
 }

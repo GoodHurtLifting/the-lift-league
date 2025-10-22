@@ -102,7 +102,7 @@ lift_entries change → recompute that lift_totals → recompute parent workout_
    Block Score	block_totals.blockScore
    Workouts Completed	COUNT(*) FROM workout_instances WHERE completed=1
    Days Taken	`(MAX(endTime) − MIN(startTime)) + 1` over completed workouts (ISO-8601 UTC)
-   Big-3 PRs (display)	Parse timeline clink with `New (Bench Press
+   Big-3 PRs (display)	Parse timeline clink with `New (Bench Press, Squat or Deadlift) PR ###lbs'
    7.3 Timeline / Check-ins
    Metric	Source
    Check-ins count	COUNT(timeline_entries WHERE type='checkin')

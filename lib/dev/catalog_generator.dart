@@ -549,9 +549,9 @@ final Map<String, Override> overrides = {
 };
 
 /// ====== 5) Generation ======
-Map<String, dynamic> toEntry(String original) {
+Map<String, dynamic>? toEntry(String original, {required int timestamp}) {
   final name = original.trim();
-  if (name.isEmpty) return {};
+  if (name.isEmpty) return null;
   final ov = overrides[name];
 
   final equipment = ov?.equipment ?? detectEquipment(name);
@@ -569,14 +569,14 @@ Map<String, dynamic> toEntry(String original) {
     'isDumbbellCapable': dbell ? 1 : 0,
     'unilateral': uni ? 1 : 0,
     'youtubeUrl': null,
-    'createdAt': DateTime.now().millisecondsSinceEpoch,
-    'updatedAt': DateTime.now().millisecondsSinceEpoch,
+    'createdAt': timestamp,
+    'updatedAt': timestamp,
   };
 
 }
 
-void main() async {
-  final names = rawNames
+List<Map<String, dynamic>> generateLiftCatalog({int startId = 1, int? timestamp}) {
+  final ts = timestamp ?? DateTime.now().millisecondsSinceEpoch;  final names = rawNames
       .split('\n')
       .map((s) => s.trim())
       .where((s) => s.isNotEmpty)
@@ -586,13 +586,26 @@ void main() async {
 
   final entries = <Map<String, dynamic>>[];
   final seen = <String>{};
+  var nextId = startId;
 
   for (final n in names) {
     if (seen.contains(n.toLowerCase())) continue;
     seen.add(n.toLowerCase());
-    final e = toEntry(n);
-    if (e.isNotEmpty) entries.add(e);
+    final e = toEntry(n, timestamp: ts);
+    if (e != null) {
+      entries.add({
+        'catalogId': nextId++,
+        ...e,
+      });
+    }
   }
+
+  return entries;
+}
+
+void main() async {
+  final entries = generateLiftCatalog();
+
 
   // Pretty print to console
   final out = const JsonEncoder.withIndent('  ').convert(entries);
