@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS lift_templates (
   baseMultiplier   REAL,               -- NULL when scoreType=BODYWEIGHT
   scoreType        INTEGER NOT NULL,   -- 0=MULTIPLIER, 1=BODYWEIGHT
   logUnilaterally  INTEGER NOT NULL DEFAULT 0,  -- doubles reps/workload/weightUsed for this lift
+  groupKey         TEXT,               -- Optional unique identifier tying lifts that belong to the same superset or circuit
   instructions     TEXT,
   PRIMARY KEY (workoutId, catalogId),
   FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE,
@@ -125,6 +126,7 @@ CREATE TABLE IF NOT EXISTS lift_instances (
   catalogId          INTEGER,          -- NULL if freeform custom
   liftName           TEXT NOT NULL,
   position           INTEGER NOT NULL DEFAULT 0,
+  groupKey           TEXT,             -- Optional unique identifier tying lifts that belong to the same superset or circuit
   sets               INTEGER,
   repsPerSet         INTEGER,
 
@@ -281,20 +283,7 @@ workout_instances(blockInstanceId, slotIndex)
 
 All CREATE INDEX should be IF NOT EXISTS.
 
-8) Migrations (existing users)
-Never overwrite existing DBs; copy asset only when DB file does not exist.
-
-Add tables/columns with IF NOT EXISTS.
-
-Backfill idempotently (e.g., INSERT OR IGNORE, UPDATE ... WHERE NOT EXISTS).
-
-If migrating from older “dumbbell=×2” logic:
-
-Map isDumbbell ⇒ logUnilaterally=1 and set scoreType from prior bodyweight flag.
-
-Recompute lift_totals using the new unilateral duplication rules.
-
-9) Admin/God Mode
+8) Admin/God Mode
 - Purpose: allow post-launch edits to stock blocks/lifts without breaking user data.
 - Scope: admins only; normal users cannot alter stock templates.
 - Rules:

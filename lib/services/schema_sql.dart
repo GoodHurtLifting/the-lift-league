@@ -86,6 +86,7 @@ const List<String> schemaCreateStatements = [
         isBodyweight INTEGER,
         isDumbbellLift INTEGER,
         position INTEGER DEFAULT 0,
+        groupKey TEXT,
         FOREIGN KEY (workoutId) REFERENCES workouts(workoutId) ON DELETE CASCADE,
         FOREIGN KEY (liftId) REFERENCES lifts(liftId) ON DELETE CASCADE
       )
@@ -102,6 +103,7 @@ const List<String> schemaCreateStatements = [
         isDumbbellLift INTEGER,
         isBodyweight INTEGER,
         position INTEGER DEFAULT 0,
+        groupKey TEXT,
         archived INTEGER DEFAULT 0,
         FOREIGN KEY (workoutInstanceId) REFERENCES workout_instances(workoutInstanceId) ON DELETE CASCADE,
         FOREIGN KEY (liftId) REFERENCES lifts(liftId)
