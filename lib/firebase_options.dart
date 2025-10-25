@@ -46,7 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '997251967762',
     projectId: 'the-lift-league',
     authDomain: 'the-lift-league.firebaseapp.com',
-    storageBucket: 'the-lift-league.firebasestorage.app',
+    storageBucket: 'the-lift-league.appspot.com',
     measurementId: 'G-HSTE5R7S9Y',
   );
 
@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
     appId: '1:997251967762:android:63878d02e1eac5a26261cb',
     messagingSenderId: '997251967762',
     projectId: 'the-lift-league',
-    storageBucket: 'the-lift-league.firebasestorage.app',
+    storageBucket: 'the-lift-league.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     appId: '1:997251967762:ios:9c93350c3aa2fd7f6261cb',
     messagingSenderId: '997251967762',
     projectId: 'the-lift-league',
-    storageBucket: 'the-lift-league.firebasestorage.app',
+    storageBucket: 'the-lift-league.appspot.com',
     iosBundleId: 'com.example.liftLeague',
   );
 
@@ -72,7 +72,7 @@ class DefaultFirebaseOptions {
     appId: '1:997251967762:ios:9c93350c3aa2fd7f6261cb',
     messagingSenderId: '997251967762',
     projectId: 'the-lift-league',
-    storageBucket: 'the-lift-league.firebasestorage.app',
+    storageBucket: 'the-lift-league.appspot.com',
     iosBundleId: 'com.example.liftLeague',
   );
 
@@ -82,7 +82,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '997251967762',
     projectId: 'the-lift-league',
     authDomain: 'the-lift-league.firebaseapp.com',
-    storageBucket: 'the-lift-league.firebasestorage.app',
+    storageBucket: 'the-lift-league.appspot.com',
     measurementId: 'G-D22L0EG6XE',
   );
 }
